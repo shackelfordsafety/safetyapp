@@ -190,9 +190,17 @@ export function StepFooter({ onBack, onNext, hasBack, hasNext, nextLabel, backLa
        check's own label (e.g. "Manager signature") — something was started
        and a specific thing is still missing
      - a step with NONE of its checks started yet reads "Not started"
-     - a step with no checks of its own (e.g. a terminal Review step) reads
-       "Done" once every check in the whole document passes, else "Not
-       started" — there's nothing on that screen itself to be half-done.
+     - a step with no checks of its own reads "Done" unconditionally —
+       there's nothing on that screen itself to be half-done (this is what
+       makes always-optional steps like Incident's Witnesses/Photos never
+       block anything). The one exception is the terminal step (last in
+       `steps`, e.g. Review/Finish & Export): since it has no checks of its
+       own either but its whole point is "is everything else done," it
+       reads "Done" once every check in the whole document passes, else
+       "Not started". (Fixed 2026-08-28 — every no-check step used to fall
+       into the terminal branch, so Witnesses/Photos read "Not started"
+       forever no matter how long you left them alone, only flipping to
+       "Done" once the entire rest of the document passed.)
      - `lockedIds` (optional, e.g. JSA's Signatures/Finish & Export before
        Job/Meeting/Work are complete) overrides all of the above with a
        plain "Locked" state -- without this, a step whose own checks happen
@@ -203,13 +211,16 @@ export function StepFooter({ onBack, onNext, hasBack, hasNext, nextLabel, backLa
        grayed out, i see it green w a check"). Still loses to "You are
        here" so a step doesn't lock itself out from under the user who's
        currently standing on it. */
-function stepRowState(step, activeStepId, checks, lockedIds) {
+function stepRowState(step, activeStepId, checks, lockedIds, isTerminal) {
   if (step.id === activeStepId) return { kind: 'current', text: 'You are here' };
   if (lockedIds && lockedIds.includes(step.id)) return { kind: 'locked', text: 'Locked' };
   const stepChecks = checks.filter(c => c.step === step.id);
+  if (!stepChecks.length) {
+    if (!isTerminal) return { kind: 'done', text: 'Done' };
+    return checks.every(c => c.ok) ? { kind: 'done', text: 'Done' } : { kind: 'pending', text: 'Not started' };
+  }
   const okCount = stepChecks.filter(c => c.ok).length;
-  const allOk = stepChecks.length ? okCount === stepChecks.length : checks.every(c => c.ok);
-  if (allOk) return { kind: 'done', text: 'Done' };
+  if (okCount === stepChecks.length) return { kind: 'done', text: 'Done' };
   if (okCount > 0) {
     const firstMissing = stepChecks.find(c => !c.ok);
     return { kind: 'attention', text: firstMissing ? firstMissing.label : 'Needs info' };
@@ -227,7 +238,7 @@ function IconLockDot(props) {
 }
 
 export function StepNav({ steps, activeStepId, checks, onJump, lockedIds, ariaLabel = 'Document steps' }) {
-  const rows = steps.map(s => ({ step: s, ...stepRowState(s, activeStepId, checks, lockedIds) }));
+  const rows = steps.map((s, i) => ({ step: s, ...stepRowState(s, activeStepId, checks, lockedIds, i === steps.length - 1) }));
   const doneCount = rows.filter(r => r.kind === 'done').length;
   return (
     <nav className="stepNav" aria-label={ariaLabel}>

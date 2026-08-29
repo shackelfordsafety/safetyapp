@@ -4,11 +4,12 @@ import {
   SYMPTOM_ONSET_OPTIONS, RESPONSE_ACTIONS, MEDICAL_EVALUATION_TYPES, WORK_STATUS_OPTIONS, INITIAL_CLASSIFICATIONS,
   MEDICAL_ATTACHMENT_OPTIONS,
   getMedicalEventReadinessChecks, isMedicalEventReady, isMedicalEventPrintFinal,
+  medicalEventStepStatus,
 } from './medicalEventModel';
 import { medicalEventFacsimileBlocks } from './medicalEventPdfDraw';
 import {
   Field, TextAreaField, SegmentedToggle, ChipGroup, StepPanel, StepFooter,
-  BuilderHeader, StepNav, ReviewExportPanel, SignaturePad, DocFacsimile,
+  BuilderHeader, StepNav, ReviewExportPanel, ReadinessChecklist, SignaturePad, DocFacsimile,
   useIsTouchPrimary, useElementWidth,
 } from '../FormPrimitives';
 import { LockedContext, useLocked } from '../lockedContext';
@@ -122,22 +123,49 @@ function StepEvaluation({ model, upd, prev, next }) {
         <SegmentedToggle label="Initial Classification" value={model.initialClassification} onChange={v => upd({ initialClassification: v })} options={INITIAL_CLASSIFICATIONS} />
       </div>
 
-      <div className="formSection">
-        <span className="formSectionHeading">Signatures</span>
-        <p className="helperText">Leave a name blank to print the employee/supervisor named at the top of the form.</p>
-        <div className="formPairRow">
-          <SignaturePad label="Employee Signature (if able)" value={model.employeeSignatureData} onChange={data => upd({ employeeSignatureData: data, employeeSignatureDate: data ? new Date().toISOString().slice(0, 10) : model.employeeSignatureDate })} />
-          <Field label="Employee Signature Date" type="date" value={model.employeeSignatureDate} onChange={v => upd({ employeeSignatureDate: v })} />
-        </div>
-        <Field label="Employee Name (printed)" value={model.employeeSignatureName} placeholder={model.employeeName} onChange={v => upd({ employeeSignatureName: v })} />
-        <div className="formPairRow">
-          <SignaturePad label="Safety / Supervisor Signature" value={model.supervisorSignatureData} onChange={data => upd({ supervisorSignatureData: data, supervisorSignatureDate: data ? new Date().toISOString().slice(0, 10) : model.supervisorSignatureDate })} />
-          <Field label="Supervisor Signature Date" type="date" value={model.supervisorSignatureDate} onChange={v => upd({ supervisorSignatureDate: v })} />
-        </div>
-        <Field label="Safety / Supervisor Name (printed)" value={model.supervisorSignatureName} placeholder={model.supervisor} onChange={v => upd({ supervisorSignatureName: v })} />
-      </div>
-
       <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Review" />
+    </StepPanel>
+  );
+}
+
+/* ── Step: Review — read the whole report over before anyone signs it.
+   No Mark Complete here -- that only makes sense after Signatures (see
+   Finish & Export below, which is where it actually lives). ── */
+function StepReview({ checks, prev, next, onJumpCheck }) {
+  const remainingCount = checks.filter(c => !c.ok).length;
+  return (
+    <StepPanel title="Review" intro="Make sure everything is right before anyone signs. Tap any item below to fix it.">
+      <div className="card">
+        <div className="cardHeader"><strong>Readiness</strong></div>
+        <p className="helperText">
+          {remainingCount === 0
+            ? 'Everything is filled in. Continue to signatures when ready.'
+            : `${remainingCount} ${remainingCount === 1 ? 'item' : 'items'} still needed — tap one to go straight to it.`}
+        </p>
+        <ReadinessChecklist checks={checks} onJump={onJumpCheck} />
+      </div>
+      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Signatures" />
+    </StepPanel>
+  );
+}
+
+/* ── Step: Signature — Safety/Supervisor only. The employee doesn't sign
+   digitally in this app at all (Fonzo, 2026-08-29: "the only thing i wanted
+   digitized is the superintendent, foreman, safety parts") -- an employee
+   name field stays available since it's just metadata, printed above a
+   blank line, not something authored by the employee. ── */
+function StepSignatures({ model, upd, prev, next }) {
+  return (
+    <StepPanel title="Signature" intro="Safety/Supervisor signs here. Leave a name blank to print the employee/supervisor named on Event & Response.">
+      <Field label="Employee Name (printed)" value={model.employeeSignatureName} placeholder={model.employeeName} onChange={v => upd({ employeeSignatureName: v })} />
+
+      <div className="formPairRow">
+        <SignaturePad label="Safety / Supervisor Signature" value={model.supervisorSignatureData} onChange={data => upd({ supervisorSignatureData: data, supervisorSignatureDate: data ? new Date().toISOString().slice(0, 10) : model.supervisorSignatureDate })} />
+        <Field label="Supervisor Signature Date" type="date" value={model.supervisorSignatureDate} onChange={v => upd({ supervisorSignatureDate: v })} />
+      </div>
+      <Field label="Safety / Supervisor Name (printed)" value={model.supervisorSignatureName} placeholder={model.supervisor} onChange={v => upd({ supervisorSignatureName: v })} />
+
+      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Finish & Export" />
     </StepPanel>
   );
 }
@@ -154,6 +182,19 @@ export default function MedicalEventWorkflow({
   const checks = getMedicalEventReadinessChecks(model);
   const checklistComplete = isMedicalEventReady(model);
   const locked = isMedicalEventPrintFinal(model);
+
+  // Signatures/Export aren't reachable until the content steps are actually
+  // filled in -- same guard JSA/Disciplinary/Separation use.
+  const contentReady = ['condition', 'evaluation'].every(s => medicalEventStepStatus(model, s) === 'complete');
+  const lockedIds = contentReady ? [] : ['signatures', 'export'];
+  function guardedJump(id) {
+    if ((id === 'signatures' || id === 'export') && !contentReady) {
+      const blocker = ['condition', 'evaluation'].find(s => medicalEventStepStatus(model, s) !== 'complete');
+      setStep(blocker || 'condition');
+      return;
+    }
+    setStep(id);
+  }
 
   const isReviewStep = step === 'review';
   const shellRef = useRef(null);
@@ -188,13 +229,15 @@ export default function MedicalEventWorkflow({
 
       <LockedContext.Provider value={locked}>
         <div className={`workflowShell withStepNav${showSideBySide ? ' withPreview' : ''}`} ref={shellRef}>
-          <StepNav steps={MEDICAL_EVENT_STEPS} activeStepId={step} checks={checks} onJump={setStep} />
+          <StepNav steps={MEDICAL_EVENT_STEPS} activeStepId={step} checks={checks} onJump={guardedJump} lockedIds={lockedIds} />
           <div className="workflowLeft">
             {step === 'condition' && <StepCondition model={model} upd={upd} next={next} />}
             {step === 'evaluation' && <StepEvaluation model={model} upd={upd} prev={prev} next={next} />}
-            {step === 'review' && (
+            {step === 'review' && <StepReview checks={checks} prev={prev} next={next} onJumpCheck={chk => setStep(chk.step)} />}
+            {step === 'signatures' && <StepSignatures model={model} upd={upd} prev={prev} next={next} />}
+            {step === 'export' && (
               <ReviewExportPanel
-                title="Review & Export"
+                title="Finish & Export"
                 checks={checks}
                 checklistComplete={checklistComplete}
                 status={model.status}

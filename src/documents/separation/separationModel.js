@@ -98,12 +98,20 @@ export function emptySeparation() {
     expensesResolved: false,
     outstandingPropertyNotes: '',
 
-    // Acknowledgement / Approvals
+    // Acknowledgement / Approvals. Employee and HR signatures are never
+    // captured in-app -- both print as blank lines for a hand signature
+    // (Fonzo, 2026-08-29: "the only thing i wanted digitized is the
+    // superintendent, foreman, safety parts... let everyone else fill out
+    // what's required from them on the paper printout" -- HR specifically
+    // closes a separation out later, off-app, which is exactly that case).
+    // employeeRefusedToSign/employeeSignatureData/hrSignatureData stay in
+    // the shape only so a pre-existing draft that already captured one
+    // keeps printing it rather than silently losing it.
     employeeRefusedToSign: false,
-
-    // Signatures
     employeeSignatureData: null,
     employeeSignatureDate: '',
+    // Supervisor signature is the one thing on this record that's actually
+    // digitized -- always required, always captured here.
     supervisorSignatureData: null,
     supervisorSignatureDate: '',
     hrName: '',
@@ -182,12 +190,23 @@ export function hasMeaningfulSeparationContent(model) {
     || Boolean(model.employeeSignatureData) || Boolean(model.supervisorSignatureData) || Boolean(model.hrSignatureData);
 }
 
+// Content -> Review -> Signatures -> Export, no exceptions (Fonzo, standing
+// rule, 2026-08-20) -- signatures always come last so everyone reviews the
+// record before signing it. Also the fix for the missing lock: Separation
+// used to have no lockedIds/guardedJump at all, so a direct StepNav jump
+// could land straight on a blank Signatures step (see SeparationWorkflow.jsx).
 export const SEPARATION_STEPS = [
   { id: 'details', label: 'Separation Details', helper: 'Employee info, separation type, reason, and explanation' },
-  { id: 'closeout', label: 'Closeout & Signatures', helper: 'Rehire status, company closeout, and signatures' },
-  { id: 'review', label: 'Review & Export', helper: 'Save, generate, and share the PDF' },
+  { id: 'closeout', label: 'Closeout', helper: 'Rehire status and company closeout' },
+  { id: 'review', label: 'Review', helper: 'Check everything before anyone signs' },
+  { id: 'signatures', label: 'Signature', helper: 'Supervisor signs — employee and HR sign the printed copy' },
+  { id: 'export', label: 'Finish & Export', helper: 'Save, generate, and download the PDF' },
 ];
 
+// Employee and HR signatures are never required in-app -- both always
+// print blank for a hand signature (see emptySeparation's comment). Only
+// the supervisor's signature -- the one part of this record that's
+// actually digitized -- gates completion.
 export function getSeparationReadinessChecks(model) {
   const has = v => String(v || '').trim().length > 0;
   const checks = [
@@ -197,7 +216,7 @@ export function getSeparationReadinessChecks(model) {
     { key: 'separationReason', label: 'Reason for separation selected', ok: has(model.separationReason), step: 'details' },
     { key: 'detailedExplanation', label: 'Detailed explanation', ok: has(model.detailedExplanation), step: 'details' },
     { key: 'eligibleForRehire', label: 'Re-hire eligibility answered', ok: has(model.eligibleForRehire), step: 'closeout' },
-    { key: 'supervisorSignature', label: 'Supervisor signature', ok: Boolean(model.supervisorSignatureData), step: 'closeout' },
+    { key: 'supervisorSignature', label: 'Supervisor signature', ok: Boolean(model.supervisorSignatureData), step: 'signatures' },
   ];
   if (model.separationReason === 'Other') {
     checks.push({ key: 'separationReasonOther', label: 'Other reason (specify)', ok: has(model.separationReasonOther), step: 'details' });
@@ -225,8 +244,11 @@ export function isSeparationReady(model) {
 // warningNoticesGiven/warningNoticesCount for an involuntary separation, or
 // rehireReasonIfNo when not eligible for rehire), so a step could show
 // complete and then block the user at Review with no clear signal why.
+// 'export' is the terminal step -- see disciplinaryStepStatus for why it
+// (not 'review', which now comes before Signatures) reflects the whole
+// document's readiness.
 export function separationStepStatus(model, stepId) {
-  if (stepId === 'review') return isSeparationReady(model) ? 'complete' : 'needs-info';
+  if (stepId === 'export') return isSeparationReady(model) ? 'complete' : 'needs-info';
   const relevant = getSeparationReadinessChecks(model).filter(c => c.step === stepId);
   if (!relevant.length) return 'complete';
   return relevant.every(c => c.ok) ? 'complete' : 'needs-info';
@@ -240,7 +262,7 @@ export function separationStepProgress(model) {
 
 export function separationNextStepHint(model) {
   const next = SEPARATION_STEPS.find(s => separationStepStatus(model, s.id) !== 'complete');
-  return next ? next.label : 'Review & Export';
+  return next ? next.label : 'Finish & Export';
 }
 
 export function isSeparationPrintFinal(model) {

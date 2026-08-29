@@ -147,10 +147,14 @@ export function hasMeaningfulMedicalEventContent(model) {
     || Boolean(model.employeeSignatureData) || Boolean(model.supervisorSignatureData);
 }
 
+// Content -> Review -> Signatures -> Export, no exceptions (Fonzo, standing
+// rule, 2026-08-20).
 export const MEDICAL_EVENT_STEPS = [
   { id: 'condition', label: 'Event & Response', helper: 'Employee info, reported condition, and response taken' },
-  { id: 'evaluation', label: 'Evaluation & Classification', helper: 'Medical evaluation, work status, and signatures' },
-  { id: 'review', label: 'Review & Export', helper: 'Save, generate, and share the PDF' },
+  { id: 'evaluation', label: 'Evaluation & Classification', helper: 'Medical evaluation, work status, and attachments' },
+  { id: 'review', label: 'Review', helper: 'Check everything before anyone signs' },
+  { id: 'signatures', label: 'Signature', helper: 'Safety/Supervisor signs (employee may sign too, if able)' },
+  { id: 'export', label: 'Finish & Export', helper: 'Save, generate, and download the PDF' },
 ];
 
 export function getMedicalEventReadinessChecks(model) {
@@ -163,7 +167,9 @@ export function getMedicalEventReadinessChecks(model) {
     { key: 'symptomsOnset', label: 'When symptoms first appeared', ok: has(model.symptomsOnset), step: 'condition' },
     { key: 'specificWorkEventReported', label: 'Specific work event/exposure question answered', ok: has(model.specificWorkEventReported), step: 'condition' },
     { key: 'initialClassification', label: 'Initial classification selected', ok: has(model.initialClassification), step: 'evaluation' },
-    { key: 'supervisorSignature', label: 'Safety / Supervisor signature', ok: Boolean(model.supervisorSignatureData), step: 'evaluation' },
+    // Employee signature stays optional ("if able") -- the app never asks
+    // the employee to sign. Only the Safety/Supervisor signature is required.
+    { key: 'supervisorSignature', label: 'Safety / Supervisor signature', ok: Boolean(model.supervisorSignatureData), step: 'signatures' },
   ];
   if (model.specificWorkEventReported === 'yes') {
     checks.push({ key: 'workEventDescription', label: 'Work event/exposure description', ok: has(model.workEventDescription), step: 'condition' });
@@ -182,9 +188,11 @@ export function isMedicalEventReady(model) {
 // carries the step it belongs to) rather than a second, separately
 // hand-picked field list -- the two had drifted (e.g. this considered
 // "evaluation" complete without checking the conditionally-required
-// offWorkUntilDate when work status is "Off Work").
+// offWorkUntilDate when work status is "Off Work"). 'export' is the
+// terminal step -- see disciplinaryStepStatus for why it (not 'review',
+// which now comes before Signatures) reflects the whole document's readiness.
 export function medicalEventStepStatus(model, stepId) {
-  if (stepId === 'review') return isMedicalEventReady(model) ? 'complete' : 'needs-info';
+  if (stepId === 'export') return isMedicalEventReady(model) ? 'complete' : 'needs-info';
   const relevant = getMedicalEventReadinessChecks(model).filter(c => c.step === stepId);
   if (!relevant.length) return 'complete';
   return relevant.every(c => c.ok) ? 'complete' : 'needs-info';
@@ -198,7 +206,7 @@ export function medicalEventStepProgress(model) {
 
 export function medicalEventNextStepHint(model) {
   const next = MEDICAL_EVENT_STEPS.find(s => medicalEventStepStatus(model, s.id) !== 'complete');
-  return next ? next.label : 'Review & Export';
+  return next ? next.label : 'Finish & Export';
 }
 
 export function isMedicalEventPrintFinal(model) {

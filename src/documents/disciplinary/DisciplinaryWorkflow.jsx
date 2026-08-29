@@ -2,42 +2,23 @@ import { useRef } from 'react';
 import {
   DISCIPLINARY_STEPS, WARNING_LEVELS,
   getDisciplinaryReadinessChecks, isDisciplinaryReady, isDisciplinaryPrintFinal, isVerbalWarning,
+  disciplinaryStepStatus,
 } from './disciplinaryModel';
 import { disciplinaryFacsimileBlocks } from './disciplinaryPdfDraw';
 import {
   Field, TextAreaField, SegmentedToggle, StepPanel, NumberedSection, StepFooter,
-  BuilderHeader, StepNav, ReviewExportPanel, SignaturePad, DocFacsimile,
+  BuilderHeader, StepNav, ReviewExportPanel, ReadinessChecklist, SignaturePad, DocFacsimile,
   useIsTouchPrimary, useElementWidth,
 } from '../FormPrimitives';
-import { LockedContext, useLocked } from '../lockedContext';
+import { LockedContext } from '../lockedContext';
 import { downloadDraftFile, buildDraftFilename } from '../../shared/draftTransfer';
 
-/* Same pattern as Separation's employee-refused-to-sign toggle and Medical
-   Event's Provider Note Attached -- a plain Yes/No button for a fact the
-   source form has no other way to capture. An employee who is unavailable
-   or refuses to sign is a real, common outcome, not a reason the notice
-   should be stuck unable to complete (see disciplinaryModel.js). */
-function BooleanToggle({ label, value, onChange, onLabel = 'Yes', offLabel = 'No' }) {
-  const locked = useLocked();
-  return (
-    <label className="field">
-      <span>{label}</span>
-      <div className="yesNoToggle">
-        <button
-          type="button"
-          aria-pressed={value}
-          aria-disabled={locked}
-          className={`btn${value ? ' active yes' : ''}`}
-          onClick={() => { if (!locked) onChange(!value); }}
-        >
-          {value ? onLabel : offLabel}
-        </button>
-      </div>
-    </label>
-  );
-}
-
-/* ── Step: Notice Details — employee info, warning level, sections 1-4 ── */
+/* ── Step: Notice Details — employee info, warning level, sections 1-3 ──
+   Section 4 (Employee Statement) is deliberately not here -- it's the
+   employee's own words, in their own hand, on the printed copy (Fonzo,
+   2026-08-29). The PDF still prints "4. EMPLOYEE STATEMENT" with a blank
+   ruled box for exactly that -- see sectionsForModel/employeeStatement in
+   disciplinaryPdfDraw.js/disciplinaryModel.js. */
 function StepNotice({ model, upd, next }) {
   return (
     <StepPanel title="Notice Details" intro="Basic facts about the employee and what occurred. Enter only what happened — do not decide the outcome here.">
@@ -70,9 +51,7 @@ function StepNotice({ model, upd, next }) {
       </NumberedSection>
 
       {!isVerbalWarning(model) && (
-        <NumberedSection number={4} title="Employee Statement" help="Write down what the employee says, in their own words — don't summarize or rephrase it.">
-          <TextAreaField label="What does the employee say happened?" rows={4} value={model.employeeStatement} onChange={v => upd({ employeeStatement: v })} voice />
-        </NumberedSection>
+        <p className="helperText">Section 4 (Employee Statement) prints as blank ruled space below Section 3 — the employee writes it by hand on the printed copy.</p>
       )}
 
       <StepFooter hasNext onNext={next} />
@@ -80,7 +59,8 @@ function StepNotice({ model, upd, next }) {
   );
 }
 
-/* ── Step: Corrective Action — sections 5-7 + signatures ── */
+/* ── Step: Corrective Action — sections 5-7 (content only, no signatures —
+   signing happens in its own step, after Review) ── */
 function StepResponse({ model, upd, prev, next }) {
   return (
     <StepPanel title="Corrective Action" intro="What the employee must do, what the company will do, and the consequence if this is not corrected.">
@@ -96,26 +76,46 @@ function StepResponse({ model, upd, prev, next }) {
         <TextAreaField label="What happens if this isn't corrected?" rows={3} value={model.ifNotCorrected} onChange={v => upd({ ifNotCorrected: v })} voice />
       </NumberedSection>
 
-      <div className="formSection">
-        <span className="formSectionHeading">Signatures</span>
-        {isVerbalWarning(model) ? (
-          <p className="helperText">A verbal warning is a coaching conversation, not a signed notice — the employee doesn't sign this. Document what was said above; only the manager signs below.</p>
-        ) : (
-          <>
-            <BooleanToggle label="Employee refused / unavailable to sign" value={model.employeeRefusedToSign} onChange={v => upd({ employeeRefusedToSign: v })} />
-            <div className="formPairRow">
-              <SignaturePad label="Employee Signature" value={model.employeeSignatureData} disabled={model.employeeRefusedToSign} onChange={data => upd({ employeeSignatureData: data, employeeSignatureDate: data ? new Date().toISOString().slice(0, 10) : model.employeeSignatureDate })} />
-              <Field label="Employee Signature Date" type="date" value={model.employeeSignatureDate} onChange={v => upd({ employeeSignatureDate: v })} disabled={model.employeeRefusedToSign} />
-            </div>
-          </>
-        )}
-        <div className="formPairRow">
-          <SignaturePad label="Manager Signature" value={model.managerSignatureData} onChange={data => upd({ managerSignatureData: data, managerSignatureDate: data ? new Date().toISOString().slice(0, 10) : model.managerSignatureDate })} />
-          <Field label="Manager Signature Date" type="date" value={model.managerSignatureDate} onChange={v => upd({ managerSignatureDate: v })} />
-        </div>
-      </div>
-
       <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Review" />
+    </StepPanel>
+  );
+}
+
+/* ── Step: Review — read the whole notice over before anyone signs it.
+   No Mark Complete here -- that only makes sense after Signatures (see
+   StepExport below, which is where it actually lives). */
+function StepReview({ checks, prev, next, onJumpCheck }) {
+  const remainingCount = checks.filter(c => !c.ok).length;
+  return (
+    <StepPanel title="Review" intro="Make sure everything is right before anyone signs. Tap any item below to fix it.">
+      <div className="card">
+        <div className="cardHeader"><strong>Readiness</strong></div>
+        <p className="helperText">
+          {remainingCount === 0
+            ? 'Everything is filled in. Continue to signatures when ready.'
+            : `${remainingCount} ${remainingCount === 1 ? 'item' : 'items'} still needed — tap one to go straight to it.`}
+        </p>
+        <ReadinessChecklist checks={checks} onJump={onJumpCheck} />
+      </div>
+      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Signatures" />
+    </StepPanel>
+  );
+}
+
+/* ── Step: Signature — manager only. Employee always signs the printed
+   copy by hand (Fonzo, 2026-08-29: "the only thing i wanted digitized is
+   the superintendent, foreman, safety parts"). ── */
+function StepSignatures({ model, upd, prev, next }) {
+  return (
+    <StepPanel title="Signature" intro="Manager signs here. The employee signs the printed copy by hand — this notice always prints a blank employee signature line.">
+      {isVerbalWarning(model) && (
+        <p className="helperText">A verbal warning is a coaching conversation, not a signed notice — the employee doesn't sign this at all. Document what was said in Notice Details; only the manager signs below.</p>
+      )}
+      <div className="formPairRow">
+        <SignaturePad label="Manager Signature" value={model.managerSignatureData} onChange={data => upd({ managerSignatureData: data, managerSignatureDate: data ? new Date().toISOString().slice(0, 10) : model.managerSignatureDate })} />
+        <Field label="Manager Signature Date" type="date" value={model.managerSignatureDate} onChange={v => upd({ managerSignatureDate: v })} />
+      </div>
+      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Finish & Export" />
     </StepPanel>
   );
 }
@@ -132,6 +132,21 @@ export default function DisciplinaryWorkflow({
   const checks = getDisciplinaryReadinessChecks(model);
   const checklistComplete = isDisciplinaryReady(model);
   const locked = isDisciplinaryPrintFinal(model);
+
+  // Signatures/Export aren't reachable until the content steps are actually
+  // filled in -- same guard JSA uses, so a direct StepNav jump can't land on
+  // a blank notice ready to sign (Separation was missing this entirely;
+  // this is that same fix, applied here too).
+  const contentReady = ['notice', 'response'].every(s => disciplinaryStepStatus(model, s) === 'complete');
+  const lockedIds = contentReady ? [] : ['signatures', 'export'];
+  function guardedJump(id) {
+    if ((id === 'signatures' || id === 'export') && !contentReady) {
+      const blocker = ['notice', 'response'].find(s => disciplinaryStepStatus(model, s) !== 'complete');
+      setStep(blocker || 'notice');
+      return;
+    }
+    setStep(id);
+  }
 
   const isReviewStep = step === 'review';
   const shellRef = useRef(null);
@@ -166,13 +181,15 @@ export default function DisciplinaryWorkflow({
 
       <LockedContext.Provider value={locked}>
         <div className={`workflowShell withStepNav${showSideBySide ? ' withPreview' : ''}`} ref={shellRef}>
-          <StepNav steps={DISCIPLINARY_STEPS} activeStepId={step} checks={checks} onJump={setStep} />
+          <StepNav steps={DISCIPLINARY_STEPS} activeStepId={step} checks={checks} onJump={guardedJump} lockedIds={lockedIds} />
           <div className="workflowLeft">
             {step === 'notice' && <StepNotice model={model} upd={upd} next={next} />}
             {step === 'response' && <StepResponse model={model} upd={upd} prev={prev} next={next} />}
-            {step === 'review' && (
+            {step === 'review' && <StepReview checks={checks} prev={prev} next={next} onJumpCheck={chk => setStep(chk.step)} />}
+            {step === 'signatures' && <StepSignatures model={model} upd={upd} prev={prev} next={next} />}
+            {step === 'export' && (
               <ReviewExportPanel
-                title="Review & Export"
+                title="Finish & Export"
                 checks={checks}
                 checklistComplete={checklistComplete}
                 status={model.status}

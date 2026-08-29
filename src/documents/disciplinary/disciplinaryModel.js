@@ -49,21 +49,33 @@ export function emptyDisciplinary() {
     // Warning level (single-select)
     warningLevel: '', // '' | 'verbal' | 'written' | 'secondWritten' | 'final'
 
-    // Seven numbered sections, verbatim order from the reference form
+    // Seven numbered sections, verbatim order from the reference form.
+    // Section 4 (Employee Statement) is the employee's own words, in their
+    // own hand -- the app doesn't offer a way to type it in (Fonzo,
+    // 2026-08-29: "the only thing i wanted digitized is the superintendent,
+    // foreman, safety parts... let everyone else fill out what's required
+    // from them on the paper printout"). employeeStatement stays in the
+    // shape only so a pre-existing draft that already has one (typed before
+    // this decision) keeps printing it rather than silently losing it.
     whatOccurred: '', // 1. What occurred
     earlierWarnings: '', // 2. Earlier verbal or written warnings/discussions on this issue
     companyPolicyStates: '', // 3. Company policy states
-    employeeStatement: '', // 4. Employee statement
+    employeeStatement: '', // 4. Employee statement -- legacy field, no longer editable in-app, see above
     correctiveActionRequired: '', // 5. Corrective action that must be taken by the employee
     companyWill: '', // 6. The company will
     ifNotCorrected: '', // 7. If behavior is not corrected / performance does not improve
 
-    // Signatures. An employee who is unavailable or refuses to sign is a
-    // real, common outcome on a disciplinary notice — not a reason the
-    // document should be stuck unable to complete. See employeeRefusedToSign.
+    // Employee signature is never captured in-app (same 2026-08-29 decision
+    // as employeeStatement above) -- the printed notice always has a blank
+    // line for the employee to sign by hand. employeeRefusedToSign/
+    // employeeSignatureData/employeeSignatureDate stay in the shape only so
+    // a pre-existing draft that already captured one keeps printing it.
     employeeRefusedToSign: false,
     employeeSignatureData: null,
     employeeSignatureDate: '',
+    // Manager signature is the one thing on this notice that's actually
+    // digitized -- Fonzo/whoever is filling this out is always right there
+    // with the device, so it's always required, always captured here.
     managerSignatureData: null,
     managerSignatureDate: '',
 
@@ -89,10 +101,15 @@ export function hasMeaningfulDisciplinaryContent(model) {
     || Boolean(model.managerSignatureData);
 }
 
+// Content -> Review -> Signatures -> Export, no exceptions (Fonzo, standing
+// rule, 2026-08-20) -- signatures always come last so the crew/employee
+// reviews what they're signing before they sign it.
 export const DISCIPLINARY_STEPS = [
   { id: 'notice', label: 'Notice Details', helper: 'Employee info, warning level, and what occurred' },
-  { id: 'response', label: 'Corrective Action', helper: 'Required correction and signatures' },
-  { id: 'review', label: 'Review & Export', helper: 'Save, generate, and share the PDF' },
+  { id: 'response', label: 'Corrective Action', helper: 'Required correction and consequence' },
+  { id: 'review', label: 'Review', helper: 'Check everything before anyone signs' },
+  { id: 'signatures', label: 'Signature', helper: 'Manager signs — employee signs the printed copy' },
+  { id: 'export', label: 'Finish & Export', helper: 'Save, generate, and download the PDF' },
 ];
 
 // A verbal warning is a coaching conversation, not a signed notice -- the
@@ -101,27 +118,21 @@ export function isVerbalWarning(model) {
   return model.warningLevel === 'verbal';
 }
 
+// Employee signature is never required in-app -- it's always collected on
+// the printed paper copy (see emptyDisciplinary's comment). Only the
+// manager's signature -- the one part of this notice that's actually
+// digitized -- gates completion.
 export function getDisciplinaryReadinessChecks(model) {
   const has = v => String(v || '').trim().length > 0;
-  const checks = [
+  return [
     { key: 'employeeName', label: 'Employee name', ok: has(model.employeeName), step: 'notice' },
     { key: 'supervisor', label: 'Supervisor', ok: has(model.supervisor), step: 'notice' },
     { key: 'noticeDate', label: 'Date', ok: has(model.noticeDate), step: 'notice' },
     { key: 'warningLevel', label: 'Warning level selected', ok: has(model.warningLevel), step: 'notice' },
     { key: 'whatOccurred', label: 'Section 1 — What occurred', ok: has(model.whatOccurred), step: 'notice' },
     { key: 'correctiveActionRequired', label: 'Section 5 — Corrective action required', ok: has(model.correctiveActionRequired), step: 'response' },
+    { key: 'managerSignature', label: 'Manager signature', ok: Boolean(model.managerSignatureData), step: 'signatures' },
   ];
-  // An employee who won't sign doesn't mean the notice can't be finished --
-  // it means that has to be documented instead of a signature. Satisfied by
-  // either a captured signature or the explicit refused/unavailable flag,
-  // never by silently dropping the requirement (see employeeRefusedToSign).
-  // Verbal warnings skip this entirely -- there is nothing for the employee
-  // to sign.
-  if (!isVerbalWarning(model)) {
-    checks.push({ key: 'employeeSignature', label: 'Employee signature (or marked refused/unavailable)', ok: model.employeeRefusedToSign || Boolean(model.employeeSignatureData), step: 'response' });
-  }
-  checks.push({ key: 'managerSignature', label: 'Manager signature', ok: Boolean(model.managerSignatureData), step: 'response' });
-  return checks;
 }
 
 export function isDisciplinaryReady(model) {
@@ -132,8 +143,12 @@ export function isDisciplinaryReady(model) {
 // carries the step it belongs to) rather than a second, separately
 // hand-picked field list -- this used to consider "notice" complete without
 // checking noticeDate, which getDisciplinaryReadinessChecks does require.
+// 'export' is the terminal step -- it has no checks of its own, so it
+// reflects the whole document's readiness rather than "complete because
+// nothing was ever tied to it" (mirrors stepRowState's terminal-step
+// handling in FormPrimitives.jsx).
 export function disciplinaryStepStatus(model, stepId) {
-  if (stepId === 'review') return isDisciplinaryReady(model) ? 'complete' : 'needs-info';
+  if (stepId === 'export') return isDisciplinaryReady(model) ? 'complete' : 'needs-info';
   const relevant = getDisciplinaryReadinessChecks(model).filter(c => c.step === stepId);
   if (!relevant.length) return 'complete';
   return relevant.every(c => c.ok) ? 'complete' : 'needs-info';
@@ -147,7 +162,7 @@ export function disciplinaryStepProgress(model) {
 
 export function disciplinaryNextStepHint(model) {
   const next = DISCIPLINARY_STEPS.find(s => disciplinaryStepStatus(model, s.id) !== 'complete');
-  return next ? next.label : 'Review & Export';
+  return next ? next.label : 'Finish & Export';
 }
 
 /* "Final" print state mirrors Incident's own status gate — 'ready' and

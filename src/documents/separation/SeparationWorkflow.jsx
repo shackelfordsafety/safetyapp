@@ -3,11 +3,12 @@ import {
   SEPARATION_STEPS, SEPARATION_TYPES, SEPARATION_REASON_GROUPS,
   REHIRE_STATUSES, PROPERTY_RETURNED_OPTIONS, ACCESS_REMOVED_OPTIONS,
   getSeparationReadinessChecks, isSeparationReady, isSeparationPrintFinal,
+  separationStepStatus,
 } from './separationModel';
 import { separationFacsimileBlocks } from './separationPdfDraw';
 import {
   Field, TextAreaField, SegmentedToggle, ChipGroup, StepPanel, StepFooter,
-  BuilderHeader, StepNav, ReviewExportPanel, SignaturePad, DocFacsimile,
+  BuilderHeader, StepNav, ReviewExportPanel, ReadinessChecklist, SignaturePad, DocFacsimile,
   useIsTouchPrimary, useElementWidth,
 } from '../FormPrimitives';
 import { LockedContext, useLocked } from '../lockedContext';
@@ -100,11 +101,12 @@ function StepDetails({ model, upd, next }) {
   );
 }
 
-/* ── Step: Closeout & Signatures — discipline/rehire, company closeout, signatures ── */
+/* ── Step: Closeout — discipline/rehire, company closeout (content only —
+   signing happens in its own step, after Review) ── */
 function StepCloseout({ model, upd, prev, next }) {
   const isInvoluntary = model.separationType === 'involuntary';
   return (
-    <StepPanel title="Closeout & Signatures" intro="Discipline and rehire status, company closeout, and approvals.">
+    <StepPanel title="Closeout" intro="Discipline and rehire status, and company closeout.">
       <div className="formSection">
         <span className="formSectionHeading">Discipline / Rehire Status</span>
         {isInvoluntary && (
@@ -152,26 +154,44 @@ function StepCloseout({ model, upd, prev, next }) {
         <TextAreaField label="Any company property or paperwork still outstanding?" rows={3} value={model.outstandingPropertyNotes} onChange={v => upd({ outstandingPropertyNotes: v })} voice />
       </div>
 
-      <div className="formSection">
-        <span className="formSectionHeading">Acknowledgement / Approvals</span>
-        <p className="helperText">Employee signature acknowledges receipt and does not necessarily indicate agreement.</p>
-        <BooleanToggle label="Employee refused / unavailable to sign" value={model.employeeRefusedToSign} onChange={v => upd({ employeeRefusedToSign: v })} />
-        <div className="formPairRow">
-          <SignaturePad label="Employee Signature" value={model.employeeSignatureData} disabled={model.employeeRefusedToSign} onChange={data => upd({ employeeSignatureData: data, employeeSignatureDate: data ? new Date().toISOString().slice(0, 10) : model.employeeSignatureDate })} />
-          <Field label="Employee Signature Date" type="date" value={model.employeeSignatureDate} onChange={v => upd({ employeeSignatureDate: v })} disabled={model.employeeRefusedToSign} />
-        </div>
-        <div className="formPairRow">
-          <SignaturePad label="Supervisor Signature" value={model.supervisorSignatureData} onChange={data => upd({ supervisorSignatureData: data, supervisorSignatureDate: data ? new Date().toISOString().slice(0, 10) : model.supervisorSignatureDate })} />
-          <Field label="Supervisor Signature Date" type="date" value={model.supervisorSignatureDate} onChange={v => upd({ supervisorSignatureDate: v })} />
-        </div>
-        <Field label="HR / Management Name" value={model.hrName} onChange={v => upd({ hrName: v })} />
-        <div className="formPairRow">
-          <SignaturePad label="HR / Management Signature" value={model.hrSignatureData} onChange={data => upd({ hrSignatureData: data, hrSignatureDate: data ? new Date().toISOString().slice(0, 10) : model.hrSignatureDate })} />
-          <Field label="HR / Management Signature Date" type="date" value={model.hrSignatureDate} onChange={v => upd({ hrSignatureDate: v })} />
-        </div>
-      </div>
-
       <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Review" />
+    </StepPanel>
+  );
+}
+
+/* ── Step: Review — read the whole record over before anyone signs it.
+   No Mark Complete here -- that only makes sense after Signatures (see
+   Finish & Export below, which is where it actually lives). ── */
+function StepReview({ checks, prev, next, onJumpCheck }) {
+  const remainingCount = checks.filter(c => !c.ok).length;
+  return (
+    <StepPanel title="Review" intro="Make sure everything is right before anyone signs. Tap any item below to fix it.">
+      <div className="card">
+        <div className="cardHeader"><strong>Readiness</strong></div>
+        <p className="helperText">
+          {remainingCount === 0
+            ? 'Everything is filled in. Continue to signatures when ready.'
+            : `${remainingCount} ${remainingCount === 1 ? 'item' : 'items'} still needed — tap one to go straight to it.`}
+        </p>
+        <ReadinessChecklist checks={checks} onJump={onJumpCheck} />
+      </div>
+      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Signatures" />
+    </StepPanel>
+  );
+}
+
+/* ── Step: Signature — supervisor only. Employee and HR always sign the
+   printed copy by hand (Fonzo, 2026-08-29: "the only thing i wanted
+   digitized is the superintendent, foreman, safety parts"). ── */
+function StepSignatures({ model, upd, prev, next }) {
+  return (
+    <StepPanel title="Signature" intro="Supervisor signs here. Employee and HR sign the printed copy by hand — this record always prints blank lines for both.">
+      <div className="formPairRow">
+        <SignaturePad label="Supervisor Signature" value={model.supervisorSignatureData} onChange={data => upd({ supervisorSignatureData: data, supervisorSignatureDate: data ? new Date().toISOString().slice(0, 10) : model.supervisorSignatureDate })} />
+        <Field label="Supervisor Signature Date" type="date" value={model.supervisorSignatureDate} onChange={v => upd({ supervisorSignatureDate: v })} />
+      </div>
+      <Field label="HR / Management Name" value={model.hrName} onChange={v => upd({ hrName: v })} />
+      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Finish & Export" />
     </StepPanel>
   );
 }
@@ -188,6 +208,20 @@ export default function SeparationWorkflow({
   const checks = getSeparationReadinessChecks(model);
   const checklistComplete = isSeparationReady(model);
   const locked = isSeparationPrintFinal(model);
+
+  // Signatures/Export aren't reachable until the content steps are actually
+  // filled in -- Separation had no lock at all before this, so a direct
+  // StepNav jump could land straight on a blank Signatures step.
+  const contentReady = ['details', 'closeout'].every(s => separationStepStatus(model, s) === 'complete');
+  const lockedIds = contentReady ? [] : ['signatures', 'export'];
+  function guardedJump(id) {
+    if ((id === 'signatures' || id === 'export') && !contentReady) {
+      const blocker = ['details', 'closeout'].find(s => separationStepStatus(model, s) !== 'complete');
+      setStep(blocker || 'details');
+      return;
+    }
+    setStep(id);
+  }
 
   const isReviewStep = step === 'review';
   const shellRef = useRef(null);
@@ -222,13 +256,15 @@ export default function SeparationWorkflow({
 
       <LockedContext.Provider value={locked}>
         <div className={`workflowShell withStepNav${showSideBySide ? ' withPreview' : ''}`} ref={shellRef}>
-          <StepNav steps={SEPARATION_STEPS} activeStepId={step} checks={checks} onJump={setStep} />
+          <StepNav steps={SEPARATION_STEPS} activeStepId={step} checks={checks} onJump={guardedJump} lockedIds={lockedIds} />
           <div className="workflowLeft">
             {step === 'details' && <StepDetails model={model} upd={upd} next={next} />}
             {step === 'closeout' && <StepCloseout model={model} upd={upd} prev={prev} next={next} />}
-            {step === 'review' && (
+            {step === 'review' && <StepReview checks={checks} prev={prev} next={next} onJumpCheck={chk => setStep(chk.step)} />}
+            {step === 'signatures' && <StepSignatures model={model} upd={upd} prev={prev} next={next} />}
+            {step === 'export' && (
               <ReviewExportPanel
-                title="Review & Export"
+                title="Finish & Export"
                 checks={checks}
                 checklistComplete={checklistComplete}
                 status={model.status}

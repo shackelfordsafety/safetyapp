@@ -136,7 +136,9 @@ export function emptyUncontrolledEvent() {
     attachmentOther: '',
     witnesses: '', // free text — names, one per line
 
-    // Reported By
+    // Reported By and Supervisor Review are both staff roles (whoever's
+    // filing/reviewing this, not the employee) -- both always digitized,
+    // no paper option needed.
     reportedByName: '',
     reportedByTitle: '',
     reportedBySignatureData: null,
@@ -171,10 +173,14 @@ export function hasMeaningfulUncontrolledEventContent(model) {
     || Boolean(model.reportedBySignatureData) || Boolean(model.supervisorSignatureData);
 }
 
+// Content -> Review -> Signatures -> Export, no exceptions (Fonzo, standing
+// rule, 2026-08-20).
 export const UNCONTROLLED_EVENT_STEPS = [
   { id: 'event', label: 'Event Info & Classification', helper: 'Where/when it happened, classification, and outcome' },
-  { id: 'narrative', label: 'Narrative & Notifications', helper: 'What happened, who was notified, and signatures' },
-  { id: 'review', label: 'Review & Export', helper: 'Save, generate, and share the PDF' },
+  { id: 'narrative', label: 'Narrative & Notifications', helper: 'What happened, and who was notified' },
+  { id: 'review', label: 'Review', helper: 'Check everything before anyone signs' },
+  { id: 'signatures', label: 'Signatures', helper: 'Reported By and Supervisor Review sign' },
+  { id: 'export', label: 'Finish & Export', helper: 'Save, generate, and download the PDF' },
 ];
 
 export function getUncontrolledEventReadinessChecks(model) {
@@ -186,7 +192,8 @@ export function getUncontrolledEventReadinessChecks(model) {
     { key: 'eventOutcomes', label: 'At least one outcome/impact selected', ok: (model.eventOutcomes || []).length > 0, step: 'event' },
     { key: 'whatHappened', label: 'What happened / summary', ok: has(model.whatHappened), step: 'narrative' },
     { key: 'reportedByName', label: 'Reported by name', ok: has(model.reportedByName), step: 'narrative' },
-    { key: 'reportedBySignature', label: 'Reported by signature', ok: Boolean(model.reportedBySignatureData), step: 'narrative' },
+    // Supervisor Review signature stays optional -- only Reported By is required.
+    { key: 'reportedBySignature', label: 'Reported by signature', ok: Boolean(model.reportedBySignatureData), step: 'signatures' },
   ];
   if ((model.eventClassifications || []).includes('Other')) {
     checks.push({ key: 'eventClassificationOther', label: 'Other classification (specify)', ok: has(model.eventClassificationOther), step: 'event' });
@@ -205,9 +212,11 @@ export function isUncontrolledEventReady(model) {
 // already carries the step it belongs to) rather than a second, separately
 // hand-picked field list -- the two had drifted (e.g. this considered
 // "event" complete without checking the conditionally-required "Other"
-// specify fields for classification/outcome).
+// specify fields for classification/outcome). 'export' is the terminal step
+// -- see disciplinaryStepStatus for why it (not 'review', which now comes
+// before Signatures) reflects the whole document's readiness.
 export function uncontrolledEventStepStatus(model, stepId) {
-  if (stepId === 'review') return isUncontrolledEventReady(model) ? 'complete' : 'needs-info';
+  if (stepId === 'export') return isUncontrolledEventReady(model) ? 'complete' : 'needs-info';
   const relevant = getUncontrolledEventReadinessChecks(model).filter(c => c.step === stepId);
   if (!relevant.length) return 'complete';
   return relevant.every(c => c.ok) ? 'complete' : 'needs-info';
@@ -221,7 +230,7 @@ export function uncontrolledEventStepProgress(model) {
 
 export function uncontrolledEventNextStepHint(model) {
   const next = UNCONTROLLED_EVENT_STEPS.find(s => uncontrolledEventStepStatus(model, s.id) !== 'complete');
-  return next ? next.label : 'Review & Export';
+  return next ? next.label : 'Finish & Export';
 }
 
 export function isUncontrolledEventPrintFinal(model) {
