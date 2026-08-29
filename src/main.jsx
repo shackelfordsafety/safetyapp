@@ -1071,7 +1071,7 @@ function useFocusTrapDialog(onCancel) {
   return dialogRef;
 }
 
-function ConfirmReplaceDialog({ templateName, isImport, onCancel, onContinue }) {
+function ConfirmReplaceDialog({ templateName, isImport, isRepeat, onCancel, onContinue }) {
   const dialogRef = useFocusTrapDialog(onCancel);
   return (
     <div className="dialogOverlay" onMouseDown={e => { if (e.target === e.currentTarget) onCancel(); }}>
@@ -1080,9 +1080,11 @@ function ConfirmReplaceDialog({ templateName, isImport, onCancel, onContinue }) 
         <p id="confirmReplaceBody">
           {isImport
             ? "Importing this draft file will replace the JSA you're currently editing on this device. This can't be undone."
-            : templateName
-              ? `Loading "${templateName}" will replace the JSA you're currently editing. This can't be undone.`
-              : "Starting a new blank JSA will replace the one you're currently editing. This can't be undone."}
+            : isRepeat
+              ? "Starting a new JSA from the last one's job info will replace the JSA you're currently editing. This can't be undone."
+              : templateName
+                ? `Loading "${templateName}" will replace the JSA you're currently editing. This can't be undone.`
+                : "Starting a new blank JSA will replace the one you're currently editing. This can't be undone."}
         </p>
         <div className="dialogActions">
           <button className="btn ghost" onClick={onCancel}>Cancel</button>
@@ -1780,6 +1782,27 @@ function App() {
     if (hasMeaningfulJsaContent(jsa)) { setConfirmReplace({ action: 'template', templateId: id }); return; }
     loadTemplate(id);
   }
+  // "Repeat Last JSA" -- same job info/tasks/hazards/controls as the most
+  // recently saved JSA, day-specific fields reset, no template save/name
+  // step required. Templates are for reusable named scopes of work; this is
+  // for "tomorrow's JSA is basically today's" without going through that
+  // (Fonzo, 2026-08-29: "the templates are just for different scopes of
+  // work... if the JSA is not changing"). Reuses makeTodayFromTemplate's
+  // exact reset shape -- the saved draft is treated as an implicit,
+  // unnamed template.
+  function repeatLastJsa() {
+    if (!savedDraft) return;
+    const next = makeTodayFromTemplate(savedDraft);
+    setJsa(next);
+    setTemplateId('blank-jsa');
+    goJsa('job');
+    showToast('Started a new JSA using the last one’s job info and tasks.');
+  }
+  function requestRepeatLastJsa() {
+    if (!savedDraft) return;
+    if (hasMeaningfulJsaContent(jsa)) { setConfirmReplace({ action: 'repeat' }); return; }
+    repeatLastJsa();
+  }
   // Entry point for an imported JSA draft file (see importDraftFile below) —
   // same normalization loadSavedDraft() applies to this device's own
   // localStorage, persisted immediately, and guarded by the same
@@ -1801,6 +1824,7 @@ function App() {
     if (confirmReplace?.action === 'blank') startBlank();
     else if (confirmReplace?.action === 'template') loadTemplate(confirmReplace.templateId);
     else if (confirmReplace?.action === 'import') loadImportedJsa(confirmReplace.importData);
+    else if (confirmReplace?.action === 'repeat') repeatLastJsa();
     setConfirmReplace(null);
   }
   function confirmReplaceCancel() { setConfirmReplace(null); }
@@ -2193,7 +2217,7 @@ function App() {
             />
           )}
           {tab === 'documents' && activeDoc === 'jsa-start' && (
-            <JsaStartView allTemplates={allTemplates} selectedTemplate={selectedTemplate} templateId={templateId} setTemplateId={setTemplateId} loadTemplate={requestLoadTemplate} loadSavedDraft={loadSavedDraft} startBlank={requestStartBlank} savedDraft={savedDraft} />
+            <JsaStartView allTemplates={allTemplates} selectedTemplate={selectedTemplate} templateId={templateId} setTemplateId={setTemplateId} loadTemplate={requestLoadTemplate} loadSavedDraft={loadSavedDraft} startBlank={requestStartBlank} repeatLastJsa={requestRepeatLastJsa} savedDraft={savedDraft} />
           )}
           {tab === 'documents' && activeDoc === 'jsa' && (
             <JsaWorkflow
@@ -2271,6 +2295,7 @@ function App() {
         <ConfirmReplaceDialog
           templateName={confirmReplace.action === 'template' ? allTemplates.find(t => t.id === confirmReplace.templateId)?.name : null}
           isImport={confirmReplace.action === 'import'}
+          isRepeat={confirmReplace.action === 'repeat'}
           onCancel={confirmReplaceCancel}
           onContinue={confirmReplaceContinue}
         />
@@ -2540,7 +2565,7 @@ function DocCenterView({ startHandlers, onImportFile }) {
 }
 
 /* ── JSA start / launcher ── */
-function JsaStartView({ allTemplates, selectedTemplate, templateId, setTemplateId, loadTemplate, loadSavedDraft, startBlank, savedDraft }) {
+function JsaStartView({ allTemplates, selectedTemplate, templateId, setTemplateId, loadTemplate, loadSavedDraft, startBlank, repeatLastJsa, savedDraft }) {
   return (
     <div className="sectionStack">
       <div className="sectionTitle">
@@ -2555,6 +2580,18 @@ function JsaStartView({ allTemplates, selectedTemplate, templateId, setTemplateI
             <button className="launchChoice featured" onClick={startBlank}>
               <strong>Start Blank</strong>
               <p>Open a clean JSA form. Good for new jobs or when you want to build a fresh template from scratch.</p>
+            </button>
+            {/* For a job that runs the same day-to-day -- same tasks,
+                hazards, controls -- without going through the
+                save/name/pick-a-template flow below (Fonzo, 2026-08-29:
+                "the templates are just for different scopes of work...
+                if the JSA is not changing"). Sourced from the last saved
+                JSA, not a saved template, so it needs nothing set up ahead
+                of time -- reuses the exact same day-reset makeTodayFromTemplate
+                applies when loading a real template. */}
+            <button className="launchChoice" onClick={repeatLastJsa} disabled={!savedDraft} style={{ opacity: savedDraft ? 1 : .65 }}>
+              <strong>Repeat Last JSA</strong>
+              <p>{savedDraft ? 'Same job info, tasks, hazards, and controls as the last JSA — date, tailgate topic, and signatures reset for today.' : 'No previous JSA found on this device.'}</p>
             </button>
             <button className="launchChoice" onClick={loadSavedDraft} style={{ opacity: savedDraft ? 1 : .65 }}>
               <strong>Continue Draft</strong>
@@ -2776,8 +2813,8 @@ function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, allTem
         </div>
       </div>
 
-      <div className={`workflowShell withStepNav${showSideBySide ? ' withPreview' : ''}`} ref={shellRef}>
-        <StepNav steps={STEPS} activeStepId={jsaStep} checks={checks} onJump={guardedJump} lockedIds={lockedIds} />
+      <StepNav steps={STEPS} activeStepId={jsaStep} checks={checks} onJump={guardedJump} lockedIds={lockedIds} />
+      <div className={`workflowShell${showSideBySide ? ' withPreview' : ''}`} ref={shellRef}>
         <div className="workflowLeft">
           {jsaStep === 'job' && <StepJob jsa={jsa} upd={upd} prev={prev} next={next} />}
           {jsaStep === 'meeting' && <StepMeeting jsa={jsa} upd={upd} prev={prev} next={next} />}

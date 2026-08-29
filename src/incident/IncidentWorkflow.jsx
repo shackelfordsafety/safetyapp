@@ -621,8 +621,8 @@ export default function IncidentWorkflow({
       </div>
 
       <LockedContext.Provider value={incident.status !== 'draft'}>
-        <div className={`workflowShell withStepNav${showSideBySide ? ' withPreview' : ''}`} ref={shellRef}>
-          <StepNav steps={INCIDENT_STEPS} activeStepId={step} checks={getIncidentReadinessChecks(incident)} onJump={setStep} />
+        <StepNav steps={INCIDENT_STEPS} activeStepId={step} checks={getIncidentReadinessChecks(incident)} onJump={setStep} />
+        <div className={`workflowShell${showSideBySide ? ' withPreview' : ''}`} ref={shellRef}>
           <div className="workflowLeft">
             {step === 'details' && <StepDetails incident={incident} upd={upd} next={next} />}
             {step === 'injury' && <StepInjury incident={incident} upd={upd} prev={prev} next={next} />}

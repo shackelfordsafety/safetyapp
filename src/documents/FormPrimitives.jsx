@@ -269,9 +269,9 @@ export function StepNav({ steps, activeStepId, checks, onJump, lockedIds, ariaLa
 
 /* Generic builder top bar — same markup IncidentWorkflow renders inline
    for itself, extracted so four new documents don't each hand-roll the
-   same header/badge/save-status/back-button block. Steps live in their own
-   StepNav column now (see workflowShell.withStepNav), not inside the
-   header, so this no longer takes step-related props. */
+   same header/badge/save-status/back-button block. Steps render as their
+   own full-width StepNav bar below this header (see each Workflow
+   component's JSX), not inside it, so this no longer takes step-related props. */
 export function BuilderHeader({ kicker, title, statusBadgeLabel, statusBadgeClass, saveStatus, saveStatusState, onSaveNow, onBack, backLabel }) {
   return (
     <div className="builderHeader">

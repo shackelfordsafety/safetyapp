@@ -1073,7 +1073,7 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 .sectionStack { display: grid; gap: 14px; }
 .launchGrid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 .launchChoice {
@@ -1116,25 +1116,26 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
    for the builder being stranded at ~720px with the right half of a large
    screen empty: .workflowLeft's own max-width below is conditional on
    this same class, not a flat constant. */
+/* Steps used to live in their own left column (C2 redesign, 2026-08); that
+   wasted a fixed 260px-wide column beside every workflow's content -- worse
+   once the step list became a horizontal scroll strip on touch (2026-08-19
+   fix below) squeezed into that same narrow column, with the column's own
+   leftover height sitting empty beneath it (Fonzo field report, 2026-08-29:
+   "obnoxious... blank space underneath it... should be on top... wasting
+   space on the left"). StepNav now renders as its own full-width bar above
+   .workflowShell (see each Workflow component) instead of as a grid track
+   here -- .workflowShell itself is content-only, plus an optional preview
+   column. */
 .workflowShell {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(380px, 460px);
+  grid-template-columns: minmax(0, 1fr);
   gap: 28px;
   align-items: start;
   min-width: 0;
 }
-/* Steps live in their own left column now (C2 redesign) — .withStepNav is
-   every document (steps | content); JSA additionally has a live preview
-   column (.withPreview adds a 3rd track). Below 900px both collapse to a
-   single column, step list stacked above content — full responsive parity
-   with the mockup's collapsed "position bar" is a later pass. */
-.workflowShell.withStepNav { grid-template-columns: 260px minmax(0, 1fr); }
-.workflowShell.withStepNav.withPreview { grid-template-columns: 260px minmax(0, 1fr) minmax(340px, 420px); }
+.workflowShell.withPreview { grid-template-columns: minmax(0, 1fr) minmax(340px, 420px); }
 @media (max-width: 900px) {
-  .workflowShell.withStepNav,
-  .workflowShell.withStepNav.withPreview {
-    grid-template-columns: 1fr;
-  }
+  .workflowShell.withPreview { grid-template-columns: 1fr; }
 }
 .workflowLeft { display: grid; gap: 18px; min-width: 0; }
 /* top matches .page's own responsive top padding (clamp 22-32px);
@@ -1190,131 +1191,92 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 .builderHeader .btn.outline { background: transparent; border-color: rgba(255,255,255,.5); color: #fff; }
 .builderHeader .badge, .builderHeader .fitBadge { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.3); color: #fff; }
 
-/* ── Vertical step list (C2 redesign) ──
-   Replaces the old horizontal stepperRail. Jumpable in any order (never
-   gated/sequential — see StepNav in FormPrimitives.jsx), each row shows
-   its state as a plain word/phrase, not just a colored dot: green check
-   "Done", red "You are here" for the active step, amber "!" plus the
-   actual missing item's own label for a step that's partially filled in,
-   plain grey "Not started" for a step with nothing entered yet. */
+/* ── Horizontal step bar (2026-08-29 — replaces the C2 redesign's vertical
+   left-column rail, which wasted a fixed-width side column on every
+   workflow and, once the 2026-08-19 touch fix made the list itself scroll
+   horizontally, crammed that scroll strip into the same narrow column with
+   dead space left beneath it. Now a full-width bar sitting above
+   .workflowShell (see each Workflow component's JSX) on every device, not
+   just touch -- same click targets, same done/current/attention/locked
+   states, just always a compact horizontal strip instead of a tall card
+   list. Jumpable in any order (never gated/sequential — see StepNav in
+   FormPrimitives.jsx). */
 .stepNav {
   display: grid;
   align-content: start;
-  gap: 8px;
+  gap: 4px;
   min-width: 0;
   position: sticky;
-  top: 24px;
-}
-/* Below 900px the step list stacks above the content instead of sitting in
-   its own column (see .workflowShell.withStepNav above) -- sticky only
-   makes sense in that side column layout. This override MUST come after
-   the base .stepNav rule above: same specificity, so source order decides,
-   and a duplicate of this same override previously sat earlier in the file
-   (next to the grid-template-columns responsive rule) where the later base
-   rule always beat it, leaving every document's step list pinned on top of
-   the page on real phones/narrow viewports while the content scrolled
-   underneath it -- invisible on short screens, glaringly visible once a
-   screen (e.g. Review with its facsimile panel) got tall enough to scroll. */
-@media (max-width: 900px) {
-  .stepNav { position: static; }
+  top: 0;
+  z-index: 5;
+  background: var(--bg);
+  padding-top: 6px;
 }
 .stepNavHead {
-  padding: 0 10px 4px;
-  font-size: 13px;
+  padding: 0 2px;
+  font-size: 11.5px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: .14em;
   color: var(--text-2);
 }
-.stepNavList { display: grid; gap: 6px; min-width: 0; }
-.stepNavRow {
+.stepNavList {
   display: flex;
+  flex-direction: row;
+  overflow-x: auto;
+  gap: 8px;
+  padding: 2px 2px 10px;
+  -webkit-overflow-scrolling: touch;
+  min-width: 0;
+}
+.stepNavRow {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  min-height: 66px;
-  padding: 0 12px;
+  gap: 5px;
+  min-width: 84px;
+  padding: 9px 8px;
   border-radius: 6px;
   border: 1px solid transparent;
-  text-align: left;
+  text-align: center;
   transition: background .15s, border-color .15s;
 }
 .stepNavRow:hover { background: var(--surface-2); }
 .stepNavDot {
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  font-size: 15px;
+  font-size: 12.5px;
   font-weight: 700;
   background: var(--surface-3);
   color: var(--text-2);
 }
-.stepNavText { display: grid; gap: 1px; min-width: 0; }
+.stepNavText { display: grid; gap: 1px; min-width: 0; text-align: center; justify-items: center; }
 .stepNavText strong {
   font-family: var(--font-condensed);
-  font-size: 19px;
-  line-height: 1.1;
+  font-size: 11px;
+  line-height: 1.15;
   font-weight: 600;
   text-transform: uppercase;
   color: var(--text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
 }
-.stepNavState { font-size: 13.5px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stepNavState { display: none; }
 
 .stepNavRow.done .stepNavDot { background: var(--good-tint); color: var(--good); border: 1px solid var(--good-border); }
-.stepNavRow.done .stepNavState { color: var(--good); font-weight: 600; }
 
 .stepNavRow.current { background: var(--accent-tint); border-color: var(--accent-border-tint); }
 .stepNavRow.current .stepNavDot { background: var(--accent); color: var(--accent-ink); }
 .stepNavRow.current .stepNavText strong { color: var(--accent-2); }
-.stepNavRow.current .stepNavState { color: var(--accent-2); font-weight: 600; }
 
 .stepNavRow.attention { background: var(--warn-tint); border-color: var(--warn-border); }
-.stepNavRow.attention .stepNavDot { background: var(--warn-border); color: #4E3A0C; font-size: 17px; }
-.stepNavRow.attention .stepNavState { color: var(--warn); font-weight: 600; }
-
-.stepNavRow.pending .stepNavState { color: var(--text-2); }
+.stepNavRow.attention .stepNavDot { background: var(--warn-border); color: #4E3A0C; font-size: 13.5px; }
 
 .stepNavRow.locked { opacity: .55; }
-.stepNavRow.locked .stepNavState { color: var(--text-2); }
-
-/* Touch, not narrow -- a wide landscape iPad is still 1000px+ so the
-   max-width breakpoint above never caught it, but the vertical card list
-   was still the thing eating a few hundred px of height (field report,
-   iPad Pro landscape, 2026-08-19: "the steps underneath the top bar is
-   abnoxious"). (any-pointer: coarse) is the same signal useIsTouchPrimary()
-   uses in JS, so this now matches every touch device regardless of width
-   or orientation. Collapse to a compact horizontal scroll-strip: same
-   rows, same click targets, same done/current/attention/locked states,
-   just no state subtitle line and a fraction of the height. */
-@media (any-pointer: coarse) {
-  .stepNavHead { padding: 0 2px 6px; font-size: 11.5px; }
-  .stepNavList {
-    display: flex;
-    flex-direction: row;
-    overflow-x: auto;
-    gap: 8px;
-    padding: 2px 2px 6px;
-    -webkit-overflow-scrolling: touch;
-  }
-  .stepNavRow {
-    flex: 0 0 auto;
-    flex-direction: column;
-    min-height: auto;
-    min-width: 84px;
-    gap: 5px;
-    padding: 9px 8px;
-    text-align: center;
-  }
-  .stepNavDot { width: 24px; height: 24px; font-size: 12.5px; }
-  .stepNavText { text-align: center; justify-items: center; }
-  .stepNavText strong { font-size: 11px; white-space: normal; line-height: 1.15; }
-  .stepNavState { display: none; }
-}
 
 /* ── Step content ── */
 .stepStack { display: grid; gap: 14px; }

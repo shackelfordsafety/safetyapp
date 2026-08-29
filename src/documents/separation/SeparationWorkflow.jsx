@@ -255,8 +255,8 @@ export default function SeparationWorkflow({
       />
 
       <LockedContext.Provider value={locked}>
-        <div className={`workflowShell withStepNav${showSideBySide ? ' withPreview' : ''}`} ref={shellRef}>
-          <StepNav steps={SEPARATION_STEPS} activeStepId={step} checks={checks} onJump={guardedJump} lockedIds={lockedIds} />
+        <StepNav steps={SEPARATION_STEPS} activeStepId={step} checks={checks} onJump={guardedJump} lockedIds={lockedIds} />
+        <div className={`workflowShell${showSideBySide ? ' withPreview' : ''}`} ref={shellRef}>
           <div className="workflowLeft">
             {step === 'details' && <StepDetails model={model} upd={upd} next={next} />}
             {step === 'closeout' && <StepCloseout model={model} upd={upd} prev={prev} next={next} />}

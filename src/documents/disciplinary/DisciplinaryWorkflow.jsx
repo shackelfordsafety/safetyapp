@@ -180,8 +180,8 @@ export default function DisciplinaryWorkflow({
       />
 
       <LockedContext.Provider value={locked}>
-        <div className={`workflowShell withStepNav${showSideBySide ? ' withPreview' : ''}`} ref={shellRef}>
-          <StepNav steps={DISCIPLINARY_STEPS} activeStepId={step} checks={checks} onJump={guardedJump} lockedIds={lockedIds} />
+        <StepNav steps={DISCIPLINARY_STEPS} activeStepId={step} checks={checks} onJump={guardedJump} lockedIds={lockedIds} />
+        <div className={`workflowShell${showSideBySide ? ' withPreview' : ''}`} ref={shellRef}>
           <div className="workflowLeft">
             {step === 'notice' && <StepNotice model={model} upd={upd} next={next} />}
             {step === 'response' && <StepResponse model={model} upd={upd} prev={prev} next={next} />}

@@ -197,8 +197,8 @@ export default function UncontrolledEventWorkflow({
       />
 
       <LockedContext.Provider value={locked}>
-        <div className={`workflowShell withStepNav${showSideBySide ? ' withPreview' : ''}`} ref={shellRef}>
-          <StepNav steps={UNCONTROLLED_EVENT_STEPS} activeStepId={step} checks={checks} onJump={guardedJump} lockedIds={lockedIds} />
+        <StepNav steps={UNCONTROLLED_EVENT_STEPS} activeStepId={step} checks={checks} onJump={guardedJump} lockedIds={lockedIds} />
+        <div className={`workflowShell${showSideBySide ? ' withPreview' : ''}`} ref={shellRef}>
           <div className="workflowLeft">
             {step === 'event' && <StepEvent model={model} upd={upd} next={next} />}
             {step === 'narrative' && <StepNarrative model={model} upd={upd} prev={prev} next={next} />}

@@ -228,8 +228,8 @@ export default function MedicalEventWorkflow({
       />
 
       <LockedContext.Provider value={locked}>
-        <div className={`workflowShell withStepNav${showSideBySide ? ' withPreview' : ''}`} ref={shellRef}>
-          <StepNav steps={MEDICAL_EVENT_STEPS} activeStepId={step} checks={checks} onJump={guardedJump} lockedIds={lockedIds} />
+        <StepNav steps={MEDICAL_EVENT_STEPS} activeStepId={step} checks={checks} onJump={guardedJump} lockedIds={lockedIds} />
+        <div className={`workflowShell${showSideBySide ? ' withPreview' : ''}`} ref={shellRef}>
           <div className="workflowLeft">
             {step === 'condition' && <StepCondition model={model} upd={upd} next={next} />}
             {step === 'evaluation' && <StepEvaluation model={model} upd={upd} prev={prev} next={next} />}
