@@ -3268,16 +3268,28 @@ function StepWork({ jsa, upd, updRow, removeRow, customQuick, prev, next }) {
 }
 
 /* ── Step: Signatures ──
-   No manual line-count picker anymore (Fonzo, 2026-08-19: "no more
-   choosing how many signature lines there should be") -- kiosk mode runs
-   until whoever's running it ends it, and CrewSignInKiosk's own "Done
-   Signing" auto-sets 20 blank lines after the digital ones for late
-   arrivals/visitors. This screen mostly exists so Acknowledgement Text
-   stays editable and so returning here later (StepNav jump, not the
-   Review "Ready for Crew to Sign" button, which opens the kiosk directly)
-   still has something to land on. */
+   No manual line-count picker for the normal path anymore (Fonzo,
+   2026-08-19: "no more choosing how many signature lines there should
+   be") -- kiosk mode runs until whoever's running it ends it, and
+   CrewSignInKiosk's own "Done Signing" auto-sets 20 blank lines after the
+   digital ones for late arrivals/visitors.
+   One exception, added back 2026-08-31: if the kiosk is never touched at
+   all (a real field case -- Fonzo sick, didn't want the crew passing
+   around the iPad he'd been using), signatureLineCount is the sheet's
+   ENTIRE blank-line count (see signInLineTotal's comment above), not "20
+   extra" -- so a fixed default silently under- or over-prints for
+   whatever crew size that day actually has. The line-count field only
+   reappears in that specific case; the moment kiosk sign-in starts, it
+   goes back to fully automatic. */
 function StepSignatures({ jsa, upd, prev, next, onOpenKiosk }) {
   const crewSignedCount = jsa.crewSignatures?.length || 0;
+  const [lineCountInput, setLineCountInput] = useState(String(jsa.signatureLineCount ?? 30));
+  useEffect(() => { setLineCountInput(String(jsa.signatureLineCount ?? 30)); }, [jsa.signatureLineCount]);
+  function commitLineCount() {
+    const n = Math.max(1, Math.min(100, parseInt(lineCountInput, 10) || 30));
+    setLineCountInput(String(n));
+    if (n !== Number(jsa.signatureLineCount)) upd({ signatureLineCount: n });
+  }
   return (
     <div className="stepStack">
       <div className="stepPanel">
@@ -3287,7 +3299,24 @@ function StepSignatures({ jsa, upd, prev, next, onOpenKiosk }) {
           <div className="sigRuleBox">
             <strong>Crew Sign-In (kiosk mode)</strong>
             <p>{crewSignedCount === 0 ? 'No one has signed yet.' : `${crewSignedCount} crew member${crewSignedCount === 1 ? '' : 's'} signed so far — their signatures will print on the attached sign-in sheet.`}</p>
-            <p className="helperText">20 extra blank lines print after them automatically, for anyone who signs in ink later.</p>
+            {crewSignedCount === 0 ? (
+              <>
+                <label className="field">
+                  <span>Blank signature lines (if printing for pen signatures instead)</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={lineCountInput}
+                    onChange={e => setLineCountInput(e.target.value)}
+                    onBlur={commitLineCount}
+                  />
+                </label>
+                <p className="helperText">Only matters if you skip the kiosk and print blank lines for everyone to sign in ink — set it to however big the crew is. Starting the kiosk below ignores this and handles blank lines automatically.</p>
+              </>
+            ) : (
+              <p className="helperText">20 extra blank lines print after them automatically, for anyone who signs in ink later.</p>
+            )}
             <button type="button" className="btn secondary sm" onClick={onOpenKiosk}>{crewSignedCount > 0 ? 'Continue Signing' : 'Start Crew Sign-In'}</button>
           </div>
         </div>
