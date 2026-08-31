@@ -1,9 +1,12 @@
-// Verifies the 2026-08-31 "blank signature lines" field on the JSA
-// Signatures step: when the crew kiosk has NOT been used, the field is
-// editable and drives the actual number of blank pen-signature lines that
-// print. The moment kiosk sign-in starts, the field must NOT reappear
-// (that path stays fully automatic, per the 2026-08-19 "no more choosing"
-// decision). Drives the real UI + real PDF export via Playwright.
+// Verifies the JSA Signatures step's explicit "How will this JSA be
+// signed?" choice (2026-08-31, second pass): Kiosk (default) vs Print &
+// Sign in Pen. In Print mode, the blank-line count (1-100) is editable and
+// drives the actual number of blank pen-signature lines that print, and
+// "Ready for Crew to Sign" on Review must NOT barge into the kiosk when
+// Print mode is selected. In Kiosk mode the count field is not shown at
+// all -- that path stays fully automatic (crew signs, kiosk auto-sets 20
+// extra blank lines), per the 2026-08-19 "no more choosing" decision.
+// Drives the real UI + real PDF export via Playwright.
 //
 // node tools/testing/verify-jsa-blank-signature-lines.mjs
 
@@ -45,14 +48,14 @@ function check(cond, label) {
 }
 
 async function main() {
-  console.log('[1/6] Starting vite preview server...');
+  console.log('[1/7] Starting vite preview server...');
   const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], {
     cwd: repoRoot, shell: true, stdio: ['ignore', 'pipe', 'pipe'],
   });
 
   try {
     await waitForServer(BASE_URL, 20000);
-    console.log('[2/6] Preview server ready at', BASE_URL);
+    console.log('[2/7] Preview server ready at', BASE_URL);
     const browser = await chromium.launch();
     const context = await browser.newContext({ viewport: { width: 1180, height: 900 } });
     await context.addInitScript((json) => { window.localStorage.setItem('sdc.jsa.draft.v4', json); }, jsaDraft);
@@ -61,16 +64,23 @@ async function main() {
     page.on('console', m => { if (m.type() === 'error') consoleErrors.push(m.text()); });
     page.on('pageerror', e => pageErrors.push(String(e)));
 
-    console.log('[3/6] Loading fixture (no crew signatures yet) and opening Signatures step...');
+    console.log('[3/7] Loading fixture and opening Signatures step (default mode)...');
     await page.goto(BASE_URL, { waitUntil: 'networkidle' });
     await page.getByRole('button', { name: 'Continue JSA' }).click();
     await page.getByRole('tab', { name: /^Signatures/ }).click();
 
+    check((await page.locator('.sigRuleBox input[type="number"]').count()) === 0, 'No blank-line field shown by default (Kiosk is the default mode)');
+    await page.getByRole('button', { name: 'Kiosk — Sign on This Device', exact: true }).click();
+    check((await page.locator('.sigRuleBox input[type="number"]').count()) === 0, 'Still no blank-line field with Kiosk explicitly selected');
+
+    console.log('[4/7] Switching to Print & Sign in Pen...');
+    await page.getByRole('button', { name: 'Print & Sign in Pen', exact: true }).click();
     const lineInput = page.locator('.sigRuleBox input[type="number"]');
     await lineInput.waitFor({ state: 'visible' });
     check((await lineInput.inputValue()) === '80', `Field shows the fixture's real stored signatureLineCount (80), got "${await lineInput.inputValue()}"`);
+    check((await page.getByRole('button', { name: 'Start Crew Sign-In' }).count()) === 0, 'Kiosk start button is gone in Print mode');
 
-    console.log('[4/6] Setting blank line count to 12 (kiosk untouched)...');
+    console.log('[5/7] Setting blank line count to 12...');
     await lineInput.fill('12');
     await lineInput.blur();
     await page.waitForTimeout(1800); // draft autosave is 900ms-debounced; wait it out (with margin)
@@ -79,8 +89,17 @@ async function main() {
     // clobber the just-saved value and make this check meaningless.
     const persistedRaw = await page.evaluate(() => JSON.parse(localStorage.getItem('sdc.jsa.draft.v4')).signatureLineCount);
     check(Number(persistedRaw) === 12, `Custom count of 12 autosaved to localStorage, got "${persistedRaw}"`);
+    const persistedMode = await page.evaluate(() => JSON.parse(localStorage.getItem('sdc.jsa.draft.v4')).signInMode);
+    check(persistedMode === 'printout', `signInMode persisted as "printout", got "${persistedMode}"`);
 
-    console.log('[5/6] Generating the real PDF with 12 blank lines, no kiosk signatures...');
+    console.log('[6/7] "Ready for Crew to Sign" must not open the kiosk in Print mode...');
+    await page.getByRole('tab', { name: /^Review/ }).click();
+    page.once('dialog', d => d.accept());
+    await page.getByRole('button', { name: 'Ready for Crew to Sign' }).click();
+    await page.waitForTimeout(300);
+    check((await page.locator('.crewKiosk').count()) === 0, 'Kiosk did not open — Print & Sign in Pen mode was respected');
+
+    console.log('[7/7] Generating the real PDF with 12 blank lines, no kiosk signatures...');
     await page.getByRole('tab', { name: /^Finish & Export/ }).click();
     await page.locator('.reviewPrimaryAction button, .btn.primary.lg').first().click();
     // exportPreflight() shows a native confirm() since crew sign-in reads as an incomplete review item -- accept it.
@@ -91,25 +110,6 @@ async function main() {
 
     const { savedTo } = await downloadGeneratedPdf(page, path.join(outDir, 'blank-signature-lines-12.pdf'));
     console.log('  Saved PDF ->', savedTo);
-
-    console.log('[6/6] Confirming the field disappears once kiosk sign-in starts...');
-    await page.getByRole('tab', { name: /^Signatures/ }).click();
-    await page.getByRole('button', { name: 'Start Crew Sign-In' }).click();
-    await page.locator('.crewKiosk').waitFor({ state: 'visible' });
-    const canvas = page.locator('.crewKioskCanvas');
-    const box = await canvas.boundingBox();
-    await page.mouse.move(box.x + box.width * 0.2, box.y + box.height * 0.5);
-    await page.mouse.down();
-    await page.mouse.move(box.x + box.width * 0.6, box.y + box.height * 0.4);
-    await page.mouse.up();
-    await page.locator('.crewKioskConfirm').click();
-    await page.locator('.crewKioskConfirmedOverlay').waitFor({ state: 'hidden', timeout: 4000 });
-    await page.locator('.crewKioskExitHold').click();
-    await page.getByRole('button', { name: 'Done Signing' }).click();
-    await page.locator('.crewKiosk').waitFor({ state: 'hidden', timeout: 3000 });
-    await page.getByRole('tab', { name: /^Signatures/ }).click();
-    const inputGoneAfterKiosk = await page.locator('.sigRuleBox input[type="number"]').count();
-    check(inputGoneAfterKiosk === 0, 'Editable field is gone once at least one kiosk signature exists (reverts to automatic "20 extra" copy)');
 
     check(consoleErrors.length === 0, `No console errors (${consoleErrors.length} found)${consoleErrors.length ? ': ' + consoleErrors.join(' | ') : ''}`);
     check(pageErrors.length === 0, `No page errors (${pageErrors.length} found)${pageErrors.length ? ': ' + pageErrors.join(' | ') : ''}`);

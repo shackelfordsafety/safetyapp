@@ -604,6 +604,11 @@ function emptyJsa() {
     // it are handled by the existing `{ ...emptyJsa(), ...raw }` merge pattern.
     suggestionBundles: [],
     signatureLineCount: 30,
+    // Explicit choice, not inferred from whether the kiosk happens to have
+    // been touched (that was the 2026-08-31 first pass -- confusing in the
+    // field because the picker silently vanished once someone signed, with
+    // no visible switch to explain why). 'kiosk' | 'printout'.
+    signInMode: 'kiosk',
     // Digitally-captured crew sign-in (kiosk mode) -- [{ dataUrl, signedAt }],
     // app-generated timestamp, never typed. Day-specific like date/tailgate
     // topic below: always reset to empty on a new day / saved template, never
@@ -624,7 +629,7 @@ const BUILT_IN_TEMPLATES = [{
 }];
 
 function makeTodayFromTemplate(data) {
-  return { ...emptyJsa(), ...data, id: crypto.randomUUID?.() || String(Date.now()), status: 'draft', date: todayISO(), timeIssued: '', timeExpired: '', tailgateTopic: '', previousDaySafety: 'None reported.', signatureLineCount: Number(data?.signatureLineCount) || 30, crewSignatures: [], notes: '', lastSavedAt: '', taskRows: withRowIds(data?.taskRows) };
+  return { ...emptyJsa(), ...data, id: crypto.randomUUID?.() || String(Date.now()), status: 'draft', date: todayISO(), timeIssued: '', timeExpired: '', tailgateTopic: '', previousDaySafety: 'None reported.', signatureLineCount: Number(data?.signatureLineCount) || 30, signInMode: 'kiosk', crewSignatures: [], notes: '', lastSavedAt: '', taskRows: withRowIds(data?.taskRows) };
 }
 function templatePayload(jsa, name) {
   return {
@@ -634,7 +639,7 @@ function templatePayload(jsa, name) {
     description: 'Custom saved JSA template',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    data: { ...jsa, id: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'), source: 'custom', status: 'template', templateName: name, date: '', timeIssued: '', timeExpired: '', tailgateTopic: '', previousDaySafety: 'None reported.', signatureLineCount: Number(jsa.signatureLineCount) || 30, crewSignatures: [], notes: '', lastSavedAt: '' },
+    data: { ...jsa, id: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'), source: 'custom', status: 'template', templateName: name, date: '', timeIssued: '', timeExpired: '', tailgateTopic: '', previousDaySafety: 'None reported.', signatureLineCount: Number(jsa.signatureLineCount) || 30, signInMode: 'kiosk', crewSignatures: [], notes: '', lastSavedAt: '' },
   };
 }
 
@@ -2735,8 +2740,11 @@ function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, allTem
       // intermediate "how many signature lines" screen (Fonzo, 2026-08-19:
       // "ready for crew sign in should just take you straight to the kiosk
       // mode, no more choosing how many signature lines there should be").
+      // Only when Kiosk is the chosen sign-in mode, though (2026-08-31) --
+      // jumping into the kiosk anyway when the user explicitly picked
+      // Print & Sign in Pen would silently override that choice.
       setJsaStep('signatures');
-      setKioskOpen(true);
+      if (jsa.signInMode !== 'printout') setKioskOpen(true);
       return;
     }
     setJsaStep(STEPS[idx + 1].id);
@@ -3268,21 +3276,20 @@ function StepWork({ jsa, upd, updRow, removeRow, customQuick, prev, next }) {
 }
 
 /* ── Step: Signatures ──
-   No manual line-count picker for the normal path anymore (Fonzo,
-   2026-08-19: "no more choosing how many signature lines there should
-   be") -- kiosk mode runs until whoever's running it ends it, and
-   CrewSignInKiosk's own "Done Signing" auto-sets 20 blank lines after the
-   digital ones for late arrivals/visitors.
-   One exception, added back 2026-08-31: if the kiosk is never touched at
-   all (a real field case -- Fonzo sick, didn't want the crew passing
-   around the iPad he'd been using), signatureLineCount is the sheet's
-   ENTIRE blank-line count (see signInLineTotal's comment above), not "20
-   extra" -- so a fixed default silently under- or over-prints for
-   whatever crew size that day actually has. The line-count field only
-   reappears in that specific case; the moment kiosk sign-in starts, it
-   goes back to fully automatic. */
+   An explicit choice (Fonzo, 2026-08-31), not inferred from whether the
+   kiosk happens to have been touched -- an earlier same-day pass tried
+   that (line-count field only shown before the first kiosk signature)
+   and it read as the feature just vanishing once the crew started
+   signing, with nothing on screen explaining why. Two real modes:
+   'kiosk' -- crew signs on this device, CrewSignInKiosk's own "Done
+   Signing" auto-sets 20 blank lines after the digital ones for late
+   arrivals/visitors, same as the 2026-08-19 "no more choosing" decision.
+   'printout' -- nobody signs digitally; signatureLineCount (1-100,
+   user-set) is the sheet's ENTIRE blank-line count (see
+   signInLineTotal's comment above), for printing and signing in pen. */
 function StepSignatures({ jsa, upd, prev, next, onOpenKiosk }) {
   const crewSignedCount = jsa.crewSignatures?.length || 0;
+  const mode = jsa.signInMode === 'printout' ? 'printout' : 'kiosk';
   const [lineCountInput, setLineCountInput] = useState(String(jsa.signatureLineCount ?? 30));
   useEffect(() => { setLineCountInput(String(jsa.signatureLineCount ?? 30)); }, [jsa.signatureLineCount]);
   function commitLineCount() {
@@ -3296,29 +3303,37 @@ function StepSignatures({ jsa, upd, prev, next, onOpenKiosk }) {
         <div className="stepPanelHeader"><h3>Signatures and Acknowledgement</h3></div>
         <div className="formGrid">
           <TA label="Acknowledgement Text" value={jsa.acknowledgement} onChange={v => upd({ acknowledgement: v })} rows={6} />
-          <div className="sigRuleBox">
-            <strong>Crew Sign-In (kiosk mode)</strong>
-            <p>{crewSignedCount === 0 ? 'No one has signed yet.' : `${crewSignedCount} crew member${crewSignedCount === 1 ? '' : 's'} signed so far — their signatures will print on the attached sign-in sheet.`}</p>
-            {crewSignedCount === 0 ? (
-              <>
-                <label className="field">
-                  <span>Blank signature lines (if printing for pen signatures instead)</span>
-                  <input
-                    type="number"
-                    min={1}
-                    max={100}
-                    value={lineCountInput}
-                    onChange={e => setLineCountInput(e.target.value)}
-                    onBlur={commitLineCount}
-                  />
-                </label>
-                <p className="helperText">Only matters if you skip the kiosk and print blank lines for everyone to sign in ink — set it to however big the crew is. Starting the kiosk below ignores this and handles blank lines automatically.</p>
-              </>
-            ) : (
-              <p className="helperText">20 extra blank lines print after them automatically, for anyone who signs in ink later.</p>
-            )}
-            <button type="button" className="btn secondary sm" onClick={onOpenKiosk}>{crewSignedCount > 0 ? 'Continue Signing' : 'Start Crew Sign-In'}</button>
+          <div className="field">
+            <span>How will this JSA be signed?</span>
+            <div className="yesNoToggle">
+              <button type="button" className={`btn${mode === 'kiosk' ? ' active' : ''}`} onClick={() => upd({ signInMode: 'kiosk' })}>Kiosk — Sign on This Device</button>
+              <button type="button" className={`btn${mode === 'printout' ? ' active' : ''}`} onClick={() => upd({ signInMode: 'printout' })}>Print &amp; Sign in Pen</button>
+            </div>
           </div>
+          {mode === 'kiosk' ? (
+            <div className="sigRuleBox">
+              <strong>Crew Sign-In (kiosk mode)</strong>
+              <p>{crewSignedCount === 0 ? 'No one has signed yet.' : `${crewSignedCount} crew member${crewSignedCount === 1 ? '' : 's'} signed so far — their signatures will print on the attached sign-in sheet.`}</p>
+              <p className="helperText">20 extra blank lines print after them automatically, for anyone who signs in ink later.</p>
+              <button type="button" className="btn secondary sm" onClick={onOpenKiosk}>{crewSignedCount > 0 ? 'Continue Signing' : 'Start Crew Sign-In'}</button>
+            </div>
+          ) : (
+            <div className="sigRuleBox">
+              <strong>Print &amp; Sign in Pen</strong>
+              <p>Nobody signs on this device. The printed sheet gets exactly the number of blank lines below for the crew to sign by hand.</p>
+              <label className="field">
+                <span>Signature boxes to print</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={lineCountInput}
+                  onChange={e => setLineCountInput(e.target.value)}
+                  onBlur={commitLineCount}
+                />
+              </label>
+            </div>
+          )}
         </div>
       </div>
       <StepFooter prev={prev} next={next} hasPrev hasNext />
