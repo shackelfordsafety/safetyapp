@@ -1,5 +1,6 @@
 import React, { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { createPortal } from 'react-dom';
 import html2canvas from 'html2canvas';
 import { PDFDocument } from 'pdf-lib';
 import './styles.css';
@@ -3950,7 +3951,18 @@ function JsaPreviewPagerModal({ jsa, plan, initialIndex = 0, onClose }) {
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [total]);
 
-  return (
+  // Portaled straight to document.body -- this modal is opened from inside
+  // the live preview panel (.workflowRight), which is itself a positioned
+  // (sticky) element and so establishes its own stacking context. Without
+  // the portal, this dialog's z-index only ever competed against its own
+  // siblings inside that panel, not against the rest of the page -- in
+  // practice the sticky StepNav bar (z-index:5) painted on top of this
+  // "fullscreen" modal despite its z-index:300, because the whole
+  // .workflowRight subtree sits at the default (z-index:auto) paint layer
+  // one level up. Confirmed via computed-style ancestor walk, not guessed
+  // (Fonzo screenshot, 2026-08-31). Every other dialog in this file already
+  // avoids this by living outside .workflowRight in the component tree.
+  return createPortal(
     <div className="dialogOverlay previewPagerOverlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="dialogPanel previewPagerPanel" role="dialog" aria-modal="true" aria-label="Print preview" ref={dialogRef}>
         <div className="previewPagerHead">
@@ -3994,7 +4006,8 @@ function JsaPreviewPagerModal({ jsa, plan, initialIndex = 0, onClose }) {
           <button type="button" className="btn ghost sm" onClick={goNext} disabled={clamped === total - 1}>Next ›</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
