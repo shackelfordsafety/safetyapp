@@ -12,7 +12,7 @@ import {
   BuilderHeader, StepNav, ReviewExportPanel, ReadinessChecklist, SignaturePad, DocFacsimile,
   useIsTouchPrimary, useElementWidth,
 } from '../FormPrimitives';
-import { LockedContext, useLocked } from '../lockedContext';
+import { LockedContext } from '../lockedContext';
 import { downloadDraftFile, buildDraftFilename } from '../../shared/draftTransfer';
 
 function toggleInList(list, item) {
@@ -76,7 +76,6 @@ function StepCondition({ model, upd, next }) {
 
 /* ── Step: Evaluation & Classification ── */
 function StepEvaluation({ model, upd, prev, next }) {
-  const locked = useLocked();
   return (
     <StepPanel title="Evaluation & Classification" intro="Medical evaluation, current work status, and the initial classification. This app never decides work-relatedness or OSHA recordability — select what applies based on the facts.">
       <div className="formSection">
@@ -93,20 +92,12 @@ function StepEvaluation({ model, upd, prev, next }) {
         {model.workStatus === 'offWork' && (
           <Field label="Off Work Until" type="date" value={model.offWorkUntilDate} onChange={v => upd({ offWorkUntilDate: v })} />
         )}
-        <label className="field">
-          <span>Provider Note Attached</span>
-          <div className="yesNoToggle">
-            <button
-              type="button"
-              aria-pressed={model.providerNoteAttached}
-              aria-disabled={locked}
-              className={`btn${model.providerNoteAttached ? ' active yes' : ''}`}
-              onClick={() => { if (!locked) upd({ providerNoteAttached: !model.providerNoteAttached }); }}
-            >
-              {model.providerNoteAttached ? 'Yes — Attached' : 'No'}
-            </button>
-          </div>
-        </label>
+        <SegmentedToggle
+          label="Provider Note Attached"
+          value={model.providerNoteAttached ? 'yes' : 'no'}
+          onChange={v => upd({ providerNoteAttached: v === 'yes' })}
+          options={[{ value: 'yes', label: 'Yes', tone: 'yes' }, { value: 'no', label: 'No', tone: 'no' }]}
+        />
       </div>
 
       <div className="formSection">

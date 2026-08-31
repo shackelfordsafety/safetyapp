@@ -26,10 +26,10 @@ export async function drawSeparationPdf(model, onProgress) {
   });
 
   doc.infoTable([
-    ['Employee Name', model.employeeName, 'Employee ID', model.employeeId],
-    ['Position', model.position, 'Project / Location', model.projectLocation],
-    ['Supervisor', model.supervisor, 'Last Day Worked', fmtDate(model.lastDayWorked)],
-    ['Effective Separation Date', fmtDate(model.effectiveSeparationDate), 'Date Submitted', fmtDate(model.dateSubmitted)],
+    ['Employee Name', model.employeeName, 'Position', model.position],
+    ['Project / Location', model.projectLocation, 'Supervisor', model.supervisor],
+    ['Last Day Worked', fmtDate(model.lastDayWorked), 'Effective Separation Date', fmtDate(model.effectiveSeparationDate)],
+    ['Date Submitted', fmtDate(model.dateSubmitted)],
   ], 0.19);
 
   doc.space(6);
@@ -58,8 +58,6 @@ export async function drawSeparationPdf(model, onProgress) {
       : model.warningNoticesGiven === 'no' ? 'No' : model.warningNoticesGiven === 'na' ? 'N/A' : '';
     disciplineRows.push(['Warning Notices Given?', warningText]);
   }
-  disciplineRows.push(['Documentation Attached?',
-    model.documentationAttached === 'yes' ? 'Yes' : model.documentationAttached === 'no' ? 'No' : '']);
   disciplineRows.push(['Eligible for Rehire?', optionLabel(REHIRE_STATUSES, model.eligibleForRehire)]);
   if (model.eligibleForRehire === 'no') disciplineRows.push(['Reason Not Eligible', model.rehireReasonIfNo]);
   doc.infoTable(disciplineRows, LABEL_W);
@@ -121,10 +119,10 @@ export async function drawSeparationPdf(model, onProgress) {
 export function separationFacsimileBlocks(model) {
   const blocks = [];
   blocks.push({ type: 'infoTable', rows: [
-    ['Employee Name', model.employeeName, 'Employee ID', model.employeeId],
-    ['Position', model.position, 'Project / Location', model.projectLocation],
-    ['Supervisor', model.supervisor, 'Last Day Worked', fmtDate(model.lastDayWorked)],
-    ['Effective Separation Date', fmtDate(model.effectiveSeparationDate), 'Date Submitted', fmtDate(model.dateSubmitted)],
+    ['Employee Name', model.employeeName, 'Position', model.position],
+    ['Project / Location', model.projectLocation, 'Supervisor', model.supervisor],
+    ['Last Day Worked', fmtDate(model.lastDayWorked), 'Effective Separation Date', fmtDate(model.effectiveSeparationDate)],
+    ['Date Submitted', fmtDate(model.dateSubmitted)],
   ] });
 
   blocks.push({ type: 'grayBar', text: 'Separation Type / Reason' });
@@ -151,8 +149,6 @@ export function separationFacsimileBlocks(model) {
       : model.warningNoticesGiven === 'no' ? 'No' : model.warningNoticesGiven === 'na' ? 'N/A' : '';
     disciplineRows.push(['Warning Notices Given?', warningText]);
   }
-  disciplineRows.push(['Documentation Attached?',
-    model.documentationAttached === 'yes' ? 'Yes' : model.documentationAttached === 'no' ? 'No' : '']);
   disciplineRows.push(['Eligible for Rehire?', optionLabel(REHIRE_STATUSES, model.eligibleForRehire)]);
   if (model.eligibleForRehire === 'no') disciplineRows.push(['Reason Not Eligible', model.rehireReasonIfNo]);
   blocks.push({ type: 'infoTable', rows: disciplineRows });

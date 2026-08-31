@@ -74,27 +74,31 @@ export function TextAreaField({ label, help, value, onChange, rows = 4, placehol
    same .yesNoToggle button.active.yes/.no color rules for a 2-option case;
    a 3+ option toggle (e.g. warning level) just omits tone and gets the
    neutral active state. */
-export function SegmentedToggle({ label: lbl, value, onChange, options }) {
+export function SegmentedToggle({ label: lbl, value, onChange, options, disabledValues }) {
   const locked = useLocked();
   return (
     <div className="field">
       <span>{lbl}</span>
       <div className={`yesNoToggle${options.length > 2 ? ' wrap' : ''}`}>
-        {options.map(opt => (
-          <button
-            key={opt.value}
-            type="button"
-            aria-pressed={value === opt.value}
-            aria-disabled={locked}
-            className={`btn${value === opt.value ? ` active${opt.tone ? ` ${opt.tone}` : ''}` : ''}`}
-            // Guarded onClick rather than the native disabled attribute --
-            // disabled would dim the final selected answer (via .btn:disabled
-            // { opacity: .45 }) exactly when it most needs to stay readable.
-            onClick={() => { if (!locked) onChange(opt.value); }}
-          >
-            {opt.label}
-          </button>
-        ))}
+        {options.map(opt => {
+          const optDisabled = locked || (disabledValues || []).includes(opt.value);
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              aria-pressed={value === opt.value}
+              aria-disabled={optDisabled}
+              className={`btn${value === opt.value ? ` active${opt.tone ? ` ${opt.tone}` : ''}` : ''}`}
+              // Guarded onClick rather than the native disabled attribute --
+              // disabled would dim the final selected answer (via .btn:disabled
+              // { opacity: .45 }) exactly when it most needs to stay readable.
+              onClick={() => { if (!optDisabled) onChange(opt.value); }}
+              style={optDisabled && value !== opt.value ? { opacity: 0.45, cursor: 'not-allowed' } : undefined}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -332,7 +336,7 @@ export function ReadinessChecklist({ checks, onJump }) {
    fire from a single accidental tap. */
 export function ReviewExportPanel({
   title, checks, checklistComplete, status,
-  draftExplainText, markReadyHintText, markReadyLabel = 'Mark Complete', onMarkReady, onMarkIncomplete,
+  draftExplainText, markReadyHintText, onMarkReady, onMarkIncomplete,
   pdfExportState, isPdfStale, onGeneratePdf, onDownload,
   generatingLabel = 'Creating…', generateLabel = 'Create Document', regenerateLabel = 'Update Document',
   downloadLabel = 'Download Document',
@@ -361,19 +365,19 @@ export function ReviewExportPanel({
           </p>
         )}
         <ReadinessChecklist checks={checks} onJump={status === 'draft' ? onJumpCheck : undefined} />
-        {status === 'draft' && (
-          <div className="reviewInlineAction">
-            <button type="button" className="btn secondary" onClick={() => setConfirmingFinish(true)} disabled={!checklistComplete}>{markReadyLabel}</button>
-          </div>
-        )}
         {status !== 'draft' && (
-          <>
-            <p className="helperText">Marked complete. Editing is locked while it's marked this way — creating or updating the PDF does not change this.</p>
-            <div className="reviewInlineAction">
-              <button type="button" className="btn secondary" onClick={onMarkIncomplete}>Mark Incomplete</button>
-            </div>
-          </>
+          <p className="helperText">Marked complete. Editing is locked while it's marked this way — creating or updating the PDF does not change this.</p>
         )}
+        <SegmentedToggle
+          label="Is this document complete?"
+          value={status === 'draft' ? 'no' : 'yes'}
+          disabledValues={status === 'draft' && !checklistComplete ? ['yes'] : []}
+          onChange={v => {
+            if (v === 'yes') { if (checklistComplete) setConfirmingFinish(true); }
+            else if (status !== 'draft') onMarkIncomplete();
+          }}
+          options={[{ value: 'yes', label: 'Yes', tone: 'yes' }, { value: 'no', label: 'No', tone: 'no' }]}
+        />
         {confirmingFinish && (
           <ConfirmDialog
             title="Mark this document complete?"
@@ -388,22 +392,19 @@ export function ReviewExportPanel({
         )}
       </div>
 
-      {onExportDraft && (
-        <div className="card">
-          <div className="cardHeader">
-            <strong>Send to Someone Else to Finish</strong>
-          </div>
-          <p className="helperText">Save a file you can text, email, or AirDrop to someone else. They can open it in this app and pick up right where you left off — the checklist above doesn't need to be done first.</p>
-          <button type="button" className="btn secondary" onClick={onExportDraft}>Export Draft File</button>
-        </div>
-      )}
-
       <div className="card">
         {!isReady && (
           <div className="reviewPrimaryAction">
             <button type="button" className="btn primary lg" onClick={onGeneratePdf} disabled={isGenerating} aria-busy={isGenerating}>
               {isGenerating ? generatingLabel : generateLabel}
             </button>
+          </div>
+        )}
+
+        {onExportDraft && (
+          <div className="reviewSecondaryActions">
+            <button type="button" className="btn ghost sm" onClick={onExportDraft}>Send to Someone Else to Finish</button>
+            <span className="reviewAutosaveNote">Saves a file to text, email, or AirDrop — they pick up right where you left off, no need to finish the checklist first.</span>
           </div>
         )}
 

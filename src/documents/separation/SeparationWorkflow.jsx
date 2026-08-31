@@ -11,35 +11,11 @@ import {
   BuilderHeader, StepNav, ReviewExportPanel, ReadinessChecklist, SignaturePad, DocFacsimile,
   useIsTouchPrimary, useElementWidth,
 } from '../FormPrimitives';
-import { LockedContext, useLocked } from '../lockedContext';
+import { LockedContext } from '../lockedContext';
 import { downloadDraftFile, buildDraftFilename } from '../../shared/draftTransfer';
 
 function toggleInList(list, item) {
   return (list || []).includes(item) ? list.filter(x => x !== item) : [...(list || []), item];
-}
-
-/* Simple single boolean toggle button -- same pattern as Medical Event's
-   "Provider Note Attached" -- for the two plain checkbox-style closeout
-   items the source form has no other options for (Final timesheet
-   submitted / Expenses resolved). */
-function BooleanToggle({ label, value, onChange, onLabel = 'Yes', offLabel = 'No' }) {
-  const locked = useLocked();
-  return (
-    <label className="field">
-      <span>{label}</span>
-      <div className="yesNoToggle">
-        <button
-          type="button"
-          aria-pressed={value}
-          aria-disabled={locked}
-          className={`btn${value ? ' active yes' : ''}`}
-          onClick={() => { if (!locked) onChange(!value); }}
-        >
-          {value ? onLabel : offLabel}
-        </button>
-      </div>
-    </label>
-  );
 }
 
 /* ── Step: Separation Details — employee info, type, reason, explanation ── */
@@ -51,18 +27,17 @@ function StepDetails({ model, upd, next }) {
         <div className="formGrid">
           <div className="formPairRow">
             <Field label="Employee Name" value={model.employeeName} onChange={v => upd({ employeeName: v })} />
-            <Field label="Employee ID" value={model.employeeId} onChange={v => upd({ employeeId: v })} />
-          </div>
-          <div className="formPairRow">
             <Field label="Position" value={model.position} onChange={v => upd({ position: v })} />
+          </div>
+          <div className="formPairRow">
             <Field label="Project / Location" value={model.projectLocation} onChange={v => upd({ projectLocation: v })} />
-          </div>
-          <div className="formPairRow">
             <Field label="Supervisor" value={model.supervisor} onChange={v => upd({ supervisor: v })} />
-            <Field label="Last Day Worked" type="date" value={model.lastDayWorked} onChange={v => upd({ lastDayWorked: v })} />
           </div>
           <div className="formPairRow">
+            <Field label="Last Day Worked" type="date" value={model.lastDayWorked} onChange={v => upd({ lastDayWorked: v })} />
             <Field label="Effective Separation Date" type="date" value={model.effectiveSeparationDate} onChange={v => upd({ effectiveSeparationDate: v })} />
+          </div>
+          <div className="formPairRow">
             <Field label="Date Submitted" type="date" value={model.dateSubmitted} onChange={v => upd({ dateSubmitted: v })} />
           </div>
         </div>
@@ -123,12 +98,6 @@ function StepCloseout({ model, upd, prev, next }) {
           </>
         )}
         <SegmentedToggle
-          label="Documentation attached?"
-          value={model.documentationAttached}
-          onChange={v => upd({ documentationAttached: v })}
-          options={[{ value: 'yes', label: 'Yes', tone: 'yes' }, { value: 'no', label: 'No', tone: 'no' }]}
-        />
-        <SegmentedToggle
           label="Eligible for rehire?"
           value={model.eligibleForRehire}
           onChange={v => upd({ eligibleForRehire: v })}
@@ -149,8 +118,18 @@ function StepCloseout({ model, upd, prev, next }) {
         {(model.accessRemoved || []).includes('Other') && (
           <Field label="Other access — specify" value={model.accessRemovedOther} onChange={v => upd({ accessRemovedOther: v })} />
         )}
-        <BooleanToggle label="Final timesheet submitted" value={model.finalTimesheetSubmitted} onChange={v => upd({ finalTimesheetSubmitted: v })} />
-        <BooleanToggle label="Expenses / receipts resolved" value={model.expensesResolved} onChange={v => upd({ expensesResolved: v })} />
+        <SegmentedToggle
+          label="Final timesheet submitted"
+          value={model.finalTimesheetSubmitted ? 'yes' : 'no'}
+          onChange={v => upd({ finalTimesheetSubmitted: v === 'yes' })}
+          options={[{ value: 'yes', label: 'Yes', tone: 'yes' }, { value: 'no', label: 'No', tone: 'no' }]}
+        />
+        <SegmentedToggle
+          label="Expenses / receipts resolved"
+          value={model.expensesResolved ? 'yes' : 'no'}
+          onChange={v => upd({ expensesResolved: v === 'yes' })}
+          options={[{ value: 'yes', label: 'Yes', tone: 'yes' }, { value: 'no', label: 'No', tone: 'no' }]}
+        />
         <TextAreaField label="Any company property or paperwork still outstanding?" rows={3} value={model.outstandingPropertyNotes} onChange={v => upd({ outstandingPropertyNotes: v })} voice />
       </div>
 
