@@ -2737,15 +2737,14 @@ function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, allTem
         const proceed = confirm(`This JSA still has ${missing.length} item${missing.length === 1 ? '' : 's'} to fix:\n\n${missing.map(c => `• ${c.label}`).join('\n')}\n\nLet the crew sign anyway?`);
         if (!proceed) return;
       }
-      // "Ready for Crew to Sign" goes straight into kiosk mode -- no
-      // intermediate "how many signature lines" screen (Fonzo, 2026-08-19:
-      // "ready for crew sign in should just take you straight to the kiosk
-      // mode, no more choosing how many signature lines there should be").
-      // Only when Kiosk is the chosen sign-in mode, though (2026-08-31) --
-      // jumping into the kiosk anyway when the user explicitly picked
-      // Print & Sign in Pen would silently override that choice.
+      // "Ready for Crew to Sign" lands on the Signatures step and lets the
+      // Kiosk / Print & Sign in Pen toggle there be the actual prompt
+      // (Fonzo, 2026-09-01: it was silently skipping straight into kiosk
+      // mode because signInMode defaults to 'kiosk' on every new JSA, so
+      // nobody ever saw a real choice -- auto-opening the kiosk here made
+      // that default look like the only option instead of a pre-selected
+      // one they could still change).
       setJsaStep('signatures');
-      if (jsa.signInMode !== 'printout') setKioskOpen(true);
       return;
     }
     setJsaStep(STEPS[idx + 1].id);
