@@ -2551,7 +2551,7 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
      eliminates that variable entirely rather than trying to tune it. */
   @page { size: letter portrait; margin: 0; }
   html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; color: #000 !important; }
-  .appShell, .toast, .layoutDebugPanel, .dialogOverlay, .suggestionsOverlay, .stickyActionBar, .printDebugPanel, .printMeasureRoot, .crewKiosk { display: none !important; }
+  .appShell, .toast, .layoutDebugPanel, .dialogOverlay, .suggestionsOverlay, .stickyActionBar, .printDebugPanel, .printMeasureRoot, .pdfExportRoot, .crewKiosk { display: none !important; }
   .printOnly { display: block !important; }
   table { width: 100%; border-collapse: collapse; }
 

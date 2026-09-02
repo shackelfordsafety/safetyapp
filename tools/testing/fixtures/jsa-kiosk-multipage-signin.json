@@ -1,0 +1,169 @@
+{
+  "id": "19b3b0cb-ffa9-4d46-97f5-24720ecdc216",
+  "status": "draft",
+  "templateName": "",
+  "location": "Ridgeland, MS",
+  "jobSite": "Entergy TAPS",
+  "jobNumber": "480-02",
+  "date": "2026-08-06",
+  "timeIssued": "06:30",
+  "timeExpired": "19:00",
+  "superintendentForeman": "Gaines Newell, Jake Lytle, Kris Taute",
+  "emergencyPhone": "911",
+  "client": "Entergy",
+  "nearestMedicalFacility": "UMMC / AFCU",
+  "siteContactPhone": "",
+  "musterPoint": "Laydown Yard",
+  "assignedMentorSse": "N/A",
+  "acknowledgement": "I have reviewed and understand the conditions of this JSA and its attached plans and will comply. I will report hazardous conditions or acts identified on this job site to my supervisor and/or Shackelford representative so they can be corrected if necessary. I will conduct a last minute risk assessment before each task and will exercise stop work authority for any unsafe act, condition, or hazard.",
+  "tailgateTopic": "Housekeeping",
+  "previousDaySafety": "None reported.",
+  "overallWorkTask": "MASS GRADING",
+  "dailyTasks": "Build lift elevation on east gen pad\nMix/move lime\nCut/fill area A\nMove material\nInstall rip rap in barrel culverts on west rd/crossover\nMaintain north haul road\nControl dust with water trucks\nService equipment",
+  "hazardsSummary": "Line of fire\nStruck by exposure\nCaught between exposure\nPinch points\nEquipment blind spots\nWorkers on foot near equipment\nBacking equipment\nMoving equipment\nEquipment traffic\nEquipment failure\nRollover/runover potential\nSlips, trips, and falls\nUneven ground\nMuddy or slippery ground\nSoft or unstable ground\nHeat stress\nDust/lime exposure\nWildlife/insects\nEye/skin irritation",
+  "controlsSummary": "Maintain eye contact with operator\nUse radios or hand signals\nConfirm communication before movement\nMaintain communication with operators and supervision\nMaintain safe distance from equipment\nStay clear of swing radius and blind spots\nInspect tools and equipment\nOperate at safe speed\nWear seat belt\nPark on level ground before servicing\nWear required PPE\nUse respiratory protection when required\nMaintain power line clearance\nEstablish traffic control\nUse designated haul routes\nHydrate regularly\nTake heat breaks as needed\nProvide shade/rest area\nMonitor for heat stress\nApply water for dust control\nCorrect housekeeping issues",
+  "taskRows": [],
+  "suggestionBundles": [],
+  "signatureLineCount": 30,
+  "notes": "",
+  "lastSavedAt": "2026-08-06T11:06:31.345Z",
+  "signInMode": "kiosk",
+  "crewSignatures": [
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:22:03.349Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:23:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:24:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:25:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:26:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:27:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:28:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:29:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:30:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:31:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:32:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:33:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:34:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:35:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:36:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:37:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:38:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:39:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:40:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:41:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:42:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:43:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:44:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:45:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:46:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:47:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:48:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:49:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:50:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:51:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:52:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:53:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:54:03.350Z"
+    },
+    {
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "signedAt": "2026-09-02T11:55:03.350Z"
+    }
+  ]
+}
