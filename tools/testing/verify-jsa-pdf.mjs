@@ -94,16 +94,33 @@ async function main() {
     await page.goto(BASE_URL, { waitUntil: 'networkidle' });
 
     await page.getByRole('button', { name: 'Continue JSA' }).click();
+    // Finish & Export is now locked behind visiting Signatures + Review
+    // first (2026-08-19 JSA simplification pass moved Review before
+    // Signatures and added the guardedJump lock -- see CLAUDE.md). Pick
+    // Print & Sign in Pen so no actual kiosk signing is needed, then hit
+    // Review's "Ready for Crew to Sign" to unlock Finish & Export.
+    await page.getByRole('tab', { name: /^Signatures/ }).click();
+    const printModeBtn = page.getByRole('button', { name: 'Print & Sign in Pen', exact: true });
+    if (await printModeBtn.count() > 0) await printModeBtn.click();
+    await page.getByRole('tab', { name: /^Review/ }).click();
+    await page.waitForTimeout(300);
+    page.once('dialog', d => d.accept());
+    const readyBtn = page.getByRole('button', { name: 'Ready for Crew to Sign' });
+    if (await readyBtn.count() > 0) await readyBtn.click();
+    await page.waitForTimeout(300);
     await page.getByRole('tab', { name: /^Finish & Export/ }).click();
 
     // Read the JS-estimated page plan (pre-generation heuristic/measured plan)
-    // shown in the Review step's own UI, for comparison against the actual
-    // generated PDF's page count.
-    const planText = await page.locator('.exportPlanGrid').innerText();
-    console.log('[4/7] Review step export plan (pre-generation):\n' + planText.replace(/\n+/g, ' | '));
+    // shown in the Finish & Export step's own "What Will Print" panel, for
+    // comparison against the actual generated PDF's page count. (Class name
+    // is stale post-2026-08-19 JSA simplification pass -- this panel is now
+    // ".previewPanel" wherever it renders, not ".exportPlanGrid".)
+    const planText = await page.locator('.previewPanel').innerText();
+    console.log('[4/7] Finish & Export step preview panel (pre-generation):\n' + planText.replace(/\n+/g, ' | '));
 
     console.log('[5/7] Triggering real PDF export (exportPdf -> generateJsaPdf)...');
-    await page.locator('.reviewPrimaryAction button').click();
+    page.once('dialog', d => d.accept()); // exportPreflight() confirm() if any review item still reads incomplete
+    await page.getByRole('button', { name: 'Create Document', exact: true }).first().click();
     await page.locator('.pdfReadyPanel').waitFor({ state: 'visible', timeout: 30000 });
 
     const readyHeadline = await page.locator('.pdfReadyHeadline').innerText();

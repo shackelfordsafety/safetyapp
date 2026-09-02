@@ -2956,12 +2956,15 @@ function SuggestionsSheet({ title, onClose, children }) {
     </div>
   );
 }
-function FieldWithSuggestions({ label, value, onChange, onBlur, rows, placeholder, quickPanelTitle, sheetTitle, groups, onPick, onRemove, itemType, mode, fieldKey, activeSuggestion, setActiveSuggestion, voice = false, voiceMode = 'narrative' }) {
+function FieldWithSuggestions({ label, value, onChange, onBlur, rows, placeholder, quickPanelTitle, sheetTitle, groups, onPick, onRemove, itemType, mode, fieldKey, activeSuggestion, setActiveSuggestion, voice = false, voiceMode = 'narrative', chips = false }) {
   const isTouchPrimary = useIsTouchPrimary();
+  const field = chips
+    ? <ChipEntryTA label={label} value={value} onChange={onChange} placeholder={placeholder} voice={voice} voiceMode={voiceMode} />
+    : <TA label={label} value={value} onChange={onChange} onBlur={onBlur} rows={rows} placeholder={placeholder} voice={voice} voiceMode={voiceMode} />;
   if (!isTouchPrimary) {
     return (
       <div className="fieldWithQuick">
-        <TA label={label} value={value} onChange={onChange} onBlur={onBlur} rows={rows} placeholder={placeholder} voice={voice} voiceMode={voiceMode} />
+        {field}
         <QuickPanel title={quickPanelTitle} groups={groups} onPick={onPick} onRemove={onRemove} existingValue={value} itemType={itemType} mode={mode} />
       </div>
     );
@@ -2969,7 +2972,7 @@ function FieldWithSuggestions({ label, value, onChange, onBlur, rows, placeholde
   const isOpen = activeSuggestion === fieldKey;
   return (
     <div className="fieldStack">
-      <TA label={label} value={value} onChange={onChange} onBlur={onBlur} rows={rows} placeholder={placeholder} voice={voice} voiceMode={voiceMode} />
+      {field}
       <button type="button" className="suggestionsTrigger" onClick={() => setActiveSuggestion(fieldKey)}>
         Suggestions
       </button>
@@ -3186,12 +3189,11 @@ function StepWork({ jsa, upd, updRow, removeRow, customQuick, prev, next }) {
             <div className="formGrid">
               <FieldWithSuggestions
                 label="Tasks for Today" value={jsa.dailyTasks} onChange={v => upd({ dailyTasks: v })}
-                onBlur={() => upd({ dailyTasks: dedupeList(splitLines(jsa.dailyTasks)).join('\n') })} rows={6}
-                placeholder="Enter each work activity on its own line."
+                placeholder="Type a task, then press Enter to add it."
                 quickPanelTitle="Quick Daily Tasks" sheetTitle="Daily Task Suggestions" groups={taskGroups}
                 onPick={handleTaskPick} onRemove={handleTaskRemove}
                 fieldKey="dailyTasks" activeSuggestion={activeSuggestion} setActiveSuggestion={setActiveSuggestion}
-                voice voiceMode="list"
+                voice voiceMode="list" chips
               />
             </div>
           </div>
@@ -3199,12 +3201,11 @@ function StepWork({ jsa, upd, updRow, removeRow, customQuick, prev, next }) {
             <div className="formGrid">
               <FieldWithSuggestions
                 label="Hazards in Work Area" value={jsa.hazardsSummary} onChange={v => upd({ hazardsSummary: v })}
-                onBlur={() => upd({ hazardsSummary: dedupeList(splitLines(jsa.hazardsSummary)).join('\n') })} rows={6}
-                placeholder="Enter each exposure or hazardous condition on its own line."
+                placeholder="Type a hazard, then press Enter to add it."
                 quickPanelTitle="Quick Hazards" sheetTitle="Hazard Suggestions" groups={hazardGroups}
                 onPick={handleHazardPick} onRemove={handleHazardRemove}
                 fieldKey="hazards" activeSuggestion={activeSuggestion} setActiveSuggestion={setActiveSuggestion}
-                voice voiceMode="list"
+                voice voiceMode="list" chips
               />
             </div>
           </div>
@@ -3212,12 +3213,11 @@ function StepWork({ jsa, upd, updRow, removeRow, customQuick, prev, next }) {
             <div className="formGrid">
               <FieldWithSuggestions
                 label="Controls and Mitigations" value={jsa.controlsSummary} onChange={v => upd({ controlsSummary: v })}
-                onBlur={() => upd({ controlsSummary: dedupeList(splitLines(jsa.controlsSummary)).join('\n') })} rows={6}
-                placeholder="Enter each preventive action or requirement on its own line."
+                placeholder="Type a control, then press Enter to add it."
                 quickPanelTitle="Quick Controls" sheetTitle="Control Suggestions" groups={controlGroups}
                 onPick={handleControlPick} onRemove={handleControlRemove}
                 fieldKey="controls" activeSuggestion={activeSuggestion} setActiveSuggestion={setActiveSuggestion}
-                voice voiceMode="list"
+                voice voiceMode="list" chips
               />
             </div>
           </div>
@@ -4144,6 +4144,84 @@ function TA({ label, value, onChange, onBlur, rows = 4, placeholder = '', voice 
       </div>
       <textarea ref={ref} rows={rows} value={value || ''} placeholder={placeholder} onChange={e => onChange(e.target.value)} onBlur={onBlur} className="autoGrow" aria-labelledby={voice ? labelId : undefined} />
     </label>
+  );
+}
+
+// One-item-at-a-time entry field for JSA Tasks/Hazards/Controls: type an
+// entry, hit Enter, it becomes a removable row and the input clears for the
+// next one. `value`/`onChange` stay the same newline-joined string the rest
+// of the app (splitLines, voice dictation's list mode, PDF pipeline) already
+// reads and writes -- this only changes how a human types into it, not the
+// data shape. Fuzzy near-duplicate cleanup (dedupeList) runs from the live
+// `value` prop, never a closed-over copy, so it can't clobber an entry that
+// was just committed in the same event.
+function ChipEntryTA({ label, value, onChange, placeholder = '', voice = false, voiceMode = 'narrative' }) {
+  const [draft, setDraft] = useState('');
+  const labelId = useId();
+  const inputRef = useRef(null);
+  const items = splitLines(value);
+
+  function commit() {
+    const text = draft.trim();
+    if (!text) return;
+    onChange(addExactEntry(value, text).value);
+    setDraft('');
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      commit();
+    } else if (e.key === 'Backspace' && draft === '' && items.length) {
+      // Empty input + backspace pulls the last entry back into the input to
+      // fix a typo, instead of silently deleting it.
+      e.preventDefault();
+      const last = items[items.length - 1];
+      onChange(removeExactEntry(value, last));
+      setDraft(last);
+    }
+  }
+
+  function handleBlur() {
+    const text = draft.trim();
+    const merged = text ? addExactEntry(value, text).value : value;
+    const cleaned = dedupeList(splitLines(merged)).join('\n');
+    if (cleaned !== value) onChange(cleaned);
+    setDraft('');
+  }
+
+  return (
+    <div className="field chipEntryField">
+      <div className="fieldLabelRow">
+        <span id={labelId}>{label}</span>
+        {voice && <SpeakButton value={value} onChange={onChange} mode={voiceMode} />}
+      </div>
+      {items.length > 0 && (
+        <ul className="chipEntryList">
+          {items.map((item, i) => (
+            <li className="chipEntryRow" key={`${item}-${i}`}>
+              <button type="button" className="chipEntryText" onClick={() => { onChange(removeExactEntry(value, item)); setDraft(item); inputRef.current?.focus(); }} title="Tap to edit">
+                {item}
+              </button>
+              <button type="button" className="chipEntryRemove" onClick={() => onChange(removeExactEntry(value, item))} aria-label={`Remove ${item}`}>
+                ×
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <input
+        ref={inputRef}
+        type="text"
+        className="chipEntryInput"
+        value={draft}
+        onChange={e => setDraft(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onBlur={handleBlur}
+        placeholder={items.length ? 'Add another…' : placeholder}
+        aria-labelledby={labelId}
+      />
+    </div>
   );
 }
 

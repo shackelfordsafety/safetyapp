@@ -1402,6 +1402,56 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 }
 .suggestionsTrigger:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--line) 55%); }
 
+/* Chip-entry field (JSA Tasks/Hazards/Controls, see ChipEntryTA in main.jsx):
+   one committed entry per row, plus a single-line input to type the next
+   one. Rows sit above the input so newly typed entries appear right next to
+   where you're typing, not scrolled away at the top. */
+.chipEntryList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+.chipEntryRow {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.chipEntryText {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 14.5px;
+  line-height: 1.4;
+  padding: 9px 4px 9px 12px;
+  cursor: pointer;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.chipEntryText:hover { color: var(--accent); }
+.chipEntryRemove {
+  flex: 0 0 auto;
+  width: 40px;
+  min-height: 40px;
+  display: grid;
+  place-items: center;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+}
+.chipEntryRemove:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+
 /* Contextual Suggestions overlay: bottom sheet on portrait/phones, side
    drawer on iPad landscape widths. Always an overlay — never a permanent
    second layout column, on any orientation. */
@@ -2501,7 +2551,7 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
      eliminates that variable entirely rather than trying to tune it. */
   @page { size: letter portrait; margin: 0; }
   html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; color: #000 !important; }
-  .appShell, .toast, .layoutDebugPanel, .dialogOverlay, .suggestionsOverlay, .stickyActionBar, .printDebugPanel, .printMeasureRoot { display: none !important; }
+  .appShell, .toast, .layoutDebugPanel, .dialogOverlay, .suggestionsOverlay, .stickyActionBar, .printDebugPanel, .printMeasureRoot, .crewKiosk { display: none !important; }
   .printOnly { display: block !important; }
   table { width: 100%; border-collapse: collapse; }
 
@@ -3114,7 +3164,4 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   text-align: center;
   font-size: 13px;
   color: var(--text-on-navy-2, #B4C4D3);
-}
-@media print {
-  .crewKiosk { display: none !important; }
 }
