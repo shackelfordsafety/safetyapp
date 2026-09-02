@@ -2235,7 +2235,7 @@ function App() {
               clearDraft={clearDraft} saveDraft={saveDraft} markReady={markReady} exportPdf={exportPdf}
               legacyBrowserPrint={legacyBrowserPrint} pdfExportState={pdfExportState} isPdfStale={isPdfStale}
               shareGeneratedPdfClick={shareGeneratedPdfClick} downloadGeneratedPdfClick={downloadGeneratedPdfClick}
-              savedDraft={savedDraft} settings={settings} saveStatus={saveStatus}
+              savedDraft={savedDraft} settings={settings} saveStatus={saveStatus} showToast={showToast}
             />
           )}
           {tab === 'documents' && activeDoc === 'incident' && (
@@ -2696,9 +2696,38 @@ function StickyActionBar({ idx, steps, prev, next, exportPdf, pdfExportState, is
 }
 
 /* ── JSA Workflow ── */
-function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, allTemplates, templateId, setTemplateId, selectedTemplate, loadTemplate, saveName, setSaveName, saveTemplate, updateTemplate, updRow, removeRow, clearDraft, saveDraft, markReady, exportPdf, legacyBrowserPrint, pdfExportState, isPdfStale, shareGeneratedPdfClick, downloadGeneratedPdfClick, savedDraft, settings, saveStatus }) {
+function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, allTemplates, templateId, setTemplateId, selectedTemplate, loadTemplate, saveName, setSaveName, saveTemplate, updateTemplate, updRow, removeRow, clearDraft, saveDraft, markReady, exportPdf, legacyBrowserPrint, pdfExportState, isPdfStale, shareGeneratedPdfClick, downloadGeneratedPdfClick, savedDraft, settings, saveStatus, showToast }) {
   const plan = useJsaPagePlan(jsa);
   const fit = calcFitFromPlan(plan);
+  // One-time heads-up the moment content crosses over into needing a
+  // continuation page -- the preview panel's badge already shows this
+  // passively, but it's easy to miss while heads-down typing. Gated on
+  // plan.measured (the character-count heuristic used for instant feedback
+  // before the real measurement rig catches up, see useJsaPagePlan, can
+  // transiently overshoot mid-keystroke) AND debounced 700ms: confirmed by
+  // direct testing that even consecutive *measured* readings can still
+  // disagree render-to-render for a couple of passes while the rig settles
+  // after a real edit — reacting to the first "measured: true" render alone
+  // isn't enough to avoid a false alarm the very next render then quietly
+  // contradicts. The debounce (mirroring the existing 900ms autosave
+  // debounce elsewhere in this file) waits for the plan to actually stop
+  // changing before evaluating the crossing. The baseline ref starts unset
+  // (not "false") so the first settled reading — which could already show
+  // overflow when opening an existing long draft — establishes silently
+  // instead of firing; only a later crossing after that baseline fires, and
+  // it re-arms if content drops back under the line and crosses again.
+  const continuationBaselineRef = useRef(null);
+  useEffect(() => {
+    if (!plan.measured) return;
+    const needsContinuation = plan.continuationPages.length > 0;
+    const timer = setTimeout(() => {
+      if (continuationBaselineRef.current !== null && needsContinuation && !continuationBaselineRef.current) {
+        showToast?.('Heads up: this JSA will now print with a continuation page.');
+      }
+      continuationBaselineRef.current = needsContinuation;
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [plan.measured, plan.continuationPages.length, showToast]);
   const measurements = usePageMeasurements();
   const checks = useMemo(() => getReviewChecks(jsa, measurements), [jsa, measurements]);
   const idx = STEPS.findIndex(s => s.id === jsaStep);
@@ -4152,9 +4181,19 @@ function TA({ label, value, onChange, onBlur, rows = 4, placeholder = '', voice 
 // next one. `value`/`onChange` stay the same newline-joined string the rest
 // of the app (splitLines, voice dictation's list mode, PDF pipeline) already
 // reads and writes -- this only changes how a human types into it, not the
-// data shape. Fuzzy near-duplicate cleanup (dedupeList) runs from the live
-// `value` prop, never a closed-over copy, so it can't clobber an entry that
-// was just committed in the same event.
+// data shape. Only exact-duplicate text is ever rejected (addExactEntry, at
+// add time) -- no fuzzy near-duplicate pruning runs here. An earlier version
+// ran dedupeList's fuzzy isNearDuplicate check on every input blur, which
+// sounded harmless but wasn't: with the natural task->hazard->control->task
+// workflow this field is built for, the input blurs after nearly every
+// single row, not once per whole-field editing session the way the old
+// textarea's onBlur did -- so any two rows that legitimately share most of
+// their wording (extremely common in a JSA: "Wear required PPE" as a
+// control on several different tasks, near-identical hazard phrasing across
+// stations) got silently collapsed down to one, deleting real content the
+// user had just typed with no warning. Confirmed by direct testing
+// (2026-09-02): typing 12 clean rows in the normal task/hazard/control
+// order dropped 11 of them. Never resurrect a fuzzy prune on blur here.
 function ChipEntryTA({ label, value, onChange, placeholder = '', voice = false, voiceMode = 'narrative' }) {
   const [draft, setDraft] = useState('');
   const labelId = useId();
@@ -4184,9 +4223,7 @@ function ChipEntryTA({ label, value, onChange, placeholder = '', voice = false, 
 
   function handleBlur() {
     const text = draft.trim();
-    const merged = text ? addExactEntry(value, text).value : value;
-    const cleaned = dedupeList(splitLines(merged)).join('\n');
-    if (cleaned !== value) onChange(cleaned);
+    if (text) onChange(addExactEntry(value, text).value);
     setDraft('');
   }
 
