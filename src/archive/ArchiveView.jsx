@@ -164,8 +164,12 @@ export default function ArchiveView() {
 
   const [q, setQ] = useState('');
   const [type, setType] = useState('');
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
+  /* A labelled period dropdown rather than two <input type="date"> boxes.
+     On iPad Safari an empty date input still paints today's date, so a pair
+     of them reads as "a filter is already applied" when nothing is set, and
+     neither box can say which end of the range it is without a visible
+     label. A single named period is also what people actually search by. */
+  const [period, setPeriod] = useState('');
 
   const loadEverything = useCallback(async () => {
     setStatus('loading');
@@ -220,19 +224,29 @@ export default function ArchiveView() {
 
   const seesAll = profile?.role === 'safety' || profile?.role === 'hr';
 
+  const range = useMemo(() => {
+    const iso = d => d.toISOString().slice(0, 10);
+    const now = new Date();
+    if (period === '30d') { const d = new Date(now); d.setDate(d.getDate() - 30); return { from: iso(d), to: null }; }
+    if (period === '90d') { const d = new Date(now); d.setDate(d.getDate() - 90); return { from: iso(d), to: null }; }
+    if (period === 'year') return { from: `${now.getFullYear()}-01-01`, to: null };
+    if (period === 'lastyear') return { from: `${now.getFullYear() - 1}-01-01`, to: `${now.getFullYear() - 1}-12-31` };
+    return { from: null, to: null };
+  }, [period]);
+
   const visible = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return rows.filter(r => {
       if (type && r.doc_type !== type) return false;
-      if (from && (!r.doc_date || r.doc_date < from)) return false;
-      if (to && (!r.doc_date || r.doc_date > to)) return false;
+      if (range.from && (!r.doc_date || r.doc_date < range.from)) return false;
+      if (range.to && (!r.doc_date || r.doc_date > range.to)) return false;
       if (needle) {
         const hay = `${r.employee_name || ''} ${r.job_site || ''}`.toLowerCase();
         if (!hay.includes(needle)) return false;
       }
       return true;
     });
-  }, [rows, q, type, from, to]);
+  }, [rows, q, type, range]);
 
   if (status === 'checking' || status === 'loading') {
     return <div className="page"><p className="helperText">Loading the archive…</p></div>;
@@ -255,13 +269,19 @@ export default function ArchiveView() {
   return (
     <div className="page">
       <div className="arcTopBar">
-        <div className="arcWho">
-          <strong>{profile?.full_name || session?.email}</strong>
-          <span>{session?.email}</span>
+        <div className="arcHeading">
+          <h2>Document Archive</h2>
+          <p>Every safety and employee document filed from the app.</p>
         </div>
-        <span className="arcRole">{profile?.role || 'field'}</span>
-        <button type="button" className="btn ghost sm" style={{ marginLeft: 'auto' }} onClick={loadEverything}>Refresh</button>
-        <button type="button" className="btn ghost sm" onClick={signOut}>Sign out</button>
+        <div className="arcAccount">
+          <div className="arcWho">
+            <strong>{profile?.full_name || session?.email}</strong>
+            <span>{session?.email}</span>
+          </div>
+          <span className="arcRole">{profile?.role || 'field'}</span>
+          <button type="button" className="btn ghost sm" onClick={loadEverything}>Refresh</button>
+          <button type="button" className="btn ghost sm" onClick={signOut}>Sign out</button>
+        </div>
       </div>
 
       <div className="arcScope">
@@ -271,22 +291,44 @@ export default function ArchiveView() {
       </div>
 
       <div className="arcFilters">
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search employee or job site…" />
-        <select value={type} onChange={e => setType(e.target.value)}>
-          <option value="">All document types</option>
-          {Object.entries(DOC_LABELS).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
-        </select>
-        <input type="date" value={from} onChange={e => setFrom(e.target.value)} title="From date" />
-        <input type="date" value={to} onChange={e => setTo(e.target.value)} title="To date" />
+        <label className="arcField">
+          <span>Search</span>
+          <input value={q} onChange={e => setQ(e.target.value)} placeholder="Employee or job site" />
+        </label>
+        <label className="arcField">
+          <span>Document type</span>
+          <select value={type} onChange={e => setType(e.target.value)}>
+            <option value="">All types</option>
+            {Object.entries(DOC_LABELS).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+          </select>
+        </label>
+        <label className="arcField">
+          <span>Time period</span>
+          <select value={period} onChange={e => setPeriod(e.target.value)}>
+            <option value="">Any time</option>
+            <option value="30d">Last 30 days</option>
+            <option value="90d">Last 3 months</option>
+            <option value="year">This year</option>
+            <option value="lastyear">Last year</option>
+          </select>
+        </label>
       </div>
 
       <div className="arcCount">{visible.length} document{visible.length === 1 ? '' : 's'}</div>
 
       {visible.length === 0 ? (
         <div className="arcEmpty">
-          {rows.length === 0
-            ? 'Nothing filed yet. Documents show up here as they are submitted.'
-            : 'Nothing matches those filters.'}
+          {rows.length === 0 ? (
+            <>
+              <strong>Nothing filed yet</strong>
+              <span>Documents land here as they are submitted from the field. Once they do, you can look anybody up by name.</span>
+            </>
+          ) : (
+            <>
+              <strong>Nothing matches</strong>
+              <span>No documents match what you searched for. Try clearing the filters.</span>
+            </>
+          )}
         </div>
       ) : (
         <div className="arcTableWrap">
