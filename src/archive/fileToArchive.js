@@ -1,0 +1,122 @@
+import { db } from './archiveClient';
+
+/* ── Filing a finished document to the company archive ───────────────────
+   Everything here runs only when somebody actually taps "File to archive".
+   This module is always reached through a dynamic import() from the
+   workflow, so neither it nor the Supabase library it pulls in ever reaches
+   the main bundle -- filling out a document stays login-free and offline.
+
+   Nothing in here can lose work: the document is already saved on the
+   device before any of this runs, and a failed upload leaves that untouched.
+   The user simply tries again when they have signal.
+
+   IMPORTANT -- why this is a single insert rather than insert-then-update:
+   the archive has no UPDATE policy at all (that absence is what makes a
+   filed document permanent), so a row cannot be written first and have its
+   pdf_path filled in afterwards. Instead the row id is generated here, the
+   PDF is uploaded to <user id>/<row id>.pdf, and only then is the row
+   inserted with pdf_path already set. Upload-then-insert is the deliberate
+   order: a failed insert leaves an unreferenced file, which is harmless,
+   whereas insert-then-failed-upload would leave a record pointing at a PDF
+   that does not exist. */
+
+export class NotSignedInError extends Error {
+  constructor() {
+    super('Sign in to file this document to the archive.');
+    this.name = 'NotSignedInError';
+  }
+}
+
+/* Which fields make each document findable later. HR looks things up by
+   person; the field side looks things up by job. Field names are the real
+   ones from each model file -- see emptyDisciplinary(), emptySeparation(),
+   emptyMedicalEvent(), emptyUncontrolledEvent(), emptyIncident(), emptyJsa(). */
+const SUMMARY = {
+  jsa: m => ({
+    employee_name: null,
+    job_site: m.jobSite || m.location || null,
+    doc_date: m.date || null,
+  }),
+  incident: m => ({
+    employee_name: m.injuredEmployeeName || m.injuredName || m.employeeName || null,
+    job_site: m.workplaceLocation || null,
+    doc_date: m.incidentDate || null,
+  }),
+  disciplinary: m => ({
+    employee_name: m.employeeName || null,
+    job_site: m.projectLocation || null,
+    doc_date: m.noticeDate || null,
+  }),
+  separation: m => ({
+    employee_name: m.employeeName || null,
+    job_site: m.projectLocation || null,
+    doc_date: m.lastDayWorked || null,
+  }),
+  medicalEvent: m => ({
+    employee_name: m.employeeName || null,
+    job_site: m.projectLocation || null,
+    doc_date: m.eventDate || null,
+  }),
+  uncontrolledEvent: m => ({
+    employee_name: null,
+    job_site: m.workplaceLocation || null,
+    doc_date: m.eventDate || null,
+  }),
+};
+
+function blank(v) {
+  return v === undefined || v === null || String(v).trim() === '' ? null : String(v).trim();
+}
+
+export async function getArchiveUser() {
+  try {
+    const { data } = await db.auth.getUser();
+    return data?.user || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function signInToArchive(email, password) {
+  const { error } = await db.auth.signInWithPassword({ email: email.trim(), password });
+  if (error) throw new Error(error.message);
+  return getArchiveUser();
+}
+
+/* Resolves to { id } on success. Throws NotSignedInError if there is no
+   session, or a plain Error with a readable message for anything else --
+   the caller shows it and offers a retry. */
+export async function fileDocument({ docType, model, pdfBlob }) {
+  const user = await getArchiveUser();
+  if (!user) throw new NotSignedInError();
+
+  const summarize = SUMMARY[docType];
+  if (!summarize) throw new Error(`Unknown document type "${docType}".`);
+  const summary = summarize(model || {});
+
+  const id = (crypto.randomUUID && crypto.randomUUID())
+    || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const path = `${user.id}/${id}.pdf`;
+
+  if (pdfBlob) {
+    const { error: uploadError } = await db.storage
+      .from('documents')
+      .upload(path, pdfBlob, { contentType: 'application/pdf', upsert: false });
+    if (uploadError) throw new Error(`Could not upload the PDF: ${uploadError.message}`);
+  }
+
+  const { error: insertError } = await db.from('documents').insert({
+    id,
+    doc_type: docType,
+    submitted_by: user.id,
+    employee_name: blank(summary.employee_name),
+    job_site: blank(summary.job_site),
+    doc_date: blank(summary.doc_date),
+    data: model,
+    client_doc_id: model?.id || null,
+    pdf_path: pdfBlob ? path : null,
+  });
+  if (insertError) throw new Error(`Could not file the document: ${insertError.message}`);
+
+  return { id };
+}

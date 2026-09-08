@@ -2,6 +2,7 @@ import { useId, useRef, useLayoutEffect, useEffect, useState } from 'react';
 import SignaturePad from '../incident/SignaturePad';
 import { useLocked } from './lockedContext';
 import SpeakButton from '../voice/SpeakButton';
+import FileToArchiveButton from '../archive/FileToArchiveButton';
 
 /* ── Shared field-section/builder primitives for the four new documents ──
    Modeled directly on the local presentational primitives IncidentWorkflow.jsx
@@ -343,6 +344,12 @@ export function ReviewExportPanel({
   onStartNew, startNewLabel = 'Start a new report',
   onExportDraft,
   onBack, onJumpCheck,
+  /* Optional. When a document passes { docType, model }, a "File to the
+     archive" action appears once a PDF has been generated -- the PDF is the
+     record that gets stored, so there is nothing to file before then.
+     Documents that don't pass it simply don't show the action, which is how
+     this gets adopted one form at a time. */
+  archiveFiling,
 }) {
   const [confirmingFinish, setConfirmingFinish] = useState(false);
   const isGenerating = pdfExportState?.phase === 'generating';
@@ -424,6 +431,13 @@ export function ReviewExportPanel({
               <button type="button" className="btn primary lg" onClick={onDownload}>{downloadLabel}</button>
             </div>
             <p className="helperText pdfReadyHelper">Download the document, then open it to print.</p>
+            {archiveFiling && (
+              <FileToArchiveButton
+                docType={archiveFiling.docType}
+                model={archiveFiling.model}
+                pdfBlob={pdfExportState.blob}
+              />
+            )}
           </div>
         )}
       </div>

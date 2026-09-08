@@ -1,0 +1,39 @@
+/* Styles for FileToArchiveButton only. Kept in its own file, imported by
+   that component, so it joins the ordinary app stylesheet -- the button
+   renders inside normal document workflows, unlike archive.css which ships
+   in the lazily-loaded Archive chunk. */
+
+.archiveFileRow { display: grid; gap: 8px; }
+.archiveFileRow .btn { width: 100%; }
+
+.archiveError {
+  margin: 0;
+  background: var(--danger-tint, #FBE8EB);
+  border: 1px solid var(--danger-border, #E8A9B4);
+  color: var(--danger, #8F1229);
+  border-radius: 7px;
+  padding: 9px 12px;
+  font-size: 15px;
+}
+
+.archiveFiled {
+  display: grid; gap: 4px;
+  background: var(--good-tint); border: 2px solid var(--good-border);
+  border-radius: 8px; padding: 14px 16px;
+}
+.archiveFiled strong {
+  font-family: var(--font-condensed); font-size: 21px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .015em; color: var(--good);
+}
+.archiveFiled span { font-size: 15px; color: var(--text-2); }
+
+.archiveSignIn {
+  display: grid; gap: 12px;
+  background: var(--surface); border: 2px solid var(--border-obj);
+  border-radius: 8px; padding: 16px;
+}
+.archiveSignIn > strong {
+  font-family: var(--font-condensed); font-size: 21px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .015em;
+}
+.archiveSignIn .btn { width: 100%; }

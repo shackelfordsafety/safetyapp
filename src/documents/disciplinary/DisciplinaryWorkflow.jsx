@@ -201,6 +201,7 @@ export default function DisciplinaryWorkflow({
                 isPdfStale={isPdfStale}
                 onGeneratePdf={onGeneratePdf}
                 onDownload={onDownload}
+                archiveFiling={{ docType: 'disciplinary', model }}
                 onStartNew={onStartNew}
                 startNewLabel="Start a new disciplinary notice"
                 onExportDraft={() => downloadDraftFile('disciplinary', model, buildDraftFilename(model.employeeName, 'Disciplinary Notice', model.noticeDate))}
