@@ -12,6 +12,7 @@ import { buildIncidentPagePlan } from './incidentPdfGenerate';
 import { LockedContext, useLocked } from '../documents/lockedContext';
 import { ConfirmDialog, StepNav } from '../documents/FormPrimitives';
 import SpeakButton from '../voice/SpeakButton';
+import FileToArchiveButton from '../archive/FileToArchiveButton';
 import { downloadDraftFile, buildDraftFilename } from '../shared/draftTransfer';
 
 /* Touch/width layout detection, duplicated from main.jsx's private
@@ -543,6 +544,7 @@ function StepReview({ incident, prev, pdfExportState, isPdfStale, onGeneratePdf,
               <button className="btn primary lg" onClick={onDownload}>{c.download}</button>
             </div>
             <p className="helperText pdfReadyHelper">Download the document, then open it to print.</p>
+            <FileToArchiveButton docType="incident" model={incident} pdfBlob={pdfExportState.blob} />
           </div>
         )}
       </div>

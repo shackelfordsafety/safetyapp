@@ -240,6 +240,7 @@ export default function MedicalEventWorkflow({
                 isPdfStale={isPdfStale}
                 onGeneratePdf={onGeneratePdf}
                 onDownload={onDownload}
+                archiveFiling={{ docType: 'medicalEvent', model }}
                 onStartNew={onStartNew}
                 startNewLabel="Start a new medical event report"
                 onExportDraft={() => downloadDraftFile('medicalEvent', model, buildDraftFilename(model.employeeName, 'Medical Event', model.eventDate))}

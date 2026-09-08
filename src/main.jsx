@@ -16,6 +16,7 @@ import IncidentWorkflow from './incident/IncidentWorkflow';
 import { IncidentPdfExportRoot, generateIncidentPdf, incidentPdfFingerprint, buildIncidentExportName, getIncidentPdfOverflowFields } from './incident/incidentPdfGenerate';
 import { DOCUMENT_REGISTRY, DOCUMENT_CATEGORIES } from './documents/registry';
 import { StepNav } from './documents/FormPrimitives';
+import FileToArchiveButton from './archive/FileToArchiveButton';
 import { DOCUMENT_STORAGE_KEYS } from './documents/storage';
 import { useDraftDocument, saveStatusLabel } from './documents/useDraftDocument';
 import { usePdfExport } from './documents/usePdfExport';
@@ -3514,6 +3515,7 @@ function StepExport({ jsa, saveName, setSaveName, saveTemplate, updateTemplate, 
                 <button className="btn primary lg" onClick={downloadGeneratedPdfClick}>Download Document</button>
               </div>
               <p className="helperText pdfReadyHelper">Download the document, then open it to print. The app does not store final documents.</p>
+              <FileToArchiveButton docType="jsa" model={jsa} pdfBlob={pdfExportState.blob} />
             </div>
           )}
 

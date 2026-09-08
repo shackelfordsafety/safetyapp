@@ -218,6 +218,7 @@ export default function UncontrolledEventWorkflow({
                 isPdfStale={isPdfStale}
                 onGeneratePdf={onGeneratePdf}
                 onDownload={onDownload}
+                archiveFiling={{ docType: 'uncontrolledEvent', model }}
                 onStartNew={onStartNew}
                 startNewLabel="Start a new uncontrolled event report"
                 onExportDraft={() => downloadDraftFile('uncontrolledEvent', model, buildDraftFilename(model.workplaceLocation, 'Uncontrolled Event', model.eventDate))}

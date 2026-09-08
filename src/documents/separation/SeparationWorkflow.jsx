@@ -255,6 +255,7 @@ export default function SeparationWorkflow({
                 isPdfStale={isPdfStale}
                 onGeneratePdf={onGeneratePdf}
                 onDownload={onDownload}
+                archiveFiling={{ docType: 'separation', model }}
                 onStartNew={onStartNew}
                 startNewLabel="Start a new separation record"
                 onExportDraft={() => downloadDraftFile('separation', model, buildDraftFilename(model.employeeName, 'Separation', model.effectiveSeparationDate))}

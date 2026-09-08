@@ -38,13 +38,18 @@ const SUMMARY = {
     doc_date: m.date || null,
   }),
   incident: m => ({
-    employee_name: m.injuredEmployeeName || m.injuredName || m.employeeName || null,
+    // injuredPartyName, not employeeName -- an incident's subject isn't
+    // always an employee, and the model has never called it that.
+    employee_name: m.injuredPartyName || null,
     job_site: m.workplaceLocation || null,
     doc_date: m.incidentDate || null,
   }),
   disciplinary: m => ({
     employee_name: m.employeeName || null,
-    job_site: m.projectLocation || null,
+    // The disciplinary notice genuinely has no location field -- employee,
+    // supervisor, position and date are all it collects. Left null rather
+    // than invented; these get found by name, which is what HR searches.
+    job_site: null,
     doc_date: m.noticeDate || null,
   }),
   separation: m => ({
