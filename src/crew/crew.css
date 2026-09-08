@@ -1,0 +1,157 @@
+/* ── Crew sign-in ──
+   Built for the actual conditions: a gravel lot at 6:30am, 50 guys, sun on
+   the screen, cracked phones, gloves half off. So: one column, big targets
+   (56px+ minimum, well past the 44px guideline), heavy weights, high
+   contrast, and no interaction that isn't a tap or a scrawl.
+
+   Deliberately does NOT use the app's C2 tokens. This page renders instead
+   of the application and loads none of it, so it carries its own handful of
+   colors rather than pulling in a 2,700-line stylesheet a crew member has
+   no other use for. */
+
+.crewWrap {
+  min-height: 100vh;
+  background: #0B1D2E;
+  padding: 20px 16px 48px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: #0B1D2E;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+.crewCard, .crewDone {
+  width: 100%;
+  max-width: 560px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 24px 20px 28px;
+  display: grid;
+  gap: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+}
+
+.crewEyebrow {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: #C51F3A;
+}
+
+.crewWrap h1 {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+.crewLead { margin: 0; font-size: 18px; color: #41505E; }
+.crewFine { margin: 0; font-size: 15px; color: #64717D; }
+
+/* One JSA on the board. Big enough to hit without looking carefully. */
+.crewPick {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  width: 100%;
+  min-height: 76px;
+  padding: 16px 18px;
+  background: #F4F7FA;
+  border: 2px solid #C9D4DE;
+  border-radius: 11px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.crewPick:active { background: #E4ECF3; border-color: #0B1D2E; }
+.crewPick strong { font-size: 20px; line-height: 1.2; }
+.crewPick span { font-size: 15px; color: #56646F; }
+
+.crewConfirm {
+  display: grid;
+  gap: 6px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid #E4EAF0;
+}
+.crewConfirm p { margin: 0; font-size: 17px; color: #41505E; }
+
+.crewRevised, .crewLate {
+  margin: 6px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.crewRevised { background: #FFF3D6; border: 1px solid #E8C97A; color: #6B4E05; }
+.crewLate { background: #FBE8EB; border: 1px solid #E8A9B4; color: #8F1229; }
+
+.crewField { display: grid; gap: 7px; }
+.crewField span { font-size: 15px; font-weight: 700; }
+.crewField input {
+  width: 100%;
+  min-height: 60px;
+  padding: 12px 14px;
+  font-size: 20px;
+  font-family: inherit;
+  color: inherit;
+  background: #fff;
+  border: 2px solid #9FB0BF;
+  border-radius: 9px;
+  outline: none;
+}
+.crewField input:focus { border-color: #0B1D2E; }
+
+.crewBtn {
+  width: 100%;
+  min-height: 60px;
+  padding: 14px 18px;
+  font-size: 19px;
+  font-weight: 700;
+  font-family: inherit;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+.crewBtn.primary { background: #C51F3A; color: #fff; }
+.crewBtn.primary:disabled { background: #DFA3AF; cursor: default; }
+.crewBtn.ghost { background: #fff; color: #0B1D2E; border-color: #C9D4DE; }
+
+.crewError {
+  margin: 0;
+  padding: 12px 14px;
+  background: #FBE8EB;
+  border: 2px solid #E8A9B4;
+  border-radius: 9px;
+  color: #8F1229;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.crewEmpty {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  text-align: center;
+  padding: 26px 18px;
+  background: #F4F7FA;
+  border: 2px dashed #C9D4DE;
+  border-radius: 11px;
+}
+.crewEmpty strong { font-size: 20px; }
+.crewEmpty span { font-size: 16px; color: #56646F; }
+
+.crewDone { justify-items: center; text-align: center; }
+.crewCheck {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: #1C7A43;
+  color: #fff;
+  font-size: 42px;
+  line-height: 76px;
+  font-weight: 700;
+}
+.crewDone p { margin: 0; font-size: 18px; }

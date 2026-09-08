@@ -17,6 +17,7 @@ import { IncidentPdfExportRoot, generateIncidentPdf, incidentPdfFingerprint, bui
 import { DOCUMENT_REGISTRY, DOCUMENT_CATEGORIES } from './documents/registry';
 import { StepNav } from './documents/FormPrimitives';
 import FileToArchiveButton from './archive/FileToArchiveButton';
+import PublishToBoardButton from './crew/PublishToBoardButton';
 import { DOCUMENT_STORAGE_KEYS } from './documents/storage';
 import { useDraftDocument, saveStatusLabel } from './documents/useDraftDocument';
 import { usePdfExport } from './documents/usePdfExport';
@@ -3519,6 +3520,13 @@ function StepExport({ jsa, saveName, setSaveName, saveTemplate, updateTemplate, 
             </div>
           )}
 
+          {/* Publishing comes BEFORE the PDF, not after: the crew signs on
+              their phones and only then is there a signed document worth
+              generating. So this deliberately sits outside the "document
+              ready" panel -- gating it behind Create Document would put
+              the two steps in the wrong order. */}
+          <PublishToBoardButton jsa={jsa} />
+
           <div className="reviewSecondaryActions">
             <button type="button" className="btn ghost sm" onClick={() => setShowDocOptions(true)} disabled={isGenerating}>Document Options</button>
             <span className="reviewAutosaveNote">Drafts autosave automatically.</span>
@@ -4962,4 +4970,39 @@ function AttachedSignIn({ jsa, pages, pageOffset, totalPages, getPageRef, indexO
   );
 }
 
-createRoot(document.getElementById('root')).render(<App />);
+/* ── Crew sign-in is a different destination, not a screen in the app ────
+   A man scanning the QR on the trailer door is not a user of this
+   application -- he has no account, no draft, no reason to download a JSA
+   builder. So #/sign/<board owner> renders the crew page INSTEAD of App,
+   lazily, and the app never mounts at all.
+
+   Deliberately hash-based: GitHub Pages serves one file and cannot route
+   real paths, and this app has no router. Nothing else here reads the
+   hash, so this cannot affect any existing screen. */
+function crewBoardOwnerFromHash() {
+  const m = /^#\/sign\/([A-Za-z0-9-]+)$/.exec(window.location.hash || '');
+  return m ? m[1] : null;
+}
+
+const CrewSignIn = lazy(() => import('./crew/CrewSignIn'));
+
+function Root() {
+  const [boardOwnerId, setBoardOwnerId] = useState(crewBoardOwnerFromHash);
+
+  useEffect(() => {
+    const onHash = () => setBoardOwnerId(crewBoardOwnerFromHash());
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  if (boardOwnerId) {
+    return (
+      <Suspense fallback={null}>
+        <CrewSignIn boardOwnerId={boardOwnerId} />
+      </Suspense>
+    );
+  }
+  return <App />;
+}
+
+createRoot(document.getElementById('root')).render(<Root />);
