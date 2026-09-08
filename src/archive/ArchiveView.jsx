@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { db } from './archiveClient';
+import UploadDocument from './UploadDocument';
 import './archive.css';
 
 /* ── Company document archive (office side) ──────────────────────────────
@@ -22,11 +23,6 @@ import './archive.css';
    The key below is the *publishable* key, which is designed to ship in
    browser code -- it identifies the project and grants nothing on its own.
    The service key is not used anywhere in this repo. */
-
-const SUPABASE_URL = 'https://adqhuueugwbbudekpkiw.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_E3BmuEKyuqoJFT2z9enHLA_fABj2RB_';
-
-const db = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
 const DOC_LABELS = {
   jsa: 'JSA',
@@ -103,11 +99,38 @@ function SignIn({ onSignedIn }) {
 }
 
 function DocumentDetail({ row, onClose }) {
-  const fields = Object.entries(row.data || {}).filter(([, v]) => {
+  const uploaded = row.data?.source === 'uploaded';
+  const fields = Object.entries(row.data || {}).filter(([k, v]) => {
     if (v === null || v === undefined || v === '') return false;
     if (Array.isArray(v) && v.length === 0) return false;
+    // Bookkeeping about the upload itself, not content of the document.
+    if (uploaded && (k === 'source' || k === 'uploadedAt')) return false;
     return true;
   });
+
+  const [fileBusy, setFileBusy] = useState(false);
+  const [fileErr, setFileErr] = useState('');
+
+  /* The stored file is the actual record -- for a scanned write-up it is
+     the ONLY record. The bucket is private, so it can't just be linked;
+     ask for a short-lived signed URL and open that. Opening rather than
+     force-downloading means a PDF or a photo previews in the browser,
+     which is what somebody looking a document up actually wants. */
+  async function openFile() {
+    setFileBusy(true);
+    setFileErr('');
+    try {
+      const { data, error } = await db.storage
+        .from('documents')
+        .createSignedUrl(row.pdf_path, 120);
+      if (error) throw new Error(error.message);
+      window.open(data.signedUrl, '_blank', 'noopener');
+    } catch (ex) {
+      setFileErr(ex?.message || 'Could not open the file. Check your connection and try again.');
+    } finally {
+      setFileBusy(false);
+    }
+  }
 
   function download() {
     const blob = new Blob([JSON.stringify(row, null, 2)], { type: 'application/json' });
@@ -136,7 +159,9 @@ function DocumentDetail({ row, onClose }) {
           <div><span className="k">Filed</span><span className="v">{fmtWhen(row.submitted_at)}</span></div>
         </div>
 
-        <div className="arcSectionTitle">The document as it was filed</div>
+        <div className="arcSectionTitle">
+          {uploaded ? 'About this file' : 'The document as it was filed'}
+        </div>
         <div className="arcKv">
           {fields.length
             ? fields.map(([k, v]) => (
@@ -144,10 +169,22 @@ function DocumentDetail({ row, onClose }) {
             ))
             : <div><span className="v">No fields recorded.</span></div>}
         </div>
+        {uploaded && (
+          <p className="arcHint" style={{ marginTop: 8 }}>
+            This one was added from existing paperwork, so the file itself is the record.
+          </p>
+        )}
+
+        {fileErr && <div className="arcErr" style={{ marginTop: 10 }}>{fileErr}</div>}
 
         <div className="dialogActions">
-          <button type="button" className="btn ghost" onClick={download}>Download a copy</button>
-          <button type="button" className="btn primary" onClick={onClose}>Close</button>
+          {row.pdf_path && (
+            <button type="button" className="btn primary" onClick={openFile} disabled={fileBusy}>
+              {fileBusy ? 'Opening…' : 'Open the document'}
+            </button>
+          )}
+          <button type="button" className="btn ghost" onClick={download}>Download the details</button>
+          <button type="button" className="btn ghost" onClick={onClose}>Close</button>
         </div>
       </div>
     </div>
@@ -161,6 +198,7 @@ export default function ArchiveView() {
   const [status, setStatus] = useState('checking'); // checking | signedout | loading | ready | error
   const [error, setError] = useState('');
   const [selected, setSelected] = useState(null);
+  const [mode, setMode] = useState('browse'); // browse | upload
 
   const [q, setQ] = useState('');
   const [type, setType] = useState('');
@@ -186,7 +224,7 @@ export default function ArchiveView() {
 
       const { data, error: docErr } = await db
         .from('documents')
-        .select('id, doc_type, employee_name, job_site, doc_date, submitted_at, data')
+        .select('id, doc_type, employee_name, job_site, doc_date, submitted_at, data, pdf_path')
         .order('submitted_at', { ascending: false })
         .limit(500);
       if (docErr) throw docErr;
@@ -266,19 +304,32 @@ export default function ArchiveView() {
     );
   }
 
+  if (mode === 'upload') {
+    return (
+      <div className="page">
+        <UploadDocument
+          onDone={async () => { setMode('browse'); await loadEverything(); }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="page">
       <div className="arcTopBar">
         <div className="arcHeading">
           <h2>Document Archive</h2>
-          <p>Every safety and employee document filed from the app.</p>
+          <p>Every safety and employee document, filed from the app or added from older paperwork.</p>
         </div>
         <div className="arcAccount">
           <div className="arcWho">
             <strong>{profile?.full_name || session?.email}</strong>
-            <span>{session?.email}</span>
+            {/* Only worth a second line when it says something the first
+                one didn't -- the name falls back to the email itself. */}
+            {profile?.full_name ? <span>{session?.email}</span> : null}
           </div>
           <span className="arcRole">{profile?.role || 'field'}</span>
+          <button type="button" className="btn ghost sm" onClick={() => setMode('upload')}>Add an old document</button>
           <button type="button" className="btn ghost sm" onClick={loadEverything}>Refresh</button>
           <button type="button" className="btn ghost sm" onClick={signOut}>Sign out</button>
         </div>
@@ -321,7 +372,7 @@ export default function ArchiveView() {
           {rows.length === 0 ? (
             <>
               <strong>Nothing filed yet</strong>
-              <span>Documents land here as they are submitted from the field. Once they do, you can look anybody up by name.</span>
+              <span>Documents land here as they are submitted from the field. Older paperwork can go in too — use “Add an old document” up top.</span>
             </>
           ) : (
             <>
@@ -341,7 +392,10 @@ export default function ArchiveView() {
             <tbody>
               {visible.map(r => (
                 <tr key={r.id} onClick={() => setSelected(r)}>
-                  <td><span className="arcType">{DOC_LABELS[r.doc_type] || r.doc_type}</span></td>
+                  <td>
+                    <span className="arcType">{DOC_LABELS[r.doc_type] || r.doc_type}</span>
+                    {r.data?.source === 'uploaded' && <span className="arcUploaded">Uploaded</span>}
+                  </td>
                   <td>{r.employee_name || '—'}</td>
                   <td>{r.job_site || '—'}</td>
                   <td>{fmtDate(r.doc_date)}</td>

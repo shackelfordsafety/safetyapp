@@ -120,3 +120,52 @@ export async function fileDocument({ docType, model, pdfBlob }) {
 
   return { id };
 }
+
+/* ── Filing a document that already exists as a file ─────────────────────
+   For the years of write-ups, separations and incident reports that were
+   finished long before this app existed and are sitting on somebody's hard
+   drive. Same destination and the same rules as fileDocument() above -- the
+   only difference is that there is no structured data to store, so the file
+   itself is the whole record and a person supplies the few details that make
+   it findable.
+
+   Marked with source: 'uploaded' in `data` so the archive can be honest
+   about where a record came from. A generated document and a scanned one
+   are not the same kind of evidence, and somebody reading this in two years
+   should be able to tell them apart. */
+export async function uploadExistingDocument({ docType, file, employeeName, jobSite, docDate, note }) {
+  const user = await getArchiveUser();
+  if (!user) throw new NotSignedInError();
+  if (!file) throw new Error('Choose a file first.');
+  if (!SUMMARY[docType]) throw new Error('Pick which kind of document this is.');
+
+  const id = (crypto.randomUUID && crypto.randomUUID())
+    || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const dot = file.name.lastIndexOf('.');
+  const ext = dot > 0 ? file.name.slice(dot + 1).toLowerCase().replace(/[^a-z0-9]/g, '') : 'pdf';
+  const path = `${user.id}/${id}.${ext || 'pdf'}`;
+
+  const { error: uploadError } = await db.storage
+    .from('documents')
+    .upload(path, file, { contentType: file.type || 'application/pdf', upsert: false });
+  if (uploadError) throw new Error(`Could not upload the file: ${uploadError.message}`);
+
+  const { error: insertError } = await db.from('documents').insert({
+    id,
+    doc_type: docType,
+    submitted_by: user.id,
+    employee_name: blank(employeeName),
+    job_site: blank(jobSite),
+    doc_date: blank(docDate),
+    data: {
+      source: 'uploaded',
+      originalFilename: file.name,
+      uploadedAt: new Date().toISOString(),
+      note: blank(note) || undefined,
+    },
+    pdf_path: path,
+  });
+  if (insertError) throw new Error(`Could not file the document: ${insertError.message}`);
+
+  return { id };
+}
