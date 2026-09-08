@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createPortal } from 'react-dom';
 import html2canvas from 'html2canvas';
@@ -49,6 +49,14 @@ import {
   separationStepProgress, separationNextStepHint,
 } from './documents/separation/separationModel';
 import SeparationWorkflow from './documents/separation/SeparationWorkflow';
+
+/* The company document archive is the only part of this app that needs a
+   login and a network. Loaded lazily on purpose: a superintendent filling
+   out a JSA never downloads it, never executes it, and cannot be affected
+   if it fails -- which matters because this app has no error boundaries and
+   the field path has to survive a bad morning. Vite splits this into its
+   own chunk (~62 kB gzip); the main bundle grows by well under 1 kB. */
+const ArchiveView = lazy(() => import('./archive/ArchiveView'));
 
 const DOCUMENT_CATEGORY_ORDER = ['fieldSafety', 'employeeAction'];
 
@@ -947,6 +955,7 @@ function IconDocuments(props) { return <svg viewBox="0 0 24 24" fill="none" stro
 function IconDrafts(props) { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M4 20.5 4.7 17l10-10 3 3-10 10z" /><path d="M13.5 8.2l3 3" /></svg>; }
 function IconTemplates(props) { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="4" y="4" width="7" height="7" rx="1" /><rect x="13" y="4" width="7" height="7" rx="1" /><rect x="4" y="13" width="7" height="7" rx="1" /><rect x="13" y="13" width="7" height="7" rx="1" /></svg>; }
 function IconSettings(props) { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="3" /><path d="M12 3v2.4M12 18.6V21M21 12h-2.4M5.4 12H3M18 6l-1.7 1.7M7.7 16.3 6 18M18 18l-1.7-1.7M7.7 7.7 6 6" /></svg>; }
+function IconArchive(props) { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="3.5" y="4.5" width="17" height="4" rx="1" /><path d="M5 8.5v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-10" /><path d="M10 12.5h4" /></svg>; }
 function IconChevronRight(props) { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M9 5l7 7-7 7" /></svg>; }
 function IconSearch(props) { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" {...props}><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>; }
 /* One mark per document type, for Home's start grid — see DOC_ICONS. */
@@ -2197,6 +2206,9 @@ function App() {
             <button className={`sidebarNavItem${tab === 'templates' ? ' active' : ''}`} onClick={() => setTab('templates')}>
               <IconTemplates className="sidebarNavIcon" /><span className="sidebarNavLabel">Templates</span>
             </button>
+            <button className={`sidebarNavItem${tab === 'archive' ? ' active' : ''}`} onClick={() => setTab('archive')}>
+              <IconArchive className="sidebarNavIcon" /><span className="sidebarNavLabel">Archive</span>
+            </button>
           </nav>
 
           <div className="sidebarBottom">
@@ -2289,6 +2301,11 @@ function App() {
           )}
           {tab === 'drafts' && <DraftsView entries={draftEntries} goDocs={goDocs} />}
           {tab === 'templates' && <TemplatesView allTemplates={allTemplates} customTemplates={customTemplates} loadTemplate={requestLoadTemplate} deleteTemplate={deleteTemplate} startBlank={requestStartBlank} shareTemplate={shareTemplate} importTemplateFile={importTemplateFile} />}
+          {tab === 'archive' && (
+            <Suspense fallback={<p className="helperText">Loading the archive…</p>}>
+              <ArchiveView />
+            </Suspense>
+          )}
           {tab === 'settings' && <SettingsView settings={settings} setSettings={setSettings} />}
         </main>
       </div>
@@ -2339,6 +2356,9 @@ function MobileBottomNav({ tab, goHome, goDocs, setTab }) {
       </button>
       <button className={`mobileNavItem${tab === 'drafts' ? ' active' : ''}`} onClick={() => setTab('drafts')}>
         <IconDrafts className="mobileNavIcon" /><span>Drafts</span>
+      </button>
+      <button className={`mobileNavItem${tab === 'archive' ? ' active' : ''}`} onClick={() => setTab('archive')}>
+        <IconArchive className="mobileNavIcon" /><span>Archive</span>
       </button>
       <button className={`mobileNavItem${tab === 'templates' ? ' active' : ''}`} onClick={() => setTab('templates')}>
         <IconTemplates className="mobileNavIcon" /><span>Templates</span>
