@@ -18,6 +18,7 @@ import { DOCUMENT_REGISTRY, DOCUMENT_CATEGORIES } from './documents/registry';
 import { StepNav } from './documents/FormPrimitives';
 import FileToArchiveButton from './archive/FileToArchiveButton';
 import PublishToBoardButton from './crew/PublishToBoardButton';
+import AccountButton from './account/AccountButton';
 import { DOCUMENT_STORAGE_KEYS } from './documents/storage';
 import { useDraftDocument, saveStatusLabel } from './documents/useDraftDocument';
 import { usePdfExport } from './documents/usePdfExport';
@@ -2188,6 +2189,7 @@ function App() {
 
   return (
     <>
+      <AccountButton />
       <div className="appShell">
         <aside className={`sidebar${isDocFlow && activeDoc !== 'jsa-start' ? ' builderActive' : ''}`}>
           <div className="sidebarBrand">
