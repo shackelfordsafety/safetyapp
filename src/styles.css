@@ -2375,6 +2375,41 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 .facsimileMultiSignatureRow { display: flex; gap: 10px; }
 .facsimileMultiSignatureRow .facsimileSignatureRow { flex: 1; }
 
+/* ── iOS/Safari automatic text inflation: off for printed output only ──
+   (2026-09-08, from a real iPhone print of a live JSA.)
+
+   Mobile Safari's text autosizer ("font boosting") enlarges small text that
+   sits in a wide block, so it stays readable on a phone. It deliberately
+   skips narrow, constrained content like table cells. The JSA main page has
+   exactly one wide continuous prose block -- the Subcontractors/Employee(s)
+   Acknowledgement -- so on a physical iPhone print that paragraph rendered
+   at roughly double size while every table cell on the same sheet stayed
+   correct.
+
+   The CSS was never wrong: .ackBlock computes to 8.2px in all three render
+   roots (.documentPage / .printMeasureRoot / .pdfExportRoot) in both screen
+   and print media, and both PDF paths -- the html2canvas export and
+   Chromium's real print engine -- wrap that sentence to 3 lines. The
+   physical iPhone print wrapped it to 6, i.e. ~16px: the un-adjusted
+   default, which is what boosting falls back to.
+
+   Scoped to the print/document roots on purpose, NOT html/body. The app's
+   own on-screen UI is left on iOS's default behavior; globally disabling
+   boosting could shrink app text on phones, and mobile usability is a
+   never-break item. The property inherits, so listing the roots covers
+   every descendant (ackBlock, signInAck, attachedSignInNotice, energyBox,
+   task tables) in both media without a per-element sweep.
+
+   NOTE: headless Chromium -- which every verify-* script in tools/testing
+   uses -- does not implement the mobile autosizer, so this fix cannot be
+   proven by the existing tooling. It has to be confirmed on a physical
+   iPhone. Same category as the Safari AirPrint page-doubling note further
+   down in the @media print block. */
+.documentPage, .printSheet, .printPage, .printMeasureRoot, .pdfExportRoot {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 /* Shared page component: one markup path for preview and PDF */
 .documentPage {
   position: relative;
