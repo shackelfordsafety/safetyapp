@@ -37,24 +37,24 @@
    state, review checklist), so it silently rendered with no color at all
    outside print; this fixes that without touching the print block. */
 :root {
-  --bg: #F4F7FA;
-  --workspace: #F4F7FA;
-  --workspace-2: #EEF3F8;
+  --bg: #F5F5F6;
+  --workspace: #F5F5F6;
+  --workspace-2: #EDEDEF;
   --surface: #FFFFFF;
-  --surface-2: #EEF3F8;
-  --surface-3: #E8F0F8;
-  --text: #10233D;
-  --muted: #607187;
-  --text-faint: #7D8C9E;
-  --text-very-faint: #98A5B4;
-  --line: #D7E0EA;
-  --line-strong: #BECBD8;
-  --accent: #C51F3A;
-  --accent-2: #A71931;
-  --accent-3: #851426;
+  --surface-2: #EDEDEF;
+  --surface-3: #E6E6E9;
+  --text: #17181A;
+  --muted: #6B6B72;
+  --text-faint: #8A8A91;
+  --text-very-faint: #A5A5AC;
+  --line: #DEDEE1;
+  --line-strong: #C4C4C9;
+  --accent: #C1121F;
+  --accent-2: #A00E19;
+  --accent-3: #7D0B14;
   --accent-ink: #FFFFFF;
-  --accent-tint: #FCE8EC;
-  --accent-border-tint: #E8AAB5;
+  --accent-tint: #FBE7E9;
+  --accent-border-tint: #E8A8AD;
   --focus: #2F6398;
   --focus-hover: #285681;
   --focus-tint: #E8F0F8;
@@ -85,12 +85,12 @@
      --muted/--text-faint/--line/--line-strong rather than replacing them,
      since those are still used by every out-of-scope screen. Later phases
      should fold these together once the rest of the app adopts them. */
-  --text-2: #43525F;
-  --text-3: #5C6B7A;
+  --text-2: #46464C;
+  --text-3: #5F5F66;
   --text-on-navy-2: #B4C4D3;
-  --border-obj: #B9C4D0;
-  --border-input: #A9B6C4;
-  --rule-2: #D7DEE5;
+  --border-obj: #C2C2C7;
+  --border-input: #B0B0B6;
+  --rule-2: #DEDEE1;
   --space-1: 4px;
   --space-2: 6px;
   --space-3: 8px;
@@ -108,9 +108,9 @@
      applies at desktop widths — see the sidebar rules below. */
   --sidebar-w: 216px;
   --sidebar-w-collapsed: 100px;
-  --sidebar-bg: #0B1D2E;
-  --sidebar-bg-active: #16324A;
-  --sidebar-bg-hover: #1C3C57;
+  --sidebar-bg: #171719;
+  --sidebar-bg-active: #2A2A2D;
+  --sidebar-bg-hover: #242427;
   --sidebar-border: rgba(244,247,250,.10);
   --sidebar-text: #F4F7FA;
   /* Was an ad-hoc color-mix (~#929BA4, unverified contrast); now the C2
@@ -142,9 +142,9 @@ html[data-theme='dark'] {
   --text-very-faint: #7690A8;
   --line: #2A4A6D;
   --line-strong: color-mix(in srgb, #2A4A6D 65%, #F5F7FA 35%);
-  --accent: #C51F3A;
-  --accent-2: #DC2E4B;
-  --accent-3: #DC2E4B;
+  --accent: #C1121F;
+  --accent-2: #E0303C;
+  --accent-3: #E0303C;
   --accent-ink: #FFFFFF;
   --accent-tint: #173B63;
   --accent-border-tint: #DC2E4B;
@@ -172,7 +172,7 @@ html[data-theme='dark'] {
      tokens defined in the light :root above) — Home/sidebar render in both
      themes, so these need real dark values rather than inheriting the
      light-theme hex (which would be near-invisible on a dark surface). */
-  --text-2: #BBC8D7;
+  --text-2: #C3C3C9;
   --text-3: #91A3B8;
   --border-obj: #2A4A6D;
   --border-input: color-mix(in srgb, #2A4A6D 65%, #F5F7FA 35%);
@@ -3029,7 +3029,7 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   position: fixed;
   inset: 0;
   z-index: 2000;
-  background: var(--navy, #0B1D2E);
+  background: var(--navy, #171719);
   color: #fff;
   display: flex;
   flex-direction: column;
@@ -3123,7 +3123,7 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   align-items: center;
   justify-content: center;
   gap: 10px;
-  color: var(--navy, #0B1D2E);
+  color: var(--navy, #171719);
 }
 .crewKioskActions {
   display: flex;
@@ -3155,7 +3155,7 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: var(--navy, #0B1D2E);
+  background: var(--navy, #171719);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3211,7 +3211,7 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   color: inherit;
   cursor: pointer;
 }
-.signRoute:hover { border-color: var(--navy, #0B1D2E); }
+.signRoute:hover { border-color: var(--navy, #171719); }
 .signRoute.active { border-color: var(--accent, #C51F3A); background: var(--accent-tint, #FBE8EB); }
 .signRoute strong { font-size: 18px; line-height: 1.2; }
 .signRoute span { font-size: 15px; color: var(--text-2); }
@@ -3230,3 +3230,14 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
    parked off-screen, so this contributes no layout of its own -- stated
    explicitly so nobody "tidies" it into something that does. */
 .pdfArchiveHost { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* The company mark in the sidebar. Sized to the rail rather than the
+   image's own dimensions, and it inverts nothing -- the logo is already
+   red-on-transparent, which reads correctly on the navy. */
+.sidebarBrandLogo {
+  display: block;
+  width: 100%;
+  max-width: 148px;
+  height: auto;
+  margin-bottom: 8px;
+}

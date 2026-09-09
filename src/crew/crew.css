@@ -11,13 +11,13 @@
 
 .crewWrap {
   min-height: 100vh;
-  background: #0B1D2E;
+  background: #171719;
   padding: 20px 16px 48px;
   display: flex;
   justify-content: center;
   align-items: flex-start;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  color: #0B1D2E;
+  color: #171719;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
@@ -38,7 +38,7 @@
   font-weight: 700;
   letter-spacing: .14em;
   text-transform: uppercase;
-  color: #C51F3A;
+  color: #C1121F;
 }
 
 .crewWrap h1 {
@@ -48,7 +48,7 @@
   font-weight: 700;
 }
 
-.crewLead { margin: 0; font-size: 18px; color: #41505E; }
+.crewLead { margin: 0; font-size: 18px; color: #44444A; }
 .crewFine { margin: 0; font-size: 15px; color: #64717D; }
 
 /* One JSA on the board. Big enough to hit without looking carefully. */
@@ -59,16 +59,16 @@
   width: 100%;
   min-height: 76px;
   padding: 16px 18px;
-  background: #F4F7FA;
-  border: 2px solid #C9D4DE;
+  background: #F5F5F6;
+  border: 2px solid #D2D2D6;
   border-radius: 11px;
   cursor: pointer;
   font: inherit;
   color: inherit;
 }
-.crewPick:active { background: #E4ECF3; border-color: #0B1D2E; }
+.crewPick:active { background: #EDEDEF; border-color: #171719; }
 .crewPick strong { font-size: 20px; line-height: 1.2; }
-.crewPick span { font-size: 15px; color: #56646F; }
+.crewPick span { font-size: 15px; color: #5A5A60; }
 
 .crewConfirm {
   display: grid;
@@ -76,7 +76,7 @@
   padding-bottom: 14px;
   border-bottom: 2px solid #E4EAF0;
 }
-.crewConfirm p { margin: 0; font-size: 17px; color: #41505E; }
+.crewConfirm p { margin: 0; font-size: 17px; color: #44444A; }
 
 .crewRevised, .crewLate {
   margin: 6px 0 0;
@@ -98,11 +98,11 @@
   font-family: inherit;
   color: inherit;
   background: #fff;
-  border: 2px solid #9FB0BF;
+  border: 2px solid #A8A8AE;
   border-radius: 9px;
   outline: none;
 }
-.crewField input:focus { border-color: #0B1D2E; }
+.crewField input:focus { border-color: #171719; }
 
 .crewBtn {
   width: 100%;
@@ -115,9 +115,9 @@
   border: 2px solid transparent;
   cursor: pointer;
 }
-.crewBtn.primary { background: #C51F3A; color: #fff; }
+.crewBtn.primary { background: #C1121F; color: #fff; }
 .crewBtn.primary:disabled { background: #DFA3AF; cursor: default; }
-.crewBtn.ghost { background: #fff; color: #0B1D2E; border-color: #C9D4DE; }
+.crewBtn.ghost { background: #fff; color: #171719; border-color: #D2D2D6; }
 
 .crewError {
   margin: 0;
@@ -136,12 +136,12 @@
   justify-items: center;
   text-align: center;
   padding: 26px 18px;
-  background: #F4F7FA;
-  border: 2px dashed #C9D4DE;
+  background: #F5F5F6;
+  border: 2px dashed #D2D2D6;
   border-radius: 11px;
 }
 .crewEmpty strong { font-size: 20px; }
-.crewEmpty span { font-size: 16px; color: #56646F; }
+.crewEmpty span { font-size: 16px; color: #5A5A60; }
 
 .crewDone { justify-items: center; text-align: center; }
 .crewCheck {
@@ -158,3 +158,19 @@
 
 /* The sign-in form, revealed only when somebody chooses to sign. */
 .crewSignForm { display: grid; gap: 16px; }
+
+
+/* The company mark, on the black band the printed documents use.
+   The logo's second line is WHITE text on transparent -- designed for a
+   dark header -- so on a white card it vanishes and only Shackelford
+   survives. The band is not decoration; it is what makes the mark legible.
+   Full-bleed, so it reads as a header rather than a floating image. */
+.crewBrandBar {
+  margin: -24px -20px 4px;
+  padding: 16px 20px;
+  background: #171719;
+  border-radius: 14px 14px 0 0;
+  display: grid;
+  justify-items: center;
+}
+.crewBrandBar img { width: 100%; max-width: 190px; height: auto; display: block; }

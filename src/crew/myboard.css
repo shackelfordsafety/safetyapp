@@ -35,7 +35,7 @@
   background: var(--surface-2); border: 1px solid var(--line);
   border-radius: 10px; cursor: pointer; font: inherit; color: inherit;
 }
-.brdCount:hover { border-color: var(--navy, #0B1D2E); }
+.brdCount:hover { border-color: var(--navy, #171719); }
 .brdCountNum {
   font-family: var(--font-condensed); font-size: 34px; font-weight: 600; line-height: 1;
 }
@@ -99,7 +99,7 @@ button.brdCardMain {
 .brdSeeDoc {
   font-size: 13px;
   font-weight: 600;
-  color: var(--accent, #C51F3A);
+  color: var(--accent, #C1121F);
 }
 button.brdCardMain:hover .brdSeeDoc { text-decoration: underline; }
 
