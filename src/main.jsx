@@ -2581,10 +2581,17 @@ function MobileBottomNav({ tab, goHome, goDocs, setTab }) {
         <IconHome className="mobileNavIcon" /><span>Home</span>
       </button>
       <button className={`mobileNavItem${tab === 'documents' ? ' active' : ''}`} onClick={goDocs}>
-        <IconDocuments className="mobileNavIcon" /><span>Documents</span>
+        <IconDocuments className="mobileNavIcon" /><span>Docs</span>
       </button>
       <button className={`mobileNavItem${tab === 'today' ? ' active' : ''}`} onClick={() => setTab('today')}>
         <IconDrafts className="mobileNavIcon" /><span>Today</span>
+      </button>
+      {/* My Board was missing here entirely -- the sidebar has had it since
+          the board shipped, so on a phone it was simply unreachable. It is
+          also the screen most likely to be wanted ON a phone: the signed
+          count, checked while standing in front of the crew. */}
+      <button className={`mobileNavItem${tab === 'board' ? ' active' : ''}`} onClick={() => setTab('board')}>
+        <IconBoard className="mobileNavIcon" /><span>Board</span>
       </button>
       <button className={`mobileNavItem${tab === 'archive' ? ' active' : ''}`} onClick={() => setTab('archive')}>
         <IconArchive className="mobileNavIcon" /><span>Archive</span>
