@@ -70,9 +70,9 @@ async function main() {
     page.on('pageerror', e => pageErrors.push(String(e)));
 
     await page.goto(BASE_URL, { waitUntil: 'networkidle' });
-    await page.getByRole('button', { name: 'Drafts', exact: false }).first().click();
+    await page.getByRole('button', { name: 'Today', exact: false }).first().click();
     const row = page.locator('.listItem', { hasText: 'DASDJK' });
-    await row.getByRole('button', { name: 'Open Draft', exact: true }).click();
+    await row.getByRole('button', { name: 'Open', exact: true }).click();
     await page.waitForSelector('text=Separation Details');
 
     console.log('[3/6] Separation Details step...');

@@ -162,7 +162,7 @@ async function main() {
         // Exercise each destination + active state.
         const destinations = [
           { label: 'Documents', selector: '.mobileNavItem:has-text("Documents")' },
-          { label: 'Drafts', selector: '.mobileNavItem:has-text("Drafts")' },
+          { label: 'Today', selector: '.mobileNavItem:has-text("Today")' },
           { label: 'Templates', selector: '.mobileNavItem:has-text("Templates")' },
           { label: 'Settings', selector: '.mobileNavItem:has-text("Settings")' },
         ];

@@ -57,8 +57,8 @@ async function generateOne(browser, { id, key, fixture, label, touch }) {
   page.on('pageerror', e => errors.push(String(e)));
 
   await page.goto(BASE_URL, { waitUntil: 'networkidle' });
-  await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'Drafts' }).first().click();
-  await page.locator('.listItem button', { hasText: 'Open Draft' }).first().click();
+  await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'Today' }).first().click();
+  await page.locator('.listItem button', { hasText: 'Open' }).first().click();
   await page.waitForTimeout(400);
 
   // Generic step navigation: walk forward until Create Document is reachable.

@@ -65,8 +65,8 @@ async function main() {
       page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(`[separation] ${m.text()}`); });
       page.on('pageerror', (e) => pageErrors.push(`[separation] ${e.message}`));
       await page.goto(BASE_URL, { waitUntil: 'networkidle' });
-      await page.locator('.mobileNavItem', { hasText: 'Drafts' }).first().click();
-      await page.locator('.listItem').first().getByRole('button', { name: 'Open Draft' }).click();
+      await page.locator('.mobileNavItem', { hasText: 'Today' }).first().click();
+      await page.locator('.listItem').first().getByRole('button', { name: 'Open' }).click();
       await page.getByRole('button', { name: 'Next', exact: true }).click().catch(() => {});
       await page.getByRole('button', { name: 'Go to Review' }).click().catch(() => {});
       await page.locator('.docFacsimile').waitFor({ state: 'visible', timeout: 10000 });

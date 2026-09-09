@@ -389,7 +389,7 @@ export function ReviewExportPanel({
           <ConfirmDialog
             title="Mark this document complete?"
             message={[
-              'Marking it complete locks the fields from further editing and removes the DRAFT watermark from the PDF.',
+              'Marking it complete locks the fields from further editing.',
               'You can come back here and choose "Mark Incomplete" any time to unlock it and keep editing.',
             ]}
             confirmLabel="Mark Complete"
@@ -560,7 +560,6 @@ export function DocFacsimile({ formTitle, draft, blocks }) {
         <h2>{formTitle}</h2>
       </div>
       {blocks.map((block, i) => <FacsimileBlock key={i} block={block} />)}
-      {draft && <div className="docFacsimileWatermark">DRAFT</div>}
     </div>
   );
 }

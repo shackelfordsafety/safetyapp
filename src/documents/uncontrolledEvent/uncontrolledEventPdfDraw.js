@@ -3,7 +3,7 @@
 import { createFormPdf, loadLogoPngBytes, fmtDate, fmtDateTime } from '../pdfDraw';
 import {
   EVENT_CLASSIFICATIONS, EVENT_OUTCOMES, NOTIFICATION_OPTIONS, ATTACHMENT_OPTIONS,
-  isUncontrolledEventPrintFinal,
+  
 } from './uncontrolledEventModel';
 
 const FORM_TITLE = 'UNCONTROLLED EVENT REPORT';
@@ -13,9 +13,7 @@ export async function drawUncontrolledEventPdf(model, onProgress) {
   const logoBytes = await loadLogoPngBytes(`${import.meta.env.BASE_URL}icons/shackelford-logo.webp`);
   const doc = await createFormPdf({
     formTitle: FORM_TITLE,
-    logoBytes,
-    draft: !isUncontrolledEventPrintFinal(model),
-  });
+    logoBytes,  });
 
   doc.infoTable([
     ['Workplace Location / Project', model.workplaceLocation],

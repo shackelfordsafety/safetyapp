@@ -89,7 +89,12 @@ function topBaseline(pad, size) {
   return pad + CAP_HEIGHT * size;
 }
 
-export async function createFormPdf({ formTitle, logoBytes, draft, watermarkText = 'DRAFT' }) {
+/* No DRAFT watermark, deliberately (Fonzo, 2026-09-09: "remove the draft
+   stamp completely"). It existed to mark a document that had not been
+   marked complete -- a state that no longer exists now that finishing a
+   document files it. A stamp that says DRAFT on a filed record is worse
+   than no stamp at all. */
+export async function createFormPdf({ formTitle, logoBytes }) {
   const pdf = await PDFDocument.create();
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
@@ -153,15 +158,6 @@ export async function createFormPdf({ formTitle, logoBytes, draft, watermarkText
   function newPage(continuation) {
     page = pdf.addPage([PAGE_W, PAGE_H]);
     pages.push(page);
-    // Watermark first so every later mark sits on top of it.
-    if (draft) {
-      const size = 96;
-      const w = widthOf(watermarkText, size, bold);
-      page.drawText(watermarkText, {
-        x: PAGE_W / 2 - w / 2 - 40, y: PAGE_H / 2 - 170,
-        size, font: bold, color: rgb(0.98, 0.90, 0.91), rotate: { type: 'degrees', angle: 32 },
-      });
-    }
     if (logo) {
       const h = 30;
       const w = (logo.width / logo.height) * h;

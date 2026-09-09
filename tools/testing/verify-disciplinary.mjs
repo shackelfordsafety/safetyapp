@@ -329,9 +329,9 @@ async function main() {
       // Load the fixture via the real Drafts -> Open Draft path (the entry
       // point that actually populates the editable model — "Start" always
       // begins a blank document, see makeDraftEntryPoints in main.jsx).
-      await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'Drafts' }).first().click();
+      await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'Today' }).first().click();
       const draftRow = page.locator('.listItem', { hasText: 'Warning level' });
-      await draftRow.getByRole('button', { name: 'Open Draft' }).click();
+      await draftRow.getByRole('button', { name: 'Open' }).click();
       await page.waitForSelector('text=Notice Details').catch(() => {});
 
       await page.getByRole('button', { name: 'Next' }).click().catch(() => {});

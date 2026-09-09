@@ -6,7 +6,7 @@
    See pdfDraw.js for why this exists and what it makes impossible. */
 
 import { createFormPdf, loadLogoPngBytes, fmtDate } from '../pdfDraw';
-import { WARNING_LEVELS, warningLevelLabel, isDisciplinaryPrintFinal, isVerbalWarning } from './disciplinaryModel';
+import { WARNING_LEVELS, warningLevelLabel,  isVerbalWarning } from './disciplinaryModel';
 
 // Verbal warnings are a coaching conversation, not a signed notice -- the
 // employee never signs (see DisciplinaryWorkflow.jsx's StepResponse). Shared
@@ -45,9 +45,7 @@ export async function drawDisciplinaryPdf(model, onProgress) {
   const logoBytes = await loadLogoPngBytes(`${import.meta.env.BASE_URL}icons/shackelford-logo.webp`);
   const doc = await createFormPdf({
     formTitle: FORM_TITLE,
-    logoBytes,
-    draft: !isDisciplinaryPrintFinal(model),
-  });
+    logoBytes,  });
 
   // Field order is the paper form's: Name | Supervisor, then Position | Date.
   doc.infoTable([

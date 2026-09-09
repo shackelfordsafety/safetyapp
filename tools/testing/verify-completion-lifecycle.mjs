@@ -135,9 +135,9 @@ async function runDoc(browser, doc) {
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
 
   await page.goto(BASE_URL, { waitUntil: 'networkidle' });
-  await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'Drafts' }).first().click();
+  await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'Today' }).first().click();
   await page.waitForTimeout(300);
-  await page.locator('.listItem button', { hasText: 'Open Draft' }).first().click();
+  await page.locator('.listItem button', { hasText: 'Open' }).first().click();
   await page.waitForTimeout(500);
   if (!await gotoReview(page)) { check(doc.id, 'reached Review step', false); await context.close(); return; }
 

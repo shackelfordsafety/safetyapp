@@ -2283,18 +2283,7 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   letter-spacing: .04em;
   text-transform: uppercase;
 }
-.docFacsimileWatermark {
-  position: absolute;
-  top: 45%;
-  left: 50%;
-  transform: translate(-50%, -50%) rotate(-24deg);
-  font: 700 60px var(--font-condensed, 'Barlow Condensed'), sans-serif;
-  color: rgba(197, 31, 58, 0.15);
-  letter-spacing: .06em;
-  pointer-events: none;
-  user-select: none;
-  white-space: nowrap;
-}
+/* .docFacsimileWatermark removed with the DRAFT stamp, 2026-09-09 */
 .facsimileGrayBar {
   background: #e8e8e8;
   border: 1px solid #cfcfcf;

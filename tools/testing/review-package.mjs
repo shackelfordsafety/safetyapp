@@ -86,9 +86,9 @@ async function gotoReview(page) {
 }
 
 async function openDraft(page) {
-  await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'Drafts' }).first().click();
+  await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'Today' }).first().click();
   await page.waitForTimeout(300);
-  await page.locator('.listItem button', { hasText: 'Open Draft' }).first().click();
+  await page.locator('.listItem button', { hasText: 'Open' }).first().click();
   await page.waitForTimeout(500);
 }
 

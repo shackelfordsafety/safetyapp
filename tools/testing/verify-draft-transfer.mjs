@@ -116,7 +116,7 @@ async function main() {
       check(dialogSeen, 'Re-importing over existing content triggers a confirm() guard');
       // Dismissed -- current in-memory draft must be unaffected. Re-open the
       // draft's own workflow via Drafts to confirm the field is unchanged.
-      await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'Drafts' }).first().click();
+      await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'Today' }).first().click();
       const draftRow = page.locator('.listItem', { hasText: 'Field Export Employee' });
       check(await draftRow.count() > 0, 'Dismissing the guard left the existing draft intact (still findable under Drafts)');
 
