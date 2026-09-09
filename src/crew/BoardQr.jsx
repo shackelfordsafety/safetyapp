@@ -37,7 +37,7 @@ export default function BoardQr({ url, label }) {
           width: 900,
           margin: 2,
           errorCorrectionLevel: 'M',
-          color: { dark: '#0B1D2E', light: '#FFFFFF' },
+          color: { dark: '#171719', light: '#FFFFFF' },
         });
         if (alive) setPng(dataUrl);
       } catch (ex) {

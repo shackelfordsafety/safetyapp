@@ -4,6 +4,12 @@ import { fetchBoard, signPublication } from './board';
 import JsaContents from './JsaContents';
 import './crew.css';
 
+/* The company mark. This page is the one outsiders actually see -- every
+   crew member, and any client or safety inspector who gets handed a
+   phone -- so it is the place branding earns its keep. Same asset the
+   printed JSA carries. */
+const LOGO = `${import.meta.env.BASE_URL}icons/shackelford-logo.webp`;
+
 /* ── The crew sign-in page ───────────────────────────────────────────────
    What a man sees after scanning the QR on the trailer door. No account,
    no login, no app -- this renders INSTEAD of the whole application when
@@ -100,6 +106,9 @@ export default function CrewSignIn({ boardOwnerId }) {
     return (
       <div className="crewWrap">
         <div className="crewDone">
+          <div className="crewBrandBar">
+            <img src={LOGO} alt="Shackelford Construction and Hauling" />
+          </div>
           <div className="crewCheck" aria-hidden="true">✓</div>
           <h1>You&apos;re signed in</h1>
           <p>{picked.area_label}</p>
@@ -127,6 +136,9 @@ export default function CrewSignIn({ boardOwnerId }) {
     return (
       <div className="crewWrap">
         <div className="crewCard">
+          <div className="crewBrandBar">
+            <img src={LOGO} alt="Shackelford Construction and Hauling" />
+          </div>
           <div className="crewConfirm">
             <span className="crewEyebrow">{picked.live ? 'Job Safety Analysis' : 'Closed'}</span>
             <h1>{picked.area_label}</h1>
@@ -185,6 +197,9 @@ export default function CrewSignIn({ boardOwnerId }) {
   return (
     <div className="crewWrap">
       <div className="crewCard">
+          <div className="crewBrandBar">
+            <img src={LOGO} alt="Shackelford Construction and Hauling" />
+          </div>
         <span className="crewEyebrow">Job Safety Analysis</span>
         <h1>Where are you working?</h1>
         <p className="crewLead">Tap yours to read it. Ask your foreman if you&apos;re not sure.</p>

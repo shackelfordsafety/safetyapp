@@ -11,6 +11,33 @@ import './jsaContents.css';
    scrollbar: nested scrolling on a phone hides content from exactly the
    people least likely to go looking for it. */
 
+/* A universal maps link. Google's URL opens the Google Maps app on
+   Android, and on iOS opens either the app or the browser -- both get a
+   man driving. In an emergency nobody should be retyping a hospital name
+   into their phone with one hand. */
+function mapsHref(address) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+}
+
+function MapLine({ label, name, address }) {
+  const hasName = String(name || '').trim();
+  const hasAddress = String(address || '').trim();
+  if (!hasName && !hasAddress) return null;
+  return (
+    <div className="jsaLine">
+      <span>{label}</span>
+      <strong>
+        {hasName}
+        {hasAddress && (
+          <a className="jsaMapLink" href={mapsHref(hasAddress)} target="_blank" rel="noopener noreferrer">
+            {hasName ? `${hasAddress} — directions` : `${hasAddress} — directions`}
+          </a>
+        )}
+      </strong>
+    </div>
+  );
+}
+
 function Line({ label, value }) {
   if (!String(value || '').trim()) return null;
   return <div className="jsaLine"><span>{label}</span><strong>{value}</strong></div>;
@@ -31,7 +58,7 @@ export default function JsaContents({ jsa, title = 'The JSA' }) {
       <Line label="Overall task" value={jsa.overallWorkTask} />
       <Line label="Good from" value={[jsa.timeIssued, jsa.timeExpired].filter(Boolean).join(' to ')} />
       <Line label="Emergency" value={jsa.emergencyPhone} />
-      <Line label="Nearest medical" value={jsa.nearestMedicalFacility} />
+      <MapLine label="Nearest medical" name={jsa.nearestMedicalFacility} address={jsa.nearestMedicalAddress} />
       <Line label="Muster point" value={jsa.musterPoint} />
       <Line label="Tailgate topic" value={jsa.tailgateTopic} />
 

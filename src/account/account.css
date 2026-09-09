@@ -15,19 +15,19 @@
   max-width: min(46vw, 300px);
   padding: 7px 13px;
   background: var(--surface, #fff);
-  border: 1px solid var(--line, #C9D4DE);
+  border: 1px solid var(--line, #D2D2D6);
   border-radius: 999px;
   font: inherit;
   font-size: 13.5px;
   line-height: 1.2;
-  color: var(--text, #0B1D2E);
+  color: var(--text, #171719);
   cursor: pointer;
   box-shadow: 0 1px 4px rgba(11, 29, 46, .12);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.acctChip:hover { border-color: var(--navy, #0B1D2E); }
+.acctChip:hover { border-color: var(--navy, #171719); }
 .acctChip strong { font-weight: 700; }
 
 /* Green dot rather than the word "signed in" -- it survives the email

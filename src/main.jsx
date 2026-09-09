@@ -470,7 +470,7 @@ function fingerprintPaginationInput(jsa) {
     rows.map(r => [r.step, r.hazards, r.controls]),
     jsa.assignedMentorSse, jsa.tailgateTopic, jsa.previousDaySafety, jsa.overallWorkTask,
     jsa.location, jsa.jobSite, jsa.timeIssued, jsa.timeExpired, jsa.date, jsa.jobNumber,
-    jsa.superintendentForeman, jsa.emergencyPhone, jsa.client, jsa.nearestMedicalFacility,
+    jsa.superintendentForeman, jsa.emergencyPhone, jsa.client, jsa.nearestMedicalFacility, jsa.nearestMedicalAddress,
     jsa.siteContactPhone, jsa.musterPoint, jsa.acknowledgement, jsa.signatureLineCount,
     // crewSignatures only ever grows by append (see CrewSignInKiosk.jsx), so
     // length alone fully captures "did the sign-in sheet's content change" --
@@ -637,6 +637,11 @@ function emptyJsa() {
     emergencyPhone: '',
     client: '',
     nearestMedicalFacility: '',
+    // Its address, so the JSA can hand somebody directions instead of a
+    // name. On the crew page this becomes a tappable map link -- in an
+    // emergency nobody wants to type a hospital name into their phone.
+    // Additive: older drafts merge through emptyJsa() as empty.
+    nearestMedicalAddress: '',
     siteContactPhone: '',
     musterPoint: '',
     assignedMentorSse: '',
@@ -923,7 +928,7 @@ const STEPS = [
 function hasMeaningfulJsaContent(jsa) {
   return [
     jsa.location, jsa.jobSite, jsa.jobNumber, jsa.timeIssued, jsa.timeExpired,
-    jsa.superintendentForeman, jsa.emergencyPhone, jsa.client, jsa.nearestMedicalFacility,
+    jsa.superintendentForeman, jsa.emergencyPhone, jsa.client, jsa.nearestMedicalFacility, jsa.nearestMedicalAddress,
     jsa.siteContactPhone, jsa.musterPoint, jsa.assignedMentorSse,
     jsa.tailgateTopic, jsa.overallWorkTask, jsa.dailyTasks, jsa.hazardsSummary, jsa.controlsSummary,
   ].some(hasText) || normalizeRows(jsa.taskRows).length > 0;
@@ -2334,8 +2339,11 @@ function App() {
       <div className="appShell">
         <aside className={`sidebar${isDocFlow && activeDoc !== 'jsa-start' ? ' builderActive' : ''}`}>
           <div className="sidebarBrand">
+            {/* The company mark, not just the app name. Requested by the
+                PM, who owns the company. The wordmark stays underneath so
+                the rail still says what the app IS. */}
+            <img className="sidebarBrandLogo" src={SHACKELFORD_LOGO} alt="Shackelford Construction and Hauling" />
             <span className="sidebarBrandName">{APP_NAME}</span>
-            <span className="sidebarBrandSub">{APP_SUB}</span>
           </div>
 
           <nav className="sidebarNav">
@@ -3119,6 +3127,12 @@ function StepJob({ jsa, upd, prev, next }) {
               <div className="formPairRow">
                 <F label="Site Contact Phone #" value={jsa.siteContactPhone} onChange={v => upd({ siteContactPhone: v })} />
                 <F label="Nearest Medical Facility" value={jsa.nearestMedicalFacility} onChange={v => upd({ nearestMedicalFacility: v })} />
+                <F
+                  label="Its Address"
+                  value={jsa.nearestMedicalAddress}
+                  onChange={v => upd({ nearestMedicalAddress: v })}
+                  placeholder="Street, city — becomes a map link for the crew"
+                />
               </div>
               <F label="Assigned Mentor / SSE Number" value={jsa.assignedMentorSse} onChange={v => upd({ assignedMentorSse: v })} />
             </div>

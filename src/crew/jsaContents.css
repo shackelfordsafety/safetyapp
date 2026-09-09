@@ -9,14 +9,14 @@
   gap: 10px;
   padding: 16px 0 4px;
   border-top: 2px solid #E4EAF0;
-  color: #0B1D2E;
+  color: #171719;
 }
 .jsaDocTitle {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: .12em;
   text-transform: uppercase;
-  color: #C51F3A;
+  color: #C1121F;
   margin-top: 6px;
 }
 .jsaLine {
@@ -26,15 +26,15 @@
   align-items: baseline;
   font-size: 16px;
 }
-.jsaLine span { color: #56646F; font-size: 14px; }
+.jsaLine span { color: #5A5A60; font-size: 14px; }
 .jsaLine strong { font-weight: 600; word-break: break-word; }
 @media (max-width: 400px) {
   .jsaLine { grid-template-columns: 1fr; gap: 1px; }
 }
 
 .jsaStep {
-  background: #F4F7FA;
-  border: 1px solid #D8E1E9;
+  background: #F5F5F6;
+  border: 1px solid #DEDEE1;
   border-radius: 9px;
   padding: 12px 14px;
   display: grid;
@@ -48,7 +48,7 @@
   font-weight: 700;
   letter-spacing: .1em;
   text-transform: uppercase;
-  color: #56646F;
+  color: #5A5A60;
 }
 
 .jsaAck {
@@ -56,4 +56,16 @@
   font-size: 15.5px;
   line-height: 1.45;
   white-space: pre-wrap;
+}
+
+/* Directions to the nearest medical facility. Its own line under the name
+   and a real link, because the moment this matters nobody is going to
+   retype a hospital into their phone. */
+.jsaMapLink {
+  display: block;
+  margin-top: 2px;
+  font-weight: 600;
+  color: #C1121F;
+  text-decoration: underline;
+  word-break: break-word;
 }
