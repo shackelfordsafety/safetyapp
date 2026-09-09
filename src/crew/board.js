@@ -103,12 +103,33 @@ async function currentUser() {
 /* Publishes a JSA to a board. Defaults to the publisher's own board;
    `boardOwner` is what lets a foreman publish onto his superintendent's
    board instead, and it follows him when he switches supers. */
-export async function publishToBoard({ jsa, boardOwner }) {
+export async function publishToBoard({ jsa, boardOwner, pdfBlob }) {
   const user = await currentUser();
   if (!user) throw new NotSignedInError();
 
   const id = (crypto.randomUUID && crypto.randomUUID())
     || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  /* Store the JSA as a real PDF alongside the row, so "see the JSA" can
+     show the actual document rather than a readable summary of it (Fonzo,
+     2026-09-09: "i need the actual PDF to pop up when tapping to see").
+     Uploaded into the publisher's own folder, which is what the storage
+     policy already allows.
+
+     Deliberately not fatal: if the PDF is missing or the upload fails, the
+     JSA still publishes and the crew can still sign it. A board that
+     refuses to go up because a file did not upload would be a far worse
+     failure at 6am than one without a downloadable copy. */
+  let pdfPath = null;
+  if (pdfBlob) {
+    try {
+      const path = `${user.id}/board-${id}.pdf`;
+      const { error: upErr } = await db.storage
+        .from('documents')
+        .upload(path, pdfBlob, { contentType: 'application/pdf', upsert: false });
+      if (!upErr) pdfPath = path;
+    } catch { /* publishing matters more than the copy */ }
+  }
 
   const { error } = await db.from('jsa_publications').insert({
     id,
@@ -123,6 +144,7 @@ export async function publishToBoard({ jsa, boardOwner }) {
     job_number: jsa?.jobNumber || null,
     doc_date: jsa?.date || null,
     expires_at: computeExpiry(jsa).toISOString(),
+    pdf_path: pdfPath,
   });
   if (error) throw new Error(`Could not publish it: ${error.message}`);
 
@@ -141,7 +163,7 @@ export function boardUrlFor(boardOwnerId) {
 export async function fetchBoard(boardOwnerId) {
   const { data, error } = await db
     .from('jsa_publications')
-    .select('id, area_label, job_site, location, job_number, doc_date, published_at, expires_at, version, data')
+    .select('id, area_label, job_site, location, job_number, doc_date, published_at, expires_at, version, data, pdf_path')
     .eq('board_owner', boardOwnerId)
     .gt('expires_at', new Date().toISOString())
     .order('published_at', { ascending: true });
@@ -207,7 +229,7 @@ export async function fetchMyBoard() {
 
   const { data, error } = await db
     .from('jsa_publications')
-    .select('id, area_label, job_site, location, job_number, doc_date, published_at, expires_at, version, client_doc_id, data')
+    .select('id, area_label, job_site, location, job_number, doc_date, published_at, expires_at, version, client_doc_id, data, pdf_path')
     .eq('board_owner', user.id)
     .gte('published_at', since.toISOString())
     .order('published_at', { ascending: false });

@@ -3448,9 +3448,15 @@ function StepFinish({
     setRoute('kiosk');
     if (jsa.signInMode !== 'kiosk') upd({ signInMode: 'kiosk' });
   }
+  /* Picking the phones route also makes the printout, quietly, so that
+     publishing has a real PDF to store alongside the board entry -- that is
+     what lets "see the JSA" open the actual document later instead of a
+     readable summary. It runs while he is still reading the screen, well
+     before he taps Publish, and publishing works with or without it. */
   function chooseBoard() {
     setRoute('board');
     if (jsa.signInMode !== 'kiosk') upd({ signInMode: 'kiosk' });
+    if (!isReady && !isGenerating) exportPdf();
   }
 
   return (
@@ -3507,7 +3513,7 @@ function StepFinish({
             </button>
             {route === 'board' && (
               <div className="signRouteBody">
-                <PublishToBoardButton jsa={jsa} />
+                <PublishToBoardButton jsa={jsa} pdfBlob={isReady && !isPdfStale ? pdfExportState.blob : null} />
               </div>
             )}
 

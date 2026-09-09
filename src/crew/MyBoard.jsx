@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchMyBoard, fetchSigners, NotSignedInError } from './board';
+import { signedUrlFor } from '../archive/fileToArchive';
 import JsaContents from './JsaContents';
 import './myboard.css';
 
@@ -89,6 +90,25 @@ export default function MyBoard() {
   const [openList, setOpenList] = useState(null);
   const [preview, setPreview] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [opening, setOpening] = useState('');
+
+  /* Tapping a row opens the JSA as it was actually published -- the real
+     PDF, not a readable summary of it. Publications made before PDFs were
+     stored (or where generation failed) fall back to the reader rather than
+     doing nothing. */
+  async function openDoc(row) {
+    if (!row.pdf_path) { setPreview(row); return; }
+    setOpening(row.id);
+    setError('');
+    try {
+      const url = await signedUrlFor(row.pdf_path);
+      if (url) window.open(url, '_blank', 'noopener');
+    } catch (ex) {
+      setError(ex?.message || 'Could not open it. Check your connection.');
+    } finally {
+      setOpening('');
+    }
+  }
 
   const load = useCallback(async () => {
     setError('');
@@ -165,13 +185,13 @@ export default function MyBoard() {
           {/* Tapping the row opens what was actually published -- the same
               view the crew reads. Checking "did I put the right one up?"
               without walking outside to scan your own QR. */}
-          <button type="button" className="brdCardMain" onClick={() => setPreview(r)}>
+          <button type="button" className="brdCardMain" onClick={() => openDoc(r)}>
             <strong>{r.area_label}</strong>
             <span className="brdMeta">
               Published {fmtTime(r.published_at)} · good until {fmtTime(r.expires_at)}
               {r.version > 1 ? ` · version ${r.version}` : ''}
             </span>
-            <span className="brdSeeDoc">See the JSA</span>
+            <span className="brdSeeDoc">{opening === r.id ? 'Opening…' : 'See the JSA'}</span>
           </button>
           <button type="button" className="brdCount" onClick={() => setOpenList(r.id)}>
             <span className="brdCountNum">{r.signed}</span>
@@ -185,10 +205,10 @@ export default function MyBoard() {
           <div className="brdSectionTitle">Finished today</div>
           {done.map(r => (
             <div key={r.id} className="brdCard done">
-              <button type="button" className="brdCardMain" onClick={() => setPreview(r)}>
+              <button type="button" className="brdCardMain" onClick={() => openDoc(r)}>
                 <strong>{r.area_label}</strong>
                 <span className="brdMeta">Expired {fmtTime(r.expires_at)}</span>
-                <span className="brdSeeDoc">See the JSA</span>
+                <span className="brdSeeDoc">{opening === r.id ? 'Opening…' : 'See the JSA'}</span>
               </button>
               <button type="button" className="brdCount" onClick={() => setOpenList(r.id)}>
                 <span className="brdCountNum">{r.signed}</span>

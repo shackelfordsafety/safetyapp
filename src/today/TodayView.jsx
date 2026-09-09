@@ -90,8 +90,15 @@ export default function TodayView({ entries = [], goDocs }) {
 
   useEffect(() => { load(); }, [load]);
 
-  async function openFiled(row) {
-    if (!row.pdf_path) { setOpenError('That one was filed without a PDF.'); return; }
+  /* Opens the real document. A row without a stored PDF -- an old
+     publication, or one where generation failed -- falls back to the
+     readable view rather than doing nothing. */
+  async function openFiled(row, fallbackToPreview) {
+    if (!row.pdf_path) {
+      if (fallbackToPreview) { setPreview(row); return; }
+      setOpenError('That one was filed without a PDF.');
+      return;
+    }
     setOpening(row.id);
     setOpenError('');
     try {
@@ -167,7 +174,7 @@ export default function TodayView({ entries = [], goDocs }) {
                   <p>Published {fmtTime(r.published_at)} · {r.signed} signed · good until {fmtTime(r.expires_at)}</p>
                 </div>
                 <div className="itemActions">
-                  <button className="btn secondary sm" onClick={() => setPreview(r)}>See the JSA</button>
+                  <button className="btn secondary sm" onClick={() => openFiled(r, true)} disabled={opening === r.id}>{opening === r.id ? 'Opening…' : 'See the JSA'}</button>
                 </div>
               </div>
             ))}
@@ -215,7 +222,7 @@ export default function TodayView({ entries = [], goDocs }) {
                   <p>Expired {fmtTime(r.expires_at)} · {r.signed} signed</p>
                 </div>
                 <div className="itemActions">
-                  <button className="btn secondary sm" onClick={() => setPreview(r)}>See the JSA</button>
+                  <button className="btn secondary sm" onClick={() => openFiled(r, true)} disabled={opening === r.id}>{opening === r.id ? 'Opening…' : 'See the JSA'}</button>
                 </div>
               </div>
             ))}

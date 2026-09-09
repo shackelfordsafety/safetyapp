@@ -135,3 +135,8 @@
   font-size: 13px; font-weight: 600; letter-spacing: .14em;
   text-transform: uppercase; color: var(--text-3); margin: 16px 0 8px;
 }
+
+/* Row actions: opening the real document is the primary move, the field
+   list is secondary. Kept from stretching the row height. */
+.arcRowActions { white-space: nowrap; }
+.arcRowActions .btn { margin-left: 6px; }

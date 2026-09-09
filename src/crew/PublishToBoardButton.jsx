@@ -13,7 +13,7 @@ import { loadModule } from '../shared/loadModule';
    it. Publishing locks the JSA -- revising means publishing a new version,
    and whoever signed the old one stays attached to it. */
 
-export default function PublishToBoardButton({ jsa, disabled }) {
+export default function PublishToBoardButton({ jsa, pdfBlob, disabled }) {
   const [phase, setPhase] = useState('idle'); // idle | needsSignIn | working | published | error
   const [message, setMessage] = useState('');
   const [boardUrl, setBoardUrl] = useState('');
@@ -26,7 +26,7 @@ export default function PublishToBoardButton({ jsa, disabled }) {
     try {
       const { publishToBoard, NotSignedInError } = await loadModule(() => import('./board'));
       try {
-        const { boardUrl: url } = await publishToBoard({ jsa });
+        const { boardUrl: url } = await publishToBoard({ jsa, pdfBlob });
         setBoardUrl(url);
         setPhase('published');
       } catch (err) {

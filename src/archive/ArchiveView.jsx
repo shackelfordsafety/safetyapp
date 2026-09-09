@@ -47,8 +47,18 @@ function fmtWhen(t) {
 function humanizeKey(k) {
   return k.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase()).trim();
 }
+/* A captured signature is stored as a data: URL -- several thousand
+   characters of base64. Printed as text it buries the actual record under a
+   wall of gibberish, which is exactly how it looked in the field
+   (2026-09-09). Show that a signature exists and move on; the signature
+   itself belongs on the PDF, which is one tap away. */
+function isImageData(v) {
+  return typeof v === 'string' && v.startsWith('data:image/');
+}
+
 function renderValue(v) {
-  if (Array.isArray(v)) return v.join('\n');
+  if (isImageData(v)) return 'Signed';
+  if (Array.isArray(v)) return v.map(x => (isImageData(x) ? 'Signed' : x)).join('\n');
   if (v && typeof v === 'object') return JSON.stringify(v, null, 2);
   return String(v);
 }
@@ -198,6 +208,27 @@ export default function ArchiveView() {
   const [status, setStatus] = useState('checking'); // checking | signedout | loading | ready | error
   const [error, setError] = useState('');
   const [selected, setSelected] = useState(null);
+  const [opening, setOpening] = useState('');
+
+  /* Opening the real document is what a tap is for. The bucket is private,
+     so it needs a short-lived signed link rather than a plain href. A row
+     filed without a PDF (an old record, or one filed before signing) simply
+     opens its details instead of doing nothing. */
+  async function openPdf(row) {
+    if (!row.pdf_path) { setSelected(row); return; }
+    setOpening(row.id);
+    try {
+      const { data, error: err } = await db.storage
+        .from('documents')
+        .createSignedUrl(row.pdf_path, 120);
+      if (err) throw new Error(err.message);
+      window.open(data.signedUrl, '_blank', 'noopener');
+    } catch (ex) {
+      setError(ex?.message || 'Could not open that document. Check your connection.');
+    } finally {
+      setOpening('');
+    }
+  }
   const [mode, setMode] = useState('browse'); // browse | upload
 
   const [q, setQ] = useState('');
@@ -386,12 +417,17 @@ export default function ArchiveView() {
           <table className="arcTable">
             <thead>
               <tr>
-                <th>Type</th><th>Employee</th><th>Job site</th><th>Document date</th><th>Filed</th>
+                <th>Type</th><th>Employee</th><th>Job site</th><th>Document date</th><th>Filed</th><th aria-label="Actions" />
               </tr>
             </thead>
             <tbody>
+              {/* Tapping a row opens the actual document, not a field dump.
+                  Fonzo, 2026-09-09: "when u tap in the archive, maybe have it
+                  pop up the PDF too, this simple read stuff is good but not
+                  for everything." The field list is still reachable, it is
+                  just no longer what a tap gets you. */}
               {visible.map(r => (
-                <tr key={r.id} onClick={() => setSelected(r)}>
+                <tr key={r.id} onClick={() => openPdf(r)} style={{ cursor: r.pdf_path ? 'pointer' : 'default' }}>
                   <td>
                     <span className="arcType">{DOC_LABELS[r.doc_type] || r.doc_type}</span>
                     {r.data?.source === 'uploaded' && <span className="arcUploaded">Uploaded</span>}
@@ -400,6 +436,14 @@ export default function ArchiveView() {
                   <td>{r.job_site || '—'}</td>
                   <td>{fmtDate(r.doc_date)}</td>
                   <td>{fmtWhen(r.submitted_at)}</td>
+                  <td className="arcRowActions" onClick={e => e.stopPropagation()}>
+                    {r.pdf_path && (
+                      <button type="button" className="btn secondary sm" onClick={() => openPdf(r)} disabled={opening === r.id}>
+                        {opening === r.id ? 'Opening…' : 'Open'}
+                      </button>
+                    )}
+                    <button type="button" className="btn ghost sm" onClick={() => setSelected(r)}>Details</button>
+                  </td>
                 </tr>
               ))}
             </tbody>
