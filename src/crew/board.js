@@ -44,13 +44,51 @@ export function computeExpiry(jsa, now = new Date()) {
   return expires;
 }
 
-/* What a crew member reads on the board to find his line. Pulled from the
-   JSA rather than typed separately -- one less thing to fill in at 6am. */
+/* What a crew member reads on the board to find his line.
+
+   The AREA leads, not the overall task. A job site can run five JSAs in one
+   day and they all share the same overall task ("Mass grading") and the
+   same job site -- labelling by task made every line on the board read
+   identically, which is exactly the thing a man scanning at 6:30 has to
+   tell apart. Reported from the field 2026-09-09 after a real test.
+
+   Falls back to the old task-based label for drafts saved before the area
+   field existed, so an old JSA still reads sensibly. */
 export function boardLabel(jsa) {
+  const area = (jsa?.area || '').trim();
   const task = (jsa?.overallWorkTask || '').trim();
   const site = (jsa?.jobSite || jsa?.location || '').trim();
+  if (area && site) return `${area} — ${site}`;
+  if (area) return area;
   if (task && site) return `${task} — ${site}`;
   return task || site || 'Job Safety Analysis';
+}
+
+/* The JSA's steps/hazards/controls, flattened for reading on a phone.
+
+   A deliberately simpler read than the app's own getContentRows(): that one
+   reconciles the two entry styles for PRINT accuracy, with near-duplicate
+   matching, and lives in main.jsx which this page must never import (the
+   crew page renders instead of the app and should not drag it along).
+   Here the job is only "show the man what he is signing", so detailed rows
+   win when they exist and the newline summaries are used when they don't.
+
+   Split on newlines because that is exactly how the summary fields are
+   stored -- one task per line, hazards and controls positionally matched. */
+export function readableRows(jsa) {
+  const lines = v => String(v || '').split('\n').map(s => s.trim()).filter(Boolean);
+  const detailed = (Array.isArray(jsa?.taskRows) ? jsa.taskRows : [])
+    .map(r => ({ step: (r?.step || '').trim(), hazards: (r?.hazards || '').trim(), controls: (r?.controls || '').trim() }))
+    .filter(r => r.step || r.hazards || r.controls);
+  if (detailed.length) return detailed;
+
+  const steps = lines(jsa?.dailyTasks);
+  const haz = lines(jsa?.hazardsSummary);
+  const con = lines(jsa?.controlsSummary);
+  const n = Math.max(steps.length, haz.length, con.length);
+  return Array.from({ length: n }, (_, i) => ({
+    step: steps[i] || '', hazards: haz[i] || '', controls: con[i] || '',
+  }));
 }
 
 async function currentUser() {

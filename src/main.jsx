@@ -617,6 +617,14 @@ function emptyJsa() {
     location: '',
     jobSite: '',
     jobNumber: '',
+    // Which part of the job this JSA covers. A job site can need several
+    // JSAs in one day -- different tasks, different hazards, different
+    // crews -- all sharing the same job site and overall task, so this is
+    // the only field that tells them apart on a superintendent's board.
+    // "Entire site" is a normal answer. Additive: older drafts and
+    // templates without it come through the `{ ...emptyJsa(), ...raw }`
+    // merge as empty, which falls back to the previous board label.
+    area: '',
     date: todayISO(),
     timeIssued: '',
     timeExpired: '',
@@ -2987,6 +2995,17 @@ function StepJob({ jsa, upd, prev, next }) {
                 <F label="Date" type="date" value={jsa.date} onChange={v => upd({ date: v })} />
                 <F label="Job #" value={jsa.jobNumber} onChange={v => upd({ jobNumber: v })} />
               </div>
+              {/* A job can need several JSAs in one day, one per area, all
+                  under the same job site and the same overall task. This is
+                  the only thing that tells them apart -- it is what a crew
+                  member reads on the board to find his line, so "Entire
+                  site" is a real answer, not a blank. */}
+              <F
+                label="Area this JSA covers"
+                value={jsa.area}
+                onChange={v => upd({ area: v })}
+                placeholder="Entire site, or a specific area"
+              />
             </div>
           </div>
           <div className="formSection">
