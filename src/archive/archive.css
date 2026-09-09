@@ -135,3 +135,81 @@
   font-size: 13px; font-weight: 600; letter-spacing: .14em;
   text-transform: uppercase; color: var(--text-3); margin: 16px 0 8px;
 }
+
+/* Row actions: opening the real document is the primary move, the field
+   list is secondary. Kept from stretching the row height. */
+.arcRowActions { white-space: nowrap; }
+.arcRowActions .btn { margin-left: 6px; }
+
+/* ── The archive as a library ──
+   A flat list grows until it is useless. Shelves first, one per document
+   type with its count, and the narrowing controls in a popup so the page
+   is not three dropdowns deep before you reach a document.
+   Fonzo, 2026-09-09: "archive should be like a library... we need to
+   organize by file types and show a pop up with filters". */
+.arcSearchBar {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  margin-bottom: 18px;
+}
+.arcSearchInput {
+  flex: 1;
+  min-width: 0;
+  min-height: 52px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 2px solid var(--border-input);
+  border-radius: 8px;
+  font-family: var(--font);
+  font-size: 17px;
+  color: var(--text);
+  outline: none;
+}
+.arcSearchInput:focus { border-color: var(--navy, #0B1D2E); }
+.arcSearchBar .btn { white-space: nowrap; }
+
+.arcShelves {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 26px;
+}
+.arcShelf {
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  text-align: left;
+  padding: 16px 18px;
+  min-height: 92px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.arcShelf:hover:not(:disabled) { border-color: var(--navy, #0B1D2E); }
+.arcShelf:disabled { opacity: .5; cursor: default; }
+.arcShelfCount {
+  font-family: var(--font-condensed);
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1;
+}
+.arcShelfName {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.arcResultsHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.arcResultsHead .arcCount { margin: 0; }

@@ -174,3 +174,39 @@ export async function uploadExistingDocument({ docType, file, employeeName, jobS
 
   return { id };
 }
+
+/* Everything filed to the archive today, for the Today view.
+
+   Returns null when nobody is signed in -- that is not an error, it is the
+   normal state of a device that only builds documents, and the caller
+   shows a quieter "sign in to see the rest" note instead of a failure.
+
+   Row-level security decides whose documents come back: your own if you
+   are a superintendent, everybody's if you are safety, HR or a PM. */
+export async function fetchFiledToday() {
+  const user = await getArchiveUser();
+  if (!user) return null;
+
+  const since = new Date();
+  since.setHours(0, 0, 0, 0);
+
+  const { data, error } = await db
+    .from('documents')
+    .select('id, doc_type, employee_name, job_site, doc_date, submitted_at, data, pdf_path')
+    .gte('submitted_at', since.toISOString())
+    .order('submitted_at', { ascending: false });
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
+/* A short-lived link to a filed document's PDF.
+
+   The bucket is private, so a stored file cannot simply be linked to --
+   every view has to mint its own signed URL. Shared here rather than
+   duplicated in each screen that offers a download. */
+export async function signedUrlFor(pdfPath, seconds = 120) {
+  if (!pdfPath) return null;
+  const { data, error } = await db.storage.from('documents').createSignedUrl(pdfPath, seconds);
+  if (error) throw new Error(error.message);
+  return data?.signedUrl || null;
+}

@@ -10,7 +10,7 @@ import { createFormPdf, loadLogoPngBytes, fmtDate } from '../pdfDraw';
 import {
   SYMPTOM_ONSET_OPTIONS, RESPONSE_ACTIONS, MEDICAL_EVALUATION_TYPES, WORK_STATUS_OPTIONS,
   INITIAL_CLASSIFICATIONS, MEDICAL_ATTACHMENT_OPTIONS,
-  isMedicalEventPrintFinal,
+  
 } from './medicalEventModel';
 
 const FORM_TITLE = 'EMPLOYEE MEDICAL EVENT FORM';
@@ -24,9 +24,7 @@ export async function drawMedicalEventPdf(model, onProgress) {
   const logoBytes = await loadLogoPngBytes(`${import.meta.env.BASE_URL}icons/shackelford-logo.webp`);
   const doc = await createFormPdf({
     formTitle: FORM_TITLE,
-    logoBytes,
-    draft: !isMedicalEventPrintFinal(model),
-  });
+    logoBytes,  });
 
   // Field order is the paper form's.
   doc.infoTable([

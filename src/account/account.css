@@ -1,0 +1,64 @@
+/* ── Account chip (top right) ──
+   Sits above the page rather than inside any one screen, so every view
+   shows the same thing in the same place. Fixed rather than sticky: the
+   builder screens scroll their own panels, and an indicator that slid away
+   would stop being an indicator. */
+
+.acctChip {
+  position: fixed;
+  top: 10px;
+  right: 12px;
+  z-index: 40; /* above page content, below .dialogOverlay */
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: min(46vw, 300px);
+  padding: 7px 13px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--line, #C9D4DE);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.2;
+  color: var(--text, #0B1D2E);
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(11, 29, 46, .12);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.acctChip:hover { border-color: var(--navy, #0B1D2E); }
+.acctChip strong { font-weight: 700; }
+
+/* Green dot rather than the word "signed in" -- it survives the email
+   being long enough to get truncated on a phone. */
+.acctDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1C7A43;
+  flex: none;
+}
+
+/* On a phone the sidebar is gone and screens start at the very top, so the
+   chip would sit on the page title -- Home's heading runs the full width,
+   so "it's in the corner" isn't enough clearance. Give the chip its own
+   band by pushing the page content down by roughly its height. Verified
+   against Home and the JSA builder at 390px; a static (non-fixed) chip was
+   the alternative and was rejected because .appShell is min-height:100vh,
+   so a block above it would add a phantom scroll to every screen. */
+@media (max-width: 680px) {
+  .acctChip {
+    top: 6px;
+    right: 8px;
+    max-width: 52vw;
+    padding: 6px 11px;
+    font-size: 12.5px;
+  }
+  .appShell .page { padding-top: 46px; }
+}
+
+/* Never print it. */
+@media print {
+  .acctChip { display: none !important; }
+}

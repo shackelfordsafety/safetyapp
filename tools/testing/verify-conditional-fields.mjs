@@ -82,8 +82,8 @@ async function main() {
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.homeLayout');
     await page.getByRole('button', { name: 'Continue Incident Report' }).click().catch(async () => {
-      await page.getByRole('button', { name: 'Drafts', exact: false }).first().click();
-      await page.locator('.listItem').first().getByRole('button', { name: 'Open Draft' }).click();
+      await page.getByRole('button', { name: 'Today', exact: false }).first().click();
+      await page.locator('.listItem').first().getByRole('button', { name: 'Open' }).click();
     });
     await page.waitForTimeout(200);
     await page.getByRole('tab', { name: /Injury/ }).click();

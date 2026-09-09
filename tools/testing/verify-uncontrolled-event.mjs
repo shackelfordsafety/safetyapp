@@ -208,7 +208,7 @@ async function main() {
       const page = await context.newPage();
       await page.goto(BASE_URL, { waitUntil: 'networkidle' });
       await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'Drafts' }).first().click();
-      await page.locator('.listItem', { hasText: 'Brandon' }).getByRole('button', { name: 'Open Draft' }).click();
+      await page.locator('.listItem', { hasText: 'Brandon' }).getByRole('button', { name: 'Open' }).click();
       await page.getByRole('button', { name: 'Next' }).click().catch(() => {});
       await page.getByRole('button', { name: 'Go to Review' }).click().catch(() => {});
       await page.waitForSelector('text=Readiness', { timeout: 5000 }).catch(() => {});
@@ -265,7 +265,7 @@ async function main() {
       await page.goto(BASE_URL, { waitUntil: 'networkidle' });
       await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'Drafts' }).first().click();
       const draftRow = page.locator('.listItem', { hasText: 'Ridgeland, MS' }).or(page.locator('.listItem', { hasText: 'Brandon, MS' }));
-      await draftRow.first().getByRole('button', { name: 'Open Draft' }).click();
+      await draftRow.first().getByRole('button', { name: 'Open' }).click();
       await page.waitForSelector('text=Event Info & Classification').catch(() => {});
 
       await page.getByRole('button', { name: 'Next' }).click().catch(() => {});

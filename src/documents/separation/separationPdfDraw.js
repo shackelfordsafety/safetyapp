@@ -4,7 +4,7 @@ import { createFormPdf, loadLogoPngBytes, fmtDate } from '../pdfDraw';
 import {
   SEPARATION_TYPES, SEPARATION_REASONS, REHIRE_STATUSES,
   PROPERTY_RETURNED_OPTIONS, ACCESS_REMOVED_OPTIONS,
-  isSeparationPrintFinal,
+  
 } from './separationModel';
 
 const FORM_TITLE = 'EMPLOYEE SEPARATION FORM';
@@ -21,9 +21,7 @@ export async function drawSeparationPdf(model, onProgress) {
   const logoBytes = await loadLogoPngBytes(`${import.meta.env.BASE_URL}icons/shackelford-logo.webp`);
   const doc = await createFormPdf({
     formTitle: FORM_TITLE,
-    logoBytes,
-    draft: !isSeparationPrintFinal(model),
-  });
+    logoBytes,  });
 
   doc.infoTable([
     ['Employee Name', model.employeeName, 'Position', model.position],
