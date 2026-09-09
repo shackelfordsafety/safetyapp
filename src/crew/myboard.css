@@ -1,0 +1,85 @@
+/* ── My Board (the superintendent's side) ──
+   Rides in the same lazy chunk as MyBoard.jsx, so a device that only
+   builds JSAs never downloads it. Uses the app's existing C2 tokens
+   rather than redeclaring colors -- unlike the crew page, this screen
+   lives inside the app and should look like the rest of it. */
+
+.brdHead {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+  padding-bottom: 14px; margin-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.brdHead h2 {
+  margin: 0; font-family: var(--font-condensed); font-size: 30px; font-weight: 600;
+  line-height: 1; text-transform: uppercase; letter-spacing: .01em;
+}
+.brdHead p { margin: 3px 0 0; font-size: 15px; color: var(--text-2); }
+
+.brdCard {
+  display: flex; align-items: center; gap: 16px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 11px; padding: 16px 18px; margin-bottom: 10px;
+}
+.brdCard.done { opacity: .72; }
+.brdCardMain { display: grid; gap: 4px; min-width: 0; flex: 1; }
+.brdCardMain strong { font-size: 19px; line-height: 1.2; }
+.brdMeta { font-size: 14px; color: var(--text-3); }
+
+/* The number is why this screen exists -- standing in front of the crew,
+   "43 signed" is the whole answer. Big enough to read at arm's length on
+   an iPad held at waist height. */
+.brdCount {
+  display: grid; justify-items: center; gap: 1px;
+  min-width: 92px; padding: 10px 14px;
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: 10px; cursor: pointer; font: inherit; color: inherit;
+}
+.brdCount:hover { border-color: var(--navy, #0B1D2E); }
+.brdCountNum {
+  font-family: var(--font-condensed); font-size: 34px; font-weight: 600; line-height: 1;
+}
+.brdCountLabel {
+  font-size: 11px; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--text-3);
+}
+
+.brdSectionTitle {
+  display: block;
+  font-size: 13px; font-weight: 600; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--text-3);
+  margin: 22px 0 9px;
+}
+
+.brdEmpty {
+  background: var(--surface); border: 2px dashed var(--border-obj);
+  border-radius: 10px; padding: 30px 24px;
+  display: grid; gap: 6px; justify-items: center; text-align: center;
+}
+.brdEmpty strong {
+  font-family: var(--font-condensed); font-size: 22px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .015em;
+}
+.brdEmpty span { font-size: 15.5px; color: var(--text-2); max-width: 52ch; }
+
+.brdLink {
+  margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line);
+  display: grid; gap: 8px; justify-items: start;
+}
+.brdUrl {
+  display: block; width: 100%;
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: 8px; padding: 11px 13px;
+  font-size: 14px; word-break: break-all;
+}
+
+.brdSigners { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 1px; }
+.brdSigners li {
+  display: grid; grid-template-columns: 34px 1fr auto; gap: 12px; align-items: center;
+  padding: 9px 4px; border-bottom: 1px solid var(--line); font-size: 16px;
+}
+.brdSigners li:last-child { border-bottom: 0; }
+.brdSignerNum { color: var(--text-3); font-size: 14px; }
+.brdSignerName { min-width: 0; word-break: break-word; }
+.brdSignerName em { color: var(--text-3); font-style: italic; }
+.brdSignerTime { font-size: 14px; color: var(--text-3); white-space: nowrap; }

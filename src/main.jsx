@@ -60,6 +60,7 @@ import SeparationWorkflow from './documents/separation/SeparationWorkflow';
    the field path has to survive a bad morning. Vite splits this into its
    own chunk (~62 kB gzip); the main bundle grows by well under 1 kB. */
 const ArchiveView = lazy(() => import('./archive/ArchiveView'));
+const MyBoard = lazy(() => import('./crew/MyBoard'));
 
 const DOCUMENT_CATEGORY_ORDER = ['fieldSafety', 'employeeAction'];
 
@@ -959,6 +960,7 @@ function IconDrafts(props) { return <svg viewBox="0 0 24 24" fill="none" stroke=
 function IconTemplates(props) { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="4" y="4" width="7" height="7" rx="1" /><rect x="13" y="4" width="7" height="7" rx="1" /><rect x="4" y="13" width="7" height="7" rx="1" /><rect x="13" y="13" width="7" height="7" rx="1" /></svg>; }
 function IconSettings(props) { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="3" /><path d="M12 3v2.4M12 18.6V21M21 12h-2.4M5.4 12H3M18 6l-1.7 1.7M7.7 16.3 6 18M18 18l-1.7-1.7M7.7 7.7 6 6" /></svg>; }
 function IconArchive(props) { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="3.5" y="4.5" width="17" height="4" rx="1" /><path d="M5 8.5v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-10" /><path d="M10 12.5h4" /></svg>; }
+function IconBoard(props) { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="3.5" y="4.5" width="17" height="15" rx="2" /><path d="M7.5 9.5h9" /><path d="M7.5 13h5" /><path d="m14.5 16.4 1.5 1.6 3-3.6" /></svg>; }
 function IconChevronRight(props) { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M9 5l7 7-7 7" /></svg>; }
 function IconSearch(props) { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" {...props}><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>; }
 /* One mark per document type, for Home's start grid — see DOC_ICONS. */
@@ -2210,6 +2212,9 @@ function App() {
             <button className={`sidebarNavItem${tab === 'templates' ? ' active' : ''}`} onClick={() => setTab('templates')}>
               <IconTemplates className="sidebarNavIcon" /><span className="sidebarNavLabel">Templates</span>
             </button>
+            <button className={`sidebarNavItem${tab === 'board' ? ' active' : ''}`} onClick={() => setTab('board')}>
+              <IconBoard className="sidebarNavIcon" /><span className="sidebarNavLabel">My Board</span>
+            </button>
             <button className={`sidebarNavItem${tab === 'archive' ? ' active' : ''}`} onClick={() => setTab('archive')}>
               <IconArchive className="sidebarNavIcon" /><span className="sidebarNavLabel">Archive</span>
             </button>
@@ -2305,6 +2310,11 @@ function App() {
           )}
           {tab === 'drafts' && <DraftsView entries={draftEntries} goDocs={goDocs} />}
           {tab === 'templates' && <TemplatesView allTemplates={allTemplates} customTemplates={customTemplates} loadTemplate={requestLoadTemplate} deleteTemplate={deleteTemplate} startBlank={requestStartBlank} shareTemplate={shareTemplate} importTemplateFile={importTemplateFile} />}
+          {tab === 'board' && (
+            <Suspense fallback={<p className="helperText">Loading your board…</p>}>
+              <MyBoard />
+            </Suspense>
+          )}
           {tab === 'archive' && (
             <Suspense fallback={<p className="helperText">Loading the archive…</p>}>
               <ArchiveView />

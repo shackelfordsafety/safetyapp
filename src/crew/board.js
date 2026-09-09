@@ -152,3 +152,51 @@ export async function fetchSignatureCounts(publicationIds) {
     return acc;
   }, {});
 }
+
+/* Everything on MY board, for the superintendent's own view: live JSAs
+   first, plus the ones that already expired today so he can still see what
+   happened this morning rather than watching them vanish at their expiry
+   time. Requires an account -- this is the office side of the same data
+   the crew reads anonymously. */
+export async function fetchMyBoard() {
+  const user = await currentUser();
+  if (!user) throw new NotSignedInError();
+
+  // Back to the start of today, local time, so "this morning's JSAs" stay
+  // visible after they expire without dragging in last week's.
+  const since = new Date();
+  since.setHours(0, 0, 0, 0);
+
+  const { data, error } = await db
+    .from('jsa_publications')
+    .select('id, area_label, job_site, location, job_number, doc_date, published_at, expires_at, version, client_doc_id')
+    .eq('board_owner', user.id)
+    .gte('published_at', since.toISOString())
+    .order('published_at', { ascending: false });
+  if (error) throw new Error(error.message);
+
+  const rows = data || [];
+  const counts = await fetchSignatureCounts(rows.map(r => r.id));
+  const now = new Date();
+  return {
+    boardUrl: boardUrlFor(user.id),
+    rows: rows.map(r => ({
+      ...r,
+      signed: counts[r.id] || 0,
+      live: new Date(r.expires_at) > now,
+    })),
+  };
+}
+
+/* Who has signed one JSA, for the super checking the list rather than the
+   number. Named signatures come from phones; the kiosk records numbered
+   ones with no name, which is deliberate and not missing data. */
+export async function fetchSigners(publicationId) {
+  const { data, error } = await db
+    .from('jsa_signatures')
+    .select('id, signer_name, source, signed_at, is_late')
+    .eq('publication_id', publicationId)
+    .order('signed_at', { ascending: true });
+  if (error) throw new Error(error.message);
+  return data || [];
+}
