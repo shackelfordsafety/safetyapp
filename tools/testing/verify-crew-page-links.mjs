@@ -82,12 +82,28 @@ async function main() {
     console.log('Directions links:');
     maps.forEach(m => console.log(`   "${m.text}"  ->  ${m.href}`));
 
-    // The whole point of the digit guard: a field holding two numbers
-    // ("911 / 601-555-0199") must NOT become one dialable link.
+    /* The digit guard, checked only when the JSA on the board actually
+       exercises it. A field holding TWO numbers ("911 / 601-555-0199")
+       must stay plain text -- one merged 13-digit link would dial
+       nonsense. A field holding just "911" must link. Reporting these
+       unconditionally was misleading: against a real JSA that says only
+       "911", both lines read false and looked like failures. */
     const bodyText = await page.locator('.jsaDoc').innerText();
-    const emergencyLinked = tels.some(t => t.text.includes('911'));
-    console.log('Emergency field left unlinked (it holds two numbers):', !emergencyLinked);
-    console.log('Emergency number still shown as text:', bodyText.includes('911 / 601-555-0199'));
+    const twoNumberField = bodyText.match(/\d{3}\s*\/\s*[\d-]{7,}/);
+    if (twoNumberField) {
+      const merged = tels.some(t => t.text === twoNumberField[0]);
+      console.log(`Guard: "${twoNumberField[0]}" left as plain text:`, !merged);
+    }
+    const bare911 = tels.find(t => t.text.trim() === '911');
+    console.log('Guard: a bare "911" is dialable:', bare911 ? bare911.href : 'no bare 911 on this JSA');
+
+    // Every list on the page, so the three-box layout is checked and not
+    // just eyeballed.
+    const boxes = await page.locator('.jsaBox').evaluateAll(els => els.map(e => ({
+      title: e.querySelector('.jsaBoxTitle')?.textContent.trim(),
+      count: e.querySelectorAll('.jsaBoxList li').length,
+    })));
+    console.log('Boxes:', boxes.map(b => `${b.title} (${b.count})`).join(', ') || 'none');
 
     if (errors.length) console.log('PAGE ERRORS:', errors);
     else console.log('No page errors.');

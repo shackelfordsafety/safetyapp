@@ -91,6 +91,43 @@ export function readableRows(jsa) {
   }));
 }
 
+/* The same content as readableRows, but kept in its three columns instead
+   of zipped into rows.
+
+   readableRows pairs steps[i] with hazards[i] with controls[i], and for a
+   JSA written the normal way -- three independent lists, typed or spoken
+   in as separate thoughts -- that pairing is fiction. A real one had 8
+   tasks, 19 hazards and 21 controls in it: line them up and the page
+   claims "Build lift elevation" causes "Line of fire" and is answered by
+   "Maintain eye contact with operator", which is not what anybody wrote.
+   On a document a man is about to sign, and might hand to a safety
+   inspector, an invented relationship between a hazard and a control is
+   worse than a plain list.
+
+   The printed JSA has always shown these as three columns. This makes the
+   readable view agree with the paper. */
+export function readableColumns(jsa) {
+  const lines = v => String(v || '').split('\n').map(s => s.trim()).filter(Boolean);
+  const rows = (Array.isArray(jsa?.taskRows) ? jsa.taskRows : [])
+    .filter(r => r && (r.step || r.hazards || r.controls));
+
+  // Detailed rows genuinely do pair up, but they still print as three
+  // columns, so flatten them the same way rather than showing this one
+  // screen two different ways depending on how the JSA was written.
+  if (rows.length) {
+    return {
+      tasks: rows.flatMap(r => lines(r.step)),
+      hazards: rows.flatMap(r => lines(r.hazards)),
+      controls: rows.flatMap(r => lines(r.controls)),
+    };
+  }
+  return {
+    tasks: lines(jsa?.dailyTasks),
+    hazards: lines(jsa?.hazardsSummary),
+    controls: lines(jsa?.controlsSummary),
+  };
+}
+
 async function currentUser() {
   try {
     const { data } = await db.auth.getUser();

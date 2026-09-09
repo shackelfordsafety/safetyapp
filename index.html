@@ -13,19 +13,36 @@
 
     <!-- Without these, iMessage/Slack/etc. link previews fall back to
          guessing an image from the page instead of using one we choose —
-         in this app's case that guess landed on a body-diagram graphic used
-         internally by the Incident Report PDF, not anything meant to be a
-         preview picture. These tags make every link-preview generator show
-         the company logo and a real title/description instead. -->
+         in this app's case that guess landed on the nude body-diagram
+         graphic the Incident Report uses to mark where somebody got hurt.
+         Which is what everybody Fonzo sent the link to actually saw.
+
+         These tags were already here and still pointed at
+         fonzohdz.github.io, the address this app lived at before the repo
+         moved to the company org. That URL 404s, and a 404 image is the
+         same as no image at all to a scraper — straight back to guessing.
+         So: absolute URLs (relative ones are ignored by most previewers),
+         on the domain the app is actually served from.
+
+         share-card.png rather than the logo file itself: it is 1200x630,
+         the size every preview generator is built around, and it is PNG,
+         which everything renders — several previewers still choke on the
+         .webp logo, and one that fails puts us back to guessing again.
+         Regenerate it with tools/testing/make-share-card.mjs. -->
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Shackelford Construction and Hauling" />
     <meta property="og:title" content="Safety Documentation Center" />
-    <meta property="og:description" content="Shackelford Construction and Hauling's field safety documentation app — JSAs, incident reports, and more, built for the job site." />
-    <meta property="og:url" content="https://fonzohdz.github.io/safetyapp/" />
-    <meta property="og:image" content="https://fonzohdz.github.io/safetyapp/icons/shackelford-logo.webp" />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:description" content="Shackelford Construction and Hauling's field safety app — JSAs, incident reports, and crew sign-in, built for the job site." />
+    <meta property="og:url" content="https://shackelfordsafety.github.io/safetyapp/" />
+    <meta property="og:image" content="https://shackelfordsafety.github.io/safetyapp/share-card.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Shackelford Construction and Hauling — Safety Documentation Center" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Safety Documentation Center" />
-    <meta name="twitter:description" content="Shackelford Construction and Hauling's field safety documentation app." />
-    <meta name="twitter:image" content="https://fonzohdz.github.io/safetyapp/icons/shackelford-logo.webp" />
+    <meta name="twitter:description" content="Shackelford Construction and Hauling's field safety app." />
+    <meta name="twitter:image" content="https://shackelfordsafety.github.io/safetyapp/share-card.png" />
   </head>
   <body>
     <div id="root"></div>

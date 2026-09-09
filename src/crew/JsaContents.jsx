@@ -1,4 +1,4 @@
-import { readableRows } from './board';
+import { readableColumns } from './board';
 import './jsaContents.css';
 
 /* ── The JSA, readable ───────────────────────────────────────────────────
@@ -46,14 +46,22 @@ function MapLine({ label, name, address }) {
    supers really do write "911 / 601-555-0199" in them -- stripping the
    punctuation out of that gives 13 digits of nonsense, and a tap-to-call
    that dials nonsense in an emergency is worse than no link at all. So
-   anything that isn't a single plausible number (7 local, 10 with area
-   code, 11 with a country digit) stays plain printed text. */
+   anything that isn't a single plausible number stays plain printed text.
+
+   Three digits counts, and it is the most important case here: real JSAs
+   have "911" sitting in the emergency field on its own, and that is the
+   one number on this whole page that has to be one tap away. An earlier
+   version of this rule allowed only 7, 10 and 11 digits and quietly
+   refused to link 911 -- caught on Fonzo's own live JSA, not in a
+   fixture. */
+const DIALABLE_LENGTHS = [3, 7, 10, 11];
+
 function PhoneLine({ label, value }) {
   const text = String(value || '').trim();
   if (!text) return null;
   const dialable = text.replace(/[^\d+]/g, '');
   const digitCount = dialable.replace(/\D/g, '').length;
-  if (digitCount !== 7 && digitCount !== 10 && digitCount !== 11) {
+  if (!DIALABLE_LENGTHS.includes(digitCount)) {
     return <Line label={label} value={text} />;
   }
   return (
@@ -69,9 +77,23 @@ function Line({ label, value }) {
   return <div className="jsaLine"><span>{label}</span><strong>{value}</strong></div>;
 }
 
+/* One column of the JSA, listed. Numbered so a man on the phone can say
+   "number four" to his foreman and be understood. */
+function ListBox({ title, items }) {
+  if (!items || items.length === 0) return null;
+  return (
+    <div className="jsaBox">
+      <div className="jsaBoxTitle">{title}</div>
+      <ol className="jsaBoxList">
+        {items.map((t, i) => <li key={i}>{t}</li>)}
+      </ol>
+    </div>
+  );
+}
+
 export default function JsaContents({ jsa, title = 'The JSA' }) {
   if (!jsa) return null;
-  const rows = readableRows(jsa);
+  const cols = readableColumns(jsa);
   return (
     <div className="jsaDoc">
       <div className="jsaDocTitle">{title}</div>
@@ -89,18 +111,9 @@ export default function JsaContents({ jsa, title = 'The JSA' }) {
       <Line label="Muster point" value={jsa.musterPoint} />
       <Line label="Tailgate topic" value={jsa.tailgateTopic} />
 
-      {rows.length > 0 && (
-        <>
-          <div className="jsaDocTitle">Steps, hazards and controls</div>
-          {rows.map((r, i) => (
-            <div className="jsaStep" key={i}>
-              {r.step && <strong>{r.step}</strong>}
-              {r.hazards && <p><span>Hazards</span>{r.hazards}</p>}
-              {r.controls && <p><span>Controls</span>{r.controls}</p>}
-            </div>
-          ))}
-        </>
-      )}
+      <ListBox title="Today's tasks" items={cols.tasks} />
+      <ListBox title="Hazards" items={cols.hazards} />
+      <ListBox title="Controls" items={cols.controls} />
 
       {String(jsa.acknowledgement || '').trim() && (
         <>

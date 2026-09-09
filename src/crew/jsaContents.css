@@ -32,24 +32,39 @@
   .jsaLine { grid-template-columns: 1fr; gap: 1px; }
 }
 
-.jsaStep {
+/* One box per column of the JSA: tasks, hazards, controls. They are three
+   independent lists on the printed form and they are three independent
+   lists here -- see readableColumns() in board.js for why pairing them
+   row-by-row was actively misleading. */
+.jsaBox {
   background: #F5F5F6;
   border: 1px solid #DEDEE1;
   border-radius: 9px;
-  padding: 12px 14px;
-  display: grid;
-  gap: 6px;
+  padding: 13px 15px 14px;
+  margin-bottom: 12px;
 }
-.jsaStep strong { font-size: 17px; line-height: 1.25; }
-.jsaStep p { margin: 0; font-size: 15.5px; line-height: 1.4; white-space: pre-wrap; }
-.jsaStep p span {
-  display: block;
-  font-size: 12px;
+.jsaBoxTitle {
+  font-size: 12.5px;
   font-weight: 700;
-  letter-spacing: .1em;
+  letter-spacing: .11em;
   text-transform: uppercase;
-  color: #5A5A60;
+  color: #C1121F;
+  margin-bottom: 9px;
 }
+/* Numbered, and the numbers sit outside the text block so a wrapped
+   second line lines up under the first instead of under the digit. */
+.jsaBoxList {
+  margin: 0;
+  padding-left: 22px;
+  display: grid;
+  gap: 7px;
+}
+.jsaBoxList li {
+  font-size: 15.5px;
+  line-height: 1.35;
+  padding-left: 3px;
+}
+.jsaBoxList li::marker { color: #8A8A90; font-size: 13px; }
 
 .jsaAck {
   margin: 0;
