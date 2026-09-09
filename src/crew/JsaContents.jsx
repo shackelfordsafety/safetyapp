@@ -1,4 +1,5 @@
 import { readableColumns } from './board';
+import { formatPhone, isDialable, phoneDigits } from '../shared/phone';
 import './jsaContents.css';
 
 /* ── The JSA, readable ───────────────────────────────────────────────────
@@ -38,36 +39,20 @@ function MapLine({ label, name, address }) {
   );
 }
 
-/* A tappable phone number. Every device that can open this page is a
-   phone, so a printed number a man has to memorise and retype is a number
-   he gets wrong at the worst possible moment.
-
-   Only ONE number gets linked, though. These fields are free text and
-   supers really do write "911 / 601-555-0199" in them -- stripping the
-   punctuation out of that gives 13 digits of nonsense, and a tap-to-call
-   that dials nonsense in an emergency is worse than no link at all. So
-   anything that isn't a single plausible number stays plain printed text.
-
-   Three digits counts, and it is the most important case here: real JSAs
-   have "911" sitting in the emergency field on its own, and that is the
-   one number on this whole page that has to be one tap away. An earlier
-   version of this rule allowed only 7, 10 and 11 digits and quietly
-   refused to link 911 -- caught on Fonzo's own live JSA, not in a
-   fixture. */
-const DIALABLE_LENGTHS = [3, 7, 10, 11];
-
+/* A tappable phone number, shown the way a phone number is written.
+   Everything that decides both -- what reads, what dials, and what is left
+   alone because we don't understand it -- lives in shared/phone.js, so the
+   printed JSA and this screen can never disagree about the same field. */
 function PhoneLine({ label, value }) {
   const text = String(value || '').trim();
   if (!text) return null;
-  const dialable = text.replace(/[^\d+]/g, '');
-  const digitCount = dialable.replace(/\D/g, '').length;
-  if (!DIALABLE_LENGTHS.includes(digitCount)) {
-    return <Line label={label} value={text} />;
-  }
+  if (!isDialable(text)) return <Line label={label} value={formatPhone(text)} />;
   return (
     <div className="jsaLine">
       <span>{label}</span>
-      <strong><a className="jsaTelLink" href={`tel:${dialable}`}>{text}</a></strong>
+      <strong>
+        <a className="jsaTelLink" href={`tel:${phoneDigits(text)}`}>{formatPhone(text)}</a>
+      </strong>
     </div>
   );
 }

@@ -22,6 +22,7 @@ import ErrorBoundary from './shared/ErrorBoundary';
 import { useUserSync } from './sync/useUserSync';
 import { recordTemplateDeletion, markSettingsChanged } from './sync/syncMeta';
 import { readStoredSession } from './shared/session';
+import { formatPhone } from './shared/phone';
 import AccountButton from './account/AccountButton';
 import { DOCUMENT_STORAGE_KEYS } from './documents/storage';
 import { useDraftDocument, saveStatusLabel } from './documents/useDraftDocument';
@@ -4486,8 +4487,8 @@ function MainJsaDocumentPage({ jsa, plan, className = '', pageRef }) {
         <tbody>
           <tr><th>Location:</th><td>{jsa.location}</td><th>Time Issued:</th><td>{jsa.timeIssued}</td><th>Date:</th><td>{dateStr(jsa.date)}</td></tr>
           <tr><th>Job Site:</th><td>{jsa.jobSite}</td><th>Time Expired:</th><td>{jsa.timeExpired}</td><th>Job #:</th><td>{jsa.jobNumber}</td></tr>
-          <tr><th>Superintendent/Foreman:</th><td>{jsa.superintendentForeman}</td><th>Emergency/Rescue Phone #:</th><td>{jsa.emergencyPhone}</td><th>Client:</th><td>{jsa.client}</td></tr>
-          <tr><th>Nearest Medical Facility:</th><td>{jsa.nearestMedicalFacility}</td><th>Superintendent Phone #:</th><td>{jsa.siteContactPhone}</td><th>Muster Point:</th><td>{jsa.musterPoint}</td></tr>
+          <tr><th>Superintendent/Foreman:</th><td>{jsa.superintendentForeman}</td><th>Emergency/Rescue Phone #:</th><td>{formatPhone(jsa.emergencyPhone)}</td><th>Client:</th><td>{jsa.client}</td></tr>
+          <tr><th>Nearest Medical Facility:</th><td>{jsa.nearestMedicalFacility}</td><th>Superintendent Phone #:</th><td>{formatPhone(jsa.siteContactPhone)}</td><th>Muster Point:</th><td>{jsa.musterPoint}</td></tr>
           {/* Its own full-width row rather than crammed in beside the
               facility name: an address is ~35 characters and a 20%-wide
               cell fits about 20, so inline it would wrap to three lines and
