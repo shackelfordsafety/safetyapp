@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { fetchMyBoard, fetchSigners, signOnKiosk, NotSignedInError } from './board';
+import { fetchMyBoard, fetchSigners, signOnKiosk, takeDownPublication, describeWindow, NotSignedInError } from './board';
 import CrewSignInKiosk from '../jsa/CrewSignInKiosk';
 import BoardQr from './BoardQr';
 import { signedUrlFor } from '../archive/fileToArchive';
@@ -98,6 +98,24 @@ export default function MyBoard() {
   const profileLabel = state.rows[0]?.job_site || 'Job Safety Analysis';
   const [kiosk, setKiosk] = useState(null);
   const [kioskSigned, setKioskSigned] = useState(0);
+  const [takingDown, setTakingDown] = useState(null);
+  const [removing, setRemoving] = useState('');
+
+  async function confirmTakeDown() {
+    const row = takingDown;
+    setTakingDown(null);
+    setRemoving(row.id);
+    setError('');
+    try {
+      await takeDownPublication(row.id);
+      await load();
+    } catch (ex) {
+      setError(ex?.message || 'Could not take it down.');
+      await load();
+    } finally {
+      setRemoving('');
+    }
+  }
 
   /* Kiosk mode for one posting: the iPad in the trailer, for the handful
      of men with no phone on them. They scrawl and walk off -- no name,
@@ -206,7 +224,7 @@ export default function MyBoard() {
           <button type="button" className="brdCardMain" onClick={() => openDoc(r)}>
             <strong>{r.area_label}</strong>
             <span className="brdMeta">
-              Published {fmtTime(r.published_at)} · good until {fmtTime(r.expires_at)}
+              Published {fmtTime(r.published_at)} · good until {describeWindow(r.expires_at)}
               {r.version > 1 ? ` · version ${r.version}` : ''}
             </span>
             <span className="brdSeeDoc">{opening === r.id ? 'Opening…' : 'See the JSA'}</span>
@@ -219,6 +237,19 @@ export default function MyBoard() {
             <button type="button" className="btn secondary sm" onClick={() => { setKiosk(r); setKioskSigned(0); }}>
               Sign on this iPad
             </button>
+            {/* Only while nobody has signed. Once a man has signed, this
+                is a record of who agreed to what and the button is gone --
+                the fix from there is a corrected version, not an eraser. */}
+            {r.signed === 0 && (
+              <button
+                type="button"
+                className="brdTakeDown"
+                onClick={() => setTakingDown(r)}
+                disabled={removing === r.id}
+              >
+                {removing === r.id ? 'Taking it down…' : 'Take it down'}
+              </button>
+            )}
           </div>
         </div>
       ))}
@@ -266,6 +297,25 @@ export default function MyBoard() {
           signedCount={kiosk.signed + kioskSigned}
           onExit={() => { setKiosk(null); load(); }}
         />
+      )}
+      {takingDown && (
+        <div className="dialogOverlay" onMouseDown={e => { if (e.target === e.currentTarget) setTakingDown(null); }}>
+          <div className="dialogPanel" role="dialog" aria-modal="true" aria-label="Take it down" style={{ maxWidth: 460 }}>
+            <h3 style={{ margin: 0 }}>Take this off the board?</h3>
+            <p className="helperText">
+              <strong>{takingDown.area_label}</strong><br />
+              Good until {describeWindow(takingDown.expires_at)}
+            </p>
+            <p className="helperText">
+              Nobody has signed it, so nothing is lost. The crew will stop seeing it straight away.
+              Your saved JSA on this device isn&apos;t touched — fix the times and publish it again.
+            </p>
+            <div className="dialogActions">
+              <button type="button" className="btn ghost" onClick={() => setTakingDown(null)}>Keep it up</button>
+              <button type="button" className="btn primary" onClick={confirmTakeDown}>Take it down</button>
+            </div>
+          </div>
+        </div>
       )}
       {preview && <JsaPreview row={preview} onClose={() => setPreview(null)} />}
       {openList && <SignerList publicationId={openList} onClose={() => setOpenList(null)} />}
