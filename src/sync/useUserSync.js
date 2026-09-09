@@ -15,7 +15,7 @@ import { readStoredSession, deviceName } from '../shared/session';
 
 const DEBOUNCE_MS = 1500;
 
-export function useUserSync({ templates, setTemplates, settings, setSettings }) {
+export function useUserSync({ templates, setTemplates, settings, setSettings, onNeedsName }) {
   const lastSyncedRef = useRef('');
   const busyRef = useRef(false);
   // Read through refs so the sync callback never has to be rebuilt when
@@ -39,6 +39,7 @@ export function useUserSync({ templates, setTemplates, settings, setSettings }) 
       if (!merged) return;
 
       lastSyncedRef.current = JSON.stringify([merged.templates, merged.settings]);
+      if (onNeedsName) onNeedsName(Boolean(merged.needsName));
 
       // Only touch React state when the merge actually produced something
       // different, so a sync that changes nothing cannot re-trigger itself.
@@ -56,7 +57,7 @@ export function useUserSync({ templates, setTemplates, settings, setSettings }) 
     } finally {
       busyRef.current = false;
     }
-  }, [setTemplates, setSettings]);
+  }, [setTemplates, setSettings, onNeedsName]);
 
   // On open, and whenever the app comes back to the foreground -- which on
   // an iPad is what "picking it up again" actually looks like.

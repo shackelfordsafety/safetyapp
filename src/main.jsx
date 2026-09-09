@@ -21,6 +21,7 @@ import { loadModule } from './shared/loadModule';
 import ErrorBoundary from './shared/ErrorBoundary';
 import { useUserSync } from './sync/useUserSync';
 import { recordTemplateDeletion, markSettingsChanged } from './sync/syncMeta';
+import { readStoredSession } from './shared/session';
 import AccountButton from './account/AccountButton';
 import { DOCUMENT_STORAGE_KEYS } from './documents/storage';
 import { useDraftDocument, saveStatusLabel } from './documents/useDraftDocument';
@@ -1308,11 +1309,17 @@ function App() {
   /* Templates and settings follow the account across devices. Silent by
      design: nothing loads while signed out, it never blocks a screen, and
      a failure just means this device keeps using its own copy. */
+  /* Nobody who is never asked will go looking for the setting, so an
+     account with no name on it says so once, where it can be acted on. */
+  const [needsName, setNeedsName] = useState(false);
+  const [nameNudgeHidden, setNameNudgeHidden] = useState(false);
+
   useUserSync({
     templates: customTemplates,
     setTemplates: setCustomTemplates,
     settings,
     setSettings,
+    onNeedsName: setNeedsName,
   });
 
   const [savedDraft, setSavedDraft] = useState(() => safeJson(localStorage.getItem(KEYS.draft), null));
@@ -2402,6 +2409,27 @@ function App() {
         </aside>
 
         <main className={`page${isDocFlow ? '' : ' pageWithBottomNav'}`}>
+          {/* Hidden during a document flow -- a man mid-JSA at 6:15 does
+              not need a housekeeping notice on the screen. */}
+          {needsName && !nameNudgeHidden && !isDocFlow && (
+            <div className="nameNudge">
+              <div>
+                <strong>Add your name</strong>
+                <p>
+                  Your account doesn&apos;t have a name on it yet. It goes on company records,
+                  so put the name the company has you under.
+                </p>
+              </div>
+              <div className="nameNudgeActions">
+                <button type="button" className="btn primary sm" onClick={() => { setTab('settings'); setNameNudgeHidden(true); }}>
+                  Add it
+                </button>
+                <button type="button" className="btn ghost sm" onClick={() => setNameNudgeHidden(true)}>
+                  Later
+                </button>
+              </div>
+            </div>
+          )}
           {tab === 'home' && (
             <HomeView customTemplates={customTemplates} setTab={setTab} docEntries={homeDocEntries} />
           )}
@@ -3803,7 +3831,12 @@ function TemplatesView({ allTemplates, customTemplates, loadTemplate, deleteTemp
 }
 
 /* ── Settings view ── */
+/* Only mounted when there is a session, and lazy either way, so Settings
+   stays a local-only screen for anyone who never signs in. */
+const ProfileCard = lazy(() => loadModule(() => import('./account/ProfileCard')));
+
 function SettingsView({ settings, setSettings }) {
+  const session = readStoredSession();
   const [quickType, setQuickType] = useState('task');
   const [quickLabel, setQuickLabel] = useState('');
   const customQuick = settings.customQuick || { task: [], hazard: [], control: [] };
@@ -3843,6 +3876,13 @@ function SettingsView({ settings, setSettings }) {
         <h2>App Settings</h2>
         <p>This build stores drafts, templates, favorites, recent items, and custom quick adds locally on this device.</p>
       </div>
+
+      {session && (
+        <Suspense fallback={null}>
+          <ProfileCard session={session} />
+        </Suspense>
+      )}
+
       <div className="card">
         <div className="cardHeader"><h3>Appearance</h3></div>
         <div className="cardBody">

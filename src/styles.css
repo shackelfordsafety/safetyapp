@@ -3241,3 +3241,26 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   height: auto;
   margin-bottom: 8px;
 }
+
+/* ── "Add your name" ──
+   Shown once per session to an account with no name on it. Deliberately a
+   banner and not a modal: it is housekeeping, not an emergency, and this
+   app is used by men standing in front of a crew who must never be blocked
+   by a screen they didn't ask for. It routes to Settings rather than
+   carrying its own form, so there is exactly one place a name gets set. */
+.nameNudge {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  background: var(--surface-2, #F5F5F6);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--brand-red, #C1121F);
+  border-radius: 10px;
+}
+.nameNudge strong { display: block; font-size: 15.5px; }
+.nameNudge p { margin: 3px 0 0; font-size: 14px; color: var(--text-2, #46464C); max-width: 60ch; }
+.nameNudgeActions { display: flex; gap: 8px; flex-shrink: 0; }
