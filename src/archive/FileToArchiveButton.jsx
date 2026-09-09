@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { loadModule } from '../shared/loadModule';
 import './fileButton.css';
 
 /* ── "File to the archive" ────────────────────────────────────────────────
@@ -26,7 +27,7 @@ export default function FileToArchiveButton({ docType, model, pdfBlob, disabled 
     setPhase('working');
     setMessage('');
     try {
-      const { fileDocument, NotSignedInError } = await import('./fileToArchive');
+      const { fileDocument, NotSignedInError } = await loadModule(() => import('./fileToArchive'));
       try {
         await fileDocument({ docType, model, pdfBlob });
         setPhase('filed');
@@ -48,7 +49,7 @@ export default function FileToArchiveButton({ docType, model, pdfBlob, disabled 
     setPhase('working');
     setMessage('');
     try {
-      const { signInToArchive, fileDocument } = await import('./fileToArchive');
+      const { signInToArchive, fileDocument } = await loadModule(() => import('./fileToArchive'));
       await signInToArchive(email, password);
       await fileDocument({ docType, model, pdfBlob });
       setPhase('filed');

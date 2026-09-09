@@ -18,6 +18,7 @@ import { DOCUMENT_REGISTRY, DOCUMENT_CATEGORIES } from './documents/registry';
 import { StepNav } from './documents/FormPrimitives';
 import FileToArchiveButton from './archive/FileToArchiveButton';
 import PublishToBoardButton from './crew/PublishToBoardButton';
+import { loadModule } from './shared/loadModule';
 import AccountButton from './account/AccountButton';
 import { DOCUMENT_STORAGE_KEYS } from './documents/storage';
 import { useDraftDocument, saveStatusLabel } from './documents/useDraftDocument';
@@ -59,8 +60,12 @@ import SeparationWorkflow from './documents/separation/SeparationWorkflow';
    if it fails -- which matters because this app has no error boundaries and
    the field path has to survive a bad morning. Vite splits this into its
    own chunk (~62 kB gzip); the main bundle grows by well under 1 kB. */
-const ArchiveView = lazy(() => import('./archive/ArchiveView'));
-const MyBoard = lazy(() => import('./crew/MyBoard'));
+/* Routed through loadModule so a tab left open across a deploy recovers by
+   reloading instead of blanking the app -- these have no error boundary
+   above them, so a failed chunk fetch takes the whole screen down. See
+   src/shared/loadModule.js. */
+const ArchiveView = lazy(() => loadModule(() => import('./archive/ArchiveView')));
+const MyBoard = lazy(() => loadModule(() => import('./crew/MyBoard')));
 
 const DOCUMENT_CATEGORY_ORDER = ['fieldSafety', 'employeeAction'];
 
@@ -5039,7 +5044,7 @@ function crewBoardOwnerFromHash() {
   return m ? m[1] : null;
 }
 
-const CrewSignIn = lazy(() => import('./crew/CrewSignIn'));
+const CrewSignIn = lazy(() => loadModule(() => import('./crew/CrewSignIn')));
 
 function Root() {
   const [boardOwnerId, setBoardOwnerId] = useState(crewBoardOwnerFromHash);

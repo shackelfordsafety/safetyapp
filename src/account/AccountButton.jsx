@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { loadModule } from '../shared/loadModule';
 import './account.css';
 
 /* ── Who you are, top right, always visible ──────────────────────────────
@@ -61,7 +62,7 @@ export default function AccountButton() {
     setBusy(true);
     setError('');
     try {
-      const { db } = await import('../archive/archiveClient');
+      const { db } = await loadModule(() => import('../archive/archiveClient'));
       const { error: err } = await db.auth.signInWithPassword({ email: email.trim(), password });
       if (err) { setError(err.message); return; }
       refresh();
@@ -77,7 +78,7 @@ export default function AccountButton() {
   async function signOut() {
     setBusy(true);
     try {
-      const { db } = await import('../archive/archiveClient');
+      const { db } = await loadModule(() => import('../archive/archiveClient'));
       await db.auth.signOut();
     } catch { /* clearing the local session below is what actually matters */ }
     refresh();

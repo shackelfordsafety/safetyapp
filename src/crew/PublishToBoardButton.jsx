@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { loadModule } from '../shared/loadModule';
 
 /* ── "Publish to my board" ────────────────────────────────────────────────
    Like FileToArchiveButton, this deliberately imports NO cloud code up
@@ -23,7 +24,7 @@ export default function PublishToBoardButton({ jsa, disabled }) {
     setPhase('working');
     setMessage('');
     try {
-      const { publishToBoard, NotSignedInError } = await import('./board');
+      const { publishToBoard, NotSignedInError } = await loadModule(() => import('./board'));
       try {
         const { boardUrl: url } = await publishToBoard({ jsa });
         setBoardUrl(url);
@@ -46,7 +47,7 @@ export default function PublishToBoardButton({ jsa, disabled }) {
     setPhase('working');
     setMessage('');
     try {
-      const { db } = await import('../archive/archiveClient');
+      const { db } = await loadModule(() => import('../archive/archiveClient'));
       const { error } = await db.auth.signInWithPassword({ email: email.trim(), password });
       if (error) throw new Error(error.message);
       await publish();
