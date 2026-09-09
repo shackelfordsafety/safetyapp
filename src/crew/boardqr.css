@@ -41,11 +41,27 @@
 @media print {
   body.printingQr > *:not(.brdQrSheet) { display: none !important; }
 
+  /* ONE PAGE, always. The first version measured about 10.2in tall, which
+     fits inside Letter on paper but not once the default page margins and
+     Safari's own URL/date header and footer have taken their cut -- so it
+     broke across two sheets and the second one carried three lines of
+     orphaned text.
+
+     Everything below is sized to land near 8.4in for that reason. Do not
+     grow it back without re-running tools/testing/verify-board-qr-sheet.mjs,
+     which measures the rendered height and fails past 9in.
+
+     Note what is NOT here: an @page rule. @page cannot be scoped to a
+     class, so declaring one would reach the JSA print system -- the most
+     regression-prone code in this app -- from a stylesheet about a
+     sticker. Fitting the content is the safe way to solve this. */
   body.printingQr .brdQrSheet {
     display: grid !important;
     justify-items: center;
     text-align: center;
-    padding: 0.45in 0.5in;
+    padding: 0.3in 0.5in;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   /* Every background on this sheet is the point of it, not decoration --
@@ -62,22 +78,22 @@
   body.printingQr .brdQrSheetHead {
     width: 100%;
     background: #171719;
-    padding: 0.3in 0;
+    padding: 0.22in 0;
     display: flex;
     justify-content: center;
   }
-  body.printingQr .brdQrSheetLogo { height: 0.95in; width: auto; }
+  body.printingQr .brdQrSheetLogo { height: 0.7in; width: auto; }
 
   body.printingQr .brdQrSheetRule {
     width: 100%;
-    height: 0.07in;
+    height: 0.06in;
     background: #C1121F;
-    margin-bottom: 0.32in;
+    margin-bottom: 0.24in;
   }
 
   body.printingQr .brdQrSheetTitle {
     font-family: var(--font-condensed, sans-serif);
-    font-size: 42pt;
+    font-size: 34pt;
     font-weight: 700;
     line-height: 1;
     letter-spacing: .02em;
@@ -85,38 +101,33 @@
     color: #171719;
   }
   body.printingQr .brdQrSheetSub {
-    font-size: 15pt;
+    font-size: 13pt;
     letter-spacing: .16em;
     text-transform: uppercase;
     color: #C1121F;
     font-weight: 600;
-    margin-top: 0.07in;
+    margin-top: 0.06in;
   }
 
+  /* 4.3in is far more code than any phone needs -- a camera reads this
+     from across a trailer -- and the inches saved are what keep the sheet
+     on one page. */
   body.printingQr .brdQrSheetCode {
-    width: 5.1in;
-    height: 5.1in;
-    margin: 0.26in 0 0.22in;
+    width: 4.3in;
+    height: 4.3in;
+    margin: 0.2in 0 0.18in;
     image-rendering: pixelated;
   }
 
-  /* Which board this is. On a job with two trailers, the wrong sticker on
-     the wrong door is a man signing the wrong JSA. */
-  body.printingQr .brdQrSheetBoard {
-    font-size: 19pt;
-    font-weight: 700;
-    color: #171719;
-  }
   body.printingQr .brdQrSheetHow {
-    font-size: 12.5pt;
+    font-size: 12pt;
     color: #46464C;
-    margin-top: 0.09in;
   }
 
   body.printingQr .brdQrSheetFoot {
     width: 100%;
-    margin-top: 0.3in;
-    padding: 0.13in 0;
+    margin-top: 0.22in;
+    padding: 0.1in 0;
     border-top: 1.5px solid #171719;
     font-size: 10.5pt;
     font-weight: 600;
