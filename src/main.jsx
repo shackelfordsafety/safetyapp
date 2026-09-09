@@ -899,13 +899,18 @@ function findTaskSuggestion(taskLabel) {
 }
 
 /* ── Step definitions ── */
+/* Four steps, not six (2026-09-09). Review, Signatures and Finish&Export
+   were three screens for what is really one moment -- look it over, then
+   say how it gets signed -- and the middle two mostly restated what the
+   last one already offered. Fonzo: "job info > meeting info >
+   tasks/hazards > complete and then options as to how the JSA is going to
+   be signed". jsaStep is ephemeral React state, never persisted with the
+   draft, so no saved draft carries a now-missing step id. */
 const STEPS = [
   { id: 'job', label: 'Job Info', helper: 'Project, site, and emergency details' },
   { id: 'meeting', label: 'Meeting Info', helper: 'Topic, previous day, overall task' },
   { id: 'work', label: 'Tasks / Hazards', helper: 'Daily tasks, hazards, and controls' },
-  { id: 'review', label: 'Review', helper: 'Check everything before the crew signs' },
-  { id: 'signatures', label: 'Signatures', helper: 'Crew count and acknowledgement' },
-  { id: 'export', label: 'Finish & Export', helper: 'Save draft, templates, and export PDF' },
+  { id: 'finish', label: 'Finish', helper: 'Check it over, then choose how the crew signs' },
 ];
 
 // Every real user-entered field, not just the handful originally checked --
@@ -940,12 +945,10 @@ function stepStatus(jsa, id) {
       const rows = getContentRows(jsa);
       return rows.some(row => hasText(row.step)) && rows.some(row => hasText(row.hazards)) && rows.some(row => hasText(row.controls)) ? 'complete' : 'needs-info';
     }
-    case 'signatures': return Number(jsa.signatureLineCount) > 0 ? 'complete' : 'needs-info';
     // A checkpoint over job/meeting/work, not its own fields -- complete the
     // instant those three are, so reaching this step is never extra data
     // entry, just a look-over-everything moment before the crew signs.
-    case 'review': return ['job', 'meeting', 'work'].every(id => stepStatus(jsa, id) === 'complete') ? 'complete' : 'needs-info';
-    case 'export': return jsa.status === 'ready' ? 'ready' : 'draft';
+    case 'finish': return ['job', 'meeting', 'work'].every(id => stepStatus(jsa, id) === 'complete') ? 'complete' : 'needs-info';
     default: return 'draft';
   }
 }
@@ -953,7 +956,7 @@ function stepStatus(jsa, id) {
 // jsaStep itself is ephemeral React state and is never persisted with the draft.
 function nextStepHint(jsa) {
   for (const step of STEPS) {
-    if (step.id === 'export') break;
+    if (step.id === 'finish') break;
     if (stepStatus(jsa, step.id) !== 'complete') return step.label;
   }
   return 'Finish & Export';
@@ -963,7 +966,7 @@ function nextStepHint(jsa) {
 // measurements tied to the active jsa, not appropriate for a passive
 // dashboard read of a possibly-unopened saved draft).
 function draftStepProgress(jsa) {
-  const relevant = STEPS.filter(s => s.id !== 'export');
+  const relevant = STEPS.filter(s => s.id !== 'finish');
   const done = relevant.filter(s => stepStatus(jsa, s.id) === 'complete').length;
   return { done, total: relevant.length };
 }
@@ -977,7 +980,7 @@ function getReviewChecks(jsa, measurements) {
     { label: 'At least one task', ok: getContentRows(jsa).some(row => hasText(row.step)), step: 'work' },
     { label: 'Hazards identified', ok: getContentRows(jsa).some(row => hasText(row.hazards)), step: 'work' },
     { label: 'Controls identified', ok: getContentRows(jsa).some(row => hasText(row.controls)), step: 'work' },
-    { label: `Signature setup (${signInLineTotal(jsa)} lines)`, ok: Number(jsa.signatureLineCount) >= 1 && Number(jsa.signatureLineCount) <= 100, step: 'signatures' },
+    { label: `Signature setup (${signInLineTotal(jsa)} lines)`, ok: Number(jsa.signatureLineCount) >= 1 && Number(jsa.signatureLineCount) <= 100, step: 'finish' },
     // No single earlier step reliably fixes an overflowing page plan (it can
     // require trimming any of meeting/work/signatures) -- left non-clickable
     // rather than guessing wrong.
@@ -1183,7 +1186,7 @@ function DocumentOptionsSheet({ onClose, saveDraft, markReady, clearDraft, legac
           <div className="actionSheetGroup">
             <button type="button" className="actionSheetAction" onClick={() => { legacyBrowserPrint(); onClose(); }} disabled={isGenerating}>
               <strong>Legacy Browser Print</strong>
-              <span>Fallback only — can produce incorrect pagination on some devices. Prefer "Create Document" above.</span>
+              <span>Fallback only — can produce incorrect pagination on some devices. Prefer "Make the printout" above.</span>
             </button>
           </div>
 
@@ -1997,14 +2000,14 @@ function App() {
     const fit = calcFit(jsa, measurements);
     if (fit.status === 'bad') {
       showToast('One task row is too large to print cleanly. Divide or shorten it before exporting.');
-      setJsaStep('review');
+      setJsaStep('finish');
       return false;
     }
     const missing = getReviewChecks(jsa, measurements).filter(check => !check.ok);
     if (missing.length) {
       const proceed = confirm(`The JSA still has ${missing.length} review item${missing.length === 1 ? '' : 's'}:\n\n${missing.map(item => `• ${item.label}`).join('\n')}\n\nPrint anyway?`);
       if (!proceed) {
-        setJsaStep('review');
+        setJsaStep('finish');
         return false;
       }
     }
@@ -2722,8 +2725,10 @@ function pdfExportStatusLabel(state) {
 function compactExportLabel(pdfExportState, isPdfStale) {
   const generating = pdfExportStatusLabel(pdfExportState);
   if (generating) return generating;
-  if (pdfExportState?.phase === 'ready') return isPdfStale ? 'Update Document' : 'Download Document';
-  return 'Create Document';
+  if (pdfExportState?.phase === 'ready') return isPdfStale ? 'Make it again' : 'Download';
+  // Matches the Finish step's wording -- "Create Document" is gone as a
+  // concept, so the sticky bar must not be the one place it survives.
+  return 'Make the printout';
 }
 function compactExportAction(pdfExportState, isPdfStale, exportPdf, downloadGeneratedPdfClick) {
   if (pdfExportState?.phase === 'ready' && !isPdfStale) return downloadGeneratedPdfClick;
@@ -2750,7 +2755,7 @@ function StickyActionBar({ idx, steps, prev, next, exportPdf, pdfExportState, is
             {showPreview ? 'Hide Preview' : 'Preview'}
           </button>
         )}
-        {!isLast && nextStep && <button className="btn primary sm" onClick={next}>{nextStep.id === 'signatures' ? 'Ready for Crew to Sign' : `Next: ${nextStep.label}`}</button>}
+        {!isLast && nextStep && <button className="btn primary sm" onClick={next}>{nextStep.id === 'finish' ? 'Ready for Crew to Sign' : `Next: ${nextStep.label}`}</button>}
         {isLast && (
           <button
             className="btn primary sm"
@@ -2814,7 +2819,7 @@ function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, allTem
   // step always show the real printed page(s) — "What will print" is not
   // optional there the way the mid-workflow Preview toggle is; only earlier
   // steps respect the user's showPreview toggle.
-  const isReviewStep = jsaStep === 'review' || jsaStep === 'export';
+  const isReviewStep = jsaStep === 'finish';
   const previewOpen = isReviewStep ? true : showPreview;
   // Whether the side-by-side preview column is actually rendering right now —
   // both canSideBySide (width/touch capability) and previewOpen (the existing
@@ -2831,7 +2836,7 @@ function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, allTem
   // own preflight already uses rather than a silent, unquestioned Next.
   function next() {
     if (idx >= STEPS.length - 1) return;
-    if (jsaStep === 'review') {
+    if (jsaStep === 'finish') {
       const missing = checks.filter(c => !c.ok);
       if (missing.length) {
         const proceed = confirm(`This JSA still has ${missing.length} item${missing.length === 1 ? '' : 's'} to fix:\n\n${missing.map(c => `• ${c.label}`).join('\n')}\n\nLet the crew sign anyway?`);
@@ -2844,7 +2849,7 @@ function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, allTem
       // nobody ever saw a real choice -- auto-opening the kiosk here made
       // that default look like the only option instead of a pre-selected
       // one they could still change).
-      setJsaStep('signatures');
+      setJsaStep('finish');
       return;
     }
     setJsaStep(STEPS[idx + 1].id);
@@ -2854,7 +2859,7 @@ function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, allTem
   // Finish & Export, since there's nothing left to configure on Signatures.
   function finishSigning() {
     setKioskOpen(false);
-    setJsaStep('export');
+    setJsaStep('finish');
   }
   // Signatures/Export are only reachable once Job/Meeting/Work are actually
   // filled in -- otherwise a crew could sign a JSA with no content on it via
@@ -2866,9 +2871,9 @@ function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, allTem
   // happen to already pass via a default value (signature line count
   // defaults to 30) used to read "Done" even though clicking it just got
   // redirected away, which read backwards in the field.
-  const lockedIds = contentReady ? [] : ['signatures', 'export'];
+  const lockedIds = contentReady ? [] : ['finish'];
   function guardedJump(id) {
-    if ((id === 'signatures' || id === 'export') && !contentReady) {
+    if (id === 'finish' && !contentReady) {
       const blocker = STEPS.find(s => ['job', 'meeting', 'work'].includes(s.id) && stepStatus(jsa, s.id) !== 'complete');
       setJsaStep(blocker ? blocker.id : 'job');
       return;
@@ -2927,9 +2932,7 @@ function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, allTem
           {jsaStep === 'job' && <StepJob jsa={jsa} upd={upd} prev={prev} next={next} />}
           {jsaStep === 'meeting' && <StepMeeting jsa={jsa} upd={upd} prev={prev} next={next} />}
           {jsaStep === 'work' && <StepWork jsa={jsa} upd={upd} updRow={updRow} removeRow={removeRow} customQuick={settings.customQuick || { task: [], hazard: [], control: [] }} prev={prev} next={next} />}
-          {jsaStep === 'review' && <StepContentReview jsa={jsa} upd={upd} checks={checks} plan={plan} fit={fit} prev={prev} next={next} setJsaStep={setJsaStep} />}
-          {jsaStep === 'signatures' && <StepSignatures jsa={jsa} upd={upd} prev={prev} next={next} onOpenKiosk={() => setKioskOpen(true)} />}
-          {jsaStep === 'export' && <StepExport jsa={jsa} saveName={saveName} setSaveName={setSaveName} saveTemplate={saveTemplate} updateTemplate={updateTemplate} saveDraft={saveDraft} markReady={markReady} exportPdf={exportPdf} legacyBrowserPrint={legacyBrowserPrint} pdfExportState={pdfExportState} isPdfStale={isPdfStale} downloadGeneratedPdfClick={downloadGeneratedPdfClick} clearDraft={clearDraft} prev={prev} next={next} />}
+          {jsaStep === 'finish' && <StepFinish jsa={jsa} upd={upd} checks={checks} plan={plan} fit={fit} setJsaStep={setJsaStep} saveName={saveName} setSaveName={setSaveName} saveTemplate={saveTemplate} updateTemplate={updateTemplate} saveDraft={saveDraft} markReady={markReady} clearDraft={clearDraft} exportPdf={exportPdf} legacyBrowserPrint={legacyBrowserPrint} pdfExportState={pdfExportState} isPdfStale={isPdfStale} downloadGeneratedPdfClick={downloadGeneratedPdfClick} onOpenKiosk={() => setKioskOpen(true)} prev={prev} />}
 
           {!canSideBySide && previewOpen && previewPanel}
         </div>
@@ -3386,114 +3389,89 @@ function StepWork({ jsa, upd, updRow, removeRow, customQuick, prev, next }) {
   );
 }
 
-/* ── Step: Signatures ──
-   An explicit choice (Fonzo, 2026-08-31), not inferred from whether the
-   kiosk happens to have been touched -- an earlier same-day pass tried
-   that (line-count field only shown before the first kiosk signature)
-   and it read as the feature just vanishing once the crew started
-   signing, with nothing on screen explaining why. Two real modes:
-   'kiosk' -- crew signs on this device, CrewSignInKiosk's own "Done
-   Signing" auto-sets 20 blank lines after the digital ones for late
-   arrivals/visitors, same as the 2026-08-19 "no more choosing" decision.
-   'printout' -- nobody signs digitally; signatureLineCount (1-100,
-   user-set) is the sheet's ENTIRE blank-line count (see
-   signInLineTotal's comment above), for printing and signing in pen. */
-function StepSignatures({ jsa, upd, prev, next, onOpenKiosk }) {
-  const crewSignedCount = jsa.crewSignatures?.length || 0;
-  const mode = jsa.signInMode === 'printout' ? 'printout' : 'kiosk';
+/* ── Step: Finish ────────────────────────────────────────────────────────
+   Replaces the old Review + Signatures + Finish&Export trio (2026-09-09,
+   Fonzo: "job info > meeting info > tasks/hazards > complete and then
+   options as to how the JSA is going to be signed... i don't see a need for
+   create document anymore").
+
+   Two things happen here and nothing else: check it over, then say how the
+   crew signs it. "Create Document" is gone as a concept -- choosing the
+   paper route IS what makes the printout, so there is no separate button
+   whose purpose has to be explained.
+
+   The three routes are deliberately parallel, not nested, because they are
+   genuinely different mornings: phones at the tailgate, one iPad passed
+   down a line, or a sheet on a clipboard. Picking one sets the signing mode
+   that the printed sign-in sheet obeys. */
+function StepFinish({
+  jsa, upd, checks, plan, fit, setJsaStep,
+  saveName, setSaveName, saveTemplate, updateTemplate, saveDraft, markReady, clearDraft,
+  exportPdf, legacyBrowserPrint, pdfExportState, isPdfStale, downloadGeneratedPdfClick,
+  onOpenKiosk, prev,
+}) {
+  const [showDocOptions, setShowDocOptions] = useState(false);
+  // Which route he picked this session. Not persisted: signInMode below is
+  // the durable record of "how does this one get signed", and it is what
+  // the printed sheet actually reads.
+  const [route, setRoute] = useState(null);
   const [lineCountInput, setLineCountInput] = useState(String(jsa.signatureLineCount ?? 30));
   useEffect(() => { setLineCountInput(String(jsa.signatureLineCount ?? 30)); }, [jsa.signatureLineCount]);
+
+  const isGenerating = pdfExportState?.phase === 'generating';
+  const isReady = pdfExportState?.phase === 'ready';
+  const exportLabel = pdfExportStatusLabel(pdfExportState);
+  const completeCount = checks.filter(c => c.ok).length;
+  const allGood = completeCount === checks.length;
+  const crewSignedCount = jsa.crewSignatures?.length || 0;
+
   function commitLineCount() {
     const n = Math.max(1, Math.min(100, parseInt(lineCountInput, 10) || 30));
     setLineCountInput(String(n));
     if (n !== Number(jsa.signatureLineCount)) upd({ signatureLineCount: n });
   }
-  return (
-    <div className="stepStack">
-      <div className="stepPanel">
-        <div className="stepPanelHeader"><h3>Signatures and Acknowledgement</h3></div>
-        <div className="formGrid">
-          <TA label="Acknowledgement Text" value={jsa.acknowledgement} onChange={v => upd({ acknowledgement: v })} rows={6} />
-          <div className="field">
-            <span>How will this JSA be signed?</span>
-            <div className="yesNoToggle">
-              <button type="button" className={`btn${mode === 'kiosk' ? ' active' : ''}`} onClick={() => upd({ signInMode: 'kiosk' })}>Kiosk — Sign on This Device</button>
-              <button type="button" className={`btn${mode === 'printout' ? ' active' : ''}`} onClick={() => upd({ signInMode: 'printout' })}>Print &amp; Sign in Pen</button>
-            </div>
-          </div>
-          {mode === 'kiosk' ? (
-            <div className="sigRuleBox">
-              <strong>Crew Sign-In (kiosk mode)</strong>
-              <p>{crewSignedCount === 0 ? 'No one has signed yet.' : `${crewSignedCount} crew member${crewSignedCount === 1 ? '' : 's'} signed so far — their signatures will print on the attached sign-in sheet.`}</p>
-              <p className="helperText">20 extra blank lines print after them automatically, for anyone who signs in ink later.</p>
-              <button type="button" className="btn secondary sm" onClick={onOpenKiosk}>{crewSignedCount > 0 ? 'Continue Signing' : 'Start Crew Sign-In'}</button>
-            </div>
-          ) : (
-            <div className="sigRuleBox">
-              <strong>Print &amp; Sign in Pen</strong>
-              <p>Nobody signs on this device. The printed sheet gets exactly the number of blank lines below for the crew to sign by hand.</p>
-              <label className="field">
-                <span>Signature boxes to print</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={lineCountInput}
-                  onChange={e => setLineCountInput(e.target.value)}
-                  onBlur={commitLineCount}
-                />
-              </label>
-            </div>
-          )}
-        </div>
-      </div>
-      <StepFooter prev={prev} next={next} hasPrev hasNext />
-    </div>
-  );
-}
 
-/* ── Step: Review (content checkpoint before the crew signs) ──
-   Split off Finish & Export (2026-08-19, Fonzo) so the crew's actual
-   content review happens BEFORE signatures instead of after -- signing used
-   to come first (Signatures step), then a step literally called "Review"
-   followed it, which read backwards once you noticed the crew had already
-   reviewed the JSA out loud at the tailgate meeting before signing. Now the
-   checklist/preview/notes moment lives here, ahead of Signatures, and the
-   old export mechanics (Create Document, Save as Template, Document
-   Options) live in StepExport below, after Signatures, where nothing left
-   to review, only paperwork to wrap up. */
-function StepContentReview({ jsa, upd, checks, plan, fit, prev, next, setJsaStep }) {
-  const completeCount = checks.filter(check => check.ok).length;
-  const allGood = completeCount === checks.length;
+  // Picking the paper route also makes the printout -- that is the whole
+  // point of dropping "Create Document". Sets printout mode first so the
+  // sheet it generates has blank lines rather than any signature captured
+  // earlier on the kiosk.
+  function choosePaper() {
+    setRoute('paper');
+    if (jsa.signInMode !== 'printout') upd({ signInMode: 'printout' });
+  }
+  function chooseKiosk() {
+    setRoute('kiosk');
+    if (jsa.signInMode !== 'kiosk') upd({ signInMode: 'kiosk' });
+  }
+  function chooseBoard() {
+    setRoute('board');
+    if (jsa.signInMode !== 'kiosk') upd({ signInMode: 'kiosk' });
+  }
+
   return (
     <div className="stepStack">
       <div className="stepPanel">
         <div className="stepPanelHeader">
-          <h3>Review</h3>
-          <p>Make sure everything's right before the crew signs.</p>
+          <h3>Finish</h3>
+          <p>Check it over, then say how the crew signs it.</p>
         </div>
         <div className="formGrid">
-          <TA label="Internal Notes / Special Instructions" value={jsa.notes} onChange={v => upd({ notes: v })} rows={4} placeholder="Optional notes visible in the draft only, not on the printed JSA." />
+          <TA label="Internal Notes / Special Instructions" value={jsa.notes} onChange={v => upd({ notes: v })} rows={3} placeholder="Optional notes visible in the draft only, not on the printed JSA." />
 
-          {/* One calm line when everything's actually fine -- the full
-              checklist grid (percentage ring, 8 boxes, page-plan grid) only
-              earns its space when there's something to fix (Fonzo,
-              2026-08-19: "the review readiness ... might look good to you
-              but to a human it's annoying"). */}
           {allGood ? (
             <div className="reviewAllGoodBanner">
               <span className="reviewAllGoodCheck" aria-hidden="true">✓</span>
               <div>
                 <strong>Looks good — ready for the crew to sign.</strong>
-                <p>{plan.totalPages} page{plan.totalPages === 1 ? '' : 's'} total ({plan.continuationPages.length} continuation, {plan.signInPages.length} sign-in). {fit.message}</p>
+                <p>{plan.totalPages} page{plan.totalPages === 1 ? '' : 's'} total. {fit.message}</p>
               </div>
             </div>
           ) : (
             <div className={`reviewSummaryCard ${fit.status}`}>
               <div className="reviewSummaryHead">
                 <div>
-                  <span className="suggestionEyebrow">Review readiness</span>
-                  <h4>{completeCount} of {checks.length} checks complete</h4>
+                  <span className="suggestionEyebrow">Still missing</span>
+                  <h4>{completeCount} of {checks.length} done</h4>
                 </div>
                 <span className="reviewScore">{Math.round((completeCount / checks.length) * 100)}%</span>
               </div>
@@ -3508,84 +3486,89 @@ function StepContentReview({ jsa, upd, checks, plan, fit, prev, next, setJsaStep
                     disabled={check.ok || !check.step}
                   >
                     <span>{check.ok ? '✓' : '!'}</span>
-                    <p>{check.label}</p>
+                    {check.label}
                   </button>
                 ))}
               </div>
-              <div className="exportPlanGrid">
-                <div><strong>Main JSA</strong><span>1 page</span></div>
-                <div><strong>Continuation</strong><span>{plan.continuationPages.length}</span></div>
-                <div><strong>Sign-In</strong><span>{plan.signInPages.length}</span></div>
-                <div><strong>Total</strong><span>{plan.totalPages}</span></div>
+            </div>
+          )}
+
+          <div className="signRoutes">
+            <span className="formSectionHeading">How is this getting signed?</span>
+
+            <button type="button" className={`signRoute${route === 'board' ? ' active' : ''}`} onClick={chooseBoard}>
+              <strong>On their phones</strong>
+              <span>They scan the QR on your trailer and sign. You watch the count.</span>
+            </button>
+            {route === 'board' && (
+              <div className="signRouteBody">
+                <PublishToBoardButton jsa={jsa} />
               </div>
-            </div>
-          )}
+            )}
 
-          <div className="reviewPrimaryAction">
-            <button className="btn primary lg" onClick={next}>Ready for Crew to Sign</button>
+            <button type="button" className={`signRoute${route === 'kiosk' ? ' active' : ''}`} onClick={chooseKiosk}>
+              <strong>On this iPad</strong>
+              <span>Pass it around. Numbered, no names typed.</span>
+            </button>
+            {route === 'kiosk' && (
+              <div className="signRouteBody">
+                <p className="helperText">
+                  {crewSignedCount === 0
+                    ? 'Nobody has signed yet. 20 blank lines print after the digital ones for anyone who signs in ink later.'
+                    : `${crewSignedCount} signed so far — they print on the attached sign-in sheet.`}
+                </p>
+                <button type="button" className="btn primary" onClick={onOpenKiosk}>
+                  {crewSignedCount > 0 ? 'Keep signing' : 'Start crew sign-in'}
+                </button>
+              </div>
+            )}
+
+            <button type="button" className={`signRoute${route === 'paper' ? ' active' : ''}`} onClick={choosePaper}>
+              <strong>On paper</strong>
+              <span>Print it and sign in pen. Nothing is captured on a screen.</span>
+            </button>
+            {route === 'paper' && (
+              <div className="signRouteBody">
+                <label className="field">
+                  <span>Signature boxes to print</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={lineCountInput}
+                    onChange={e => setLineCountInput(e.target.value)}
+                    onBlur={commitLineCount}
+                  />
+                </label>
+                {!isReady && (
+                  <button className="btn primary lg" onClick={exportPdf} disabled={isGenerating} aria-busy={isGenerating}>
+                    {exportLabel || 'Make the printout'}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
-          <p className="helperText">Moves on to Signatures. If anything above still needs fixing, you'll get a chance to go back first.</p>
-        </div>
-      </div>
-      <StepFooter prev={prev} next={next} hasPrev hasNext={false} />
-    </div>
-  );
-}
-
-/* ── Step: Finish & Export ── */
-function StepExport({ jsa, saveName, setSaveName, saveTemplate, updateTemplate, saveDraft, markReady, exportPdf, legacyBrowserPrint, pdfExportState, isPdfStale, downloadGeneratedPdfClick, clearDraft, prev, next }) {
-  const [showDocOptions, setShowDocOptions] = useState(false);
-  const isGenerating = pdfExportState?.phase === 'generating';
-  const isReady = pdfExportState?.phase === 'ready';
-  const exportLabel = pdfExportStatusLabel(pdfExportState);
-  return (
-    <div className="stepStack">
-      <div className="stepPanel">
-        <div className="stepPanelHeader">
-          <h3>Finish & Export</h3>
-          <p>Generate the PDF, save a template, or wrap up the draft.</p>
-        </div>
-        <div className="formGrid">
-          <div className="exportNamePreview">
-            <strong>Suggested PDF filename</strong>
-            <code>{buildExportName(jsa)}.pdf</code>
-          </div>
-
-          {!isReady && (
-            <div className="reviewPrimaryAction">
-              <button className="btn primary lg" onClick={exportPdf} disabled={isGenerating} aria-busy={isGenerating}>{exportLabel || 'Create Document'}</button>
-            </div>
-          )}
-
-          {!isReady && <p className="helperText">Creates the document, ready to download. The app does not store final documents.</p>}
 
           {isReady && isPdfStale && (
             <div className="pdfStaleWarning">
-              <strong>Document changed — update it before downloading.</strong>
-              <p>The draft was edited after this document was created, so it no longer reflects the current content.</p>
-              <button className="btn primary sm" onClick={exportPdf} disabled={isGenerating} aria-busy={isGenerating}>{exportLabel || 'Update Document'}</button>
+              <strong>It changed — make it again before printing.</strong>
+              <p>The JSA was edited after this printout was made, so it no longer matches.</p>
+              <button className="btn primary sm" onClick={exportPdf} disabled={isGenerating} aria-busy={isGenerating}>{exportLabel || 'Make it again'}</button>
             </div>
           )}
 
           {isReady && !isPdfStale && (
             <div className="pdfReadyPanel">
-              <span className="pdfReadyEyebrow">Document Ready</span>
+              <span className="pdfReadyEyebrow">Ready</span>
               <strong className="pdfReadyHeadline">{pdfExportState.pageCount} page{pdfExportState.pageCount === 1 ? '' : 's'}</strong>
               <p className="pdfReadyFilename">{pdfExportState.filename}</p>
               <div className="pdfReadyActions">
-                <button className="btn primary lg" onClick={downloadGeneratedPdfClick}>Download Document</button>
+                <button className="btn primary lg" onClick={downloadGeneratedPdfClick}>Download</button>
               </div>
-              <p className="helperText pdfReadyHelper">Download the document, then open it to print. The app does not store final documents.</p>
+              <p className="helperText pdfReadyHelper">Download it, then open it to print.</p>
               <FileToArchiveButton docType="jsa" model={jsa} pdfBlob={pdfExportState.blob} />
             </div>
           )}
-
-          {/* Publishing comes BEFORE the PDF, not after: the crew signs on
-              their phones and only then is there a signed document worth
-              generating. So this deliberately sits outside the "document
-              ready" panel -- gating it behind Create Document would put
-              the two steps in the wrong order. */}
-          <PublishToBoardButton jsa={jsa} />
 
           <div className="reviewSecondaryActions">
             <button type="button" className="btn ghost sm" onClick={() => setShowDocOptions(true)} disabled={isGenerating}>Document Options</button>
@@ -3602,7 +3585,7 @@ function StepExport({ jsa, saveName, setSaveName, saveTemplate, updateTemplate, 
               <button type="button" className="btn primary sm" onClick={saveTemplate}>Save Template</button>
               <button type="button" className="btn ghost sm" onClick={updateTemplate}>Update Loaded</button>
             </div>
-            <p className="helperText">Loading a template starts a fresh JSA for today and never carries over signatures or daily work details. Want to share a saved template with someone else? Do that from the Templates tab.</p>
+            <p className="helperText">Loading a template starts a fresh JSA for today and never carries over signatures or daily work details.</p>
           </div>
         </div>
       </div>
@@ -3616,12 +3599,11 @@ function StepExport({ jsa, saveName, setSaveName, saveTemplate, updateTemplate, 
           isGenerating={isGenerating}
         />
       )}
-      <StepFooter prev={prev} next={next} hasPrev hasNext={false} />
+      <StepFooter prev={prev} hasPrev hasNext={false} />
     </div>
   );
 }
 
-/* ── Step footer ── */
 function StepFooter({ prev, next, hasPrev, hasNext }) {
   // Touch devices get the sticky workflow action bar (JsaWorkflow) instead —
   // this avoids duplicate Back/Next controls on the same screen.

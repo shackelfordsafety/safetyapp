@@ -3200,3 +3200,36 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   font-size: 13px;
   color: var(--text-on-navy-2, #B4C4D3);
 }
+
+/* ── "How is this getting signed?" (Finish step) ──
+   Three parallel routes, not a dropdown: they are genuinely different
+   mornings -- phones at the tailgate, one iPad passed down a line, or a
+   sheet on a clipboard -- and a superintendent should see all three at once
+   rather than discover them by opening a menu. Big targets, plain words.
+   Added 2026-09-09 with the four-step workflow. */
+.signRoutes { display: grid; gap: 10px; }
+.signRoute {
+  display: grid;
+  gap: 3px;
+  text-align: left;
+  width: 100%;
+  min-height: 68px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 2px solid var(--border-obj, #C9D4DE);
+  border-radius: 11px;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.signRoute:hover { border-color: var(--navy, #0B1D2E); }
+.signRoute.active { border-color: var(--accent, #C51F3A); background: var(--accent-tint, #FBE8EB); }
+.signRoute strong { font-size: 18px; line-height: 1.2; }
+.signRoute span { font-size: 15px; color: var(--text-2); }
+.signRouteBody {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px 4px;
+  margin-top: -4px;
+  border-left: 3px solid var(--accent, #C51F3A);
+}
