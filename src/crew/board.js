@@ -159,16 +159,28 @@ export function boardUrlFor(boardOwnerId) {
   return `${origin}${pathname}#/sign/${boardOwnerId}`;
 }
 
-/* Everything live on one board. Public: a crew member has no account. */
+/* One board, as a crew member sees it. Public: he has no account.
+
+   Includes JSAs that have already expired today, marked closed. A board
+   that empties itself at the expiry minute recreates the exact problem
+   this feature exists to solve -- Fonzo's scenario is a client or a safety
+   inspector stopping one of his guys and asking to see the JSA, and
+   "nothing published yet" at 4pm is the worst possible answer. Anything
+   that was live at any point today stays readable for the rest of it. */
 export async function fetchBoard(boardOwnerId) {
+  const since = new Date();
+  since.setHours(0, 0, 0, 0);
+
   const { data, error } = await db
     .from('jsa_publications')
     .select('id, area_label, job_site, location, job_number, doc_date, published_at, expires_at, version, data, pdf_path')
     .eq('board_owner', boardOwnerId)
-    .gt('expires_at', new Date().toISOString())
+    .gt('expires_at', since.toISOString())
     .order('published_at', { ascending: true });
   if (error) throw new Error(error.message);
-  return data || [];
+
+  const now = new Date();
+  return (data || []).map(r => ({ ...r, live: new Date(r.expires_at) > now }));
 }
 
 /* One crew member signing.
@@ -371,5 +383,26 @@ export async function fetchUnfiledExpired() {
         archivedPublicationId: p.id,
       },
     };
+  });
+}
+
+/* A signature taken on the superintendent's iPad for a board posting.
+
+   No name, deliberately. Fonzo, 2026-09-09: "if they're too fucking lazy
+   to do it on their goddamn phone, which is the easiest way possible,
+   asking them to type in their name is like asking for the world." The
+   database has enforced this shape since day one -- a phone signature must
+   carry a name, a kiosk one may not.
+
+   Lands in exactly the same table as a phone signature, which is the point:
+   the two used to live apart (cloud vs the JSA on the device) and that
+   split caused every blank sign-in sheet of 2026-09-09. */
+export async function signOnKiosk({ publicationId, signatureData, expiresAt }) {
+  return signPublication({
+    publicationId,
+    signerName: null,
+    signatureData,
+    source: 'kiosk',
+    expiresAt,
   });
 }

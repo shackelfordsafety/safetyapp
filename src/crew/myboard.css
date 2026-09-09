@@ -102,3 +102,7 @@ button.brdCardMain {
   color: var(--accent, #C51F3A);
 }
 button.brdCardMain:hover .brdSeeDoc { text-decoration: underline; }
+
+/* The count and the kiosk button sit together on the right of a live row. */
+.brdCardRight { display: grid; gap: 8px; justify-items: stretch; }
+.brdCardRight .btn { white-space: nowrap; }

@@ -13,11 +13,18 @@ import './crew.css';
      show up in the morning -> scan QR -> ask foreman where you're working
      -> click that area/JSA -> sign your name.
 
+   READING COMES FIRST, SIGNING IS DELIBERATE (2026-09-09). Tapping an area
+   used to land on a signing screen with the JSA above it. That is right at
+   6:30am and wrong every other hour: Fonzo's guys carry no paper, so when a
+   client or a safety inspector stops one and asks to see the JSA, this link
+   is the answer -- and nobody wants to hand over a phone showing a
+   signature pad. So a tap opens the document, and signing is one more tap
+   underneath it. The same screen does both jobs and neither gets in the
+   other's way.
+
    Built for a 50+ crew standing in a gravel lot at 6:30am on cracked
    phones in the sun: big targets, short words, high contrast, and the date
-   and job stated plainly before anybody signs anything. A permanent QR
-   can physically show the wrong meeting, unlike a per-meeting code, so
-   confirming what you're about to sign is the price of never reprinting. */
+   and job stated plainly before anybody signs anything. */
 
 const NAME_KEY = 'sdc.crew.name.v1';
 
@@ -33,6 +40,7 @@ export default function CrewSignIn({ boardOwnerId }) {
   const [status, setStatus] = useState('loading'); // loading | ready | error
   const [error, setError] = useState('');
   const [picked, setPicked] = useState(null);
+  const [signing, setSigning] = useState(false);
   const [name, setName] = useState('');
   const [signature, setSignature] = useState('');
   const [busy, setBusy] = useState(false);
@@ -58,6 +66,13 @@ export default function CrewSignIn({ boardOwnerId }) {
   }, [boardOwnerId]);
 
   useEffect(() => { load(); }, [load]);
+
+  function backToList() {
+    setPicked(null);
+    setSigning(false);
+    setSignature('');
+    setError('');
+  }
 
   async function submit(e) {
     e.preventDefault();
@@ -92,9 +107,16 @@ export default function CrewSignIn({ boardOwnerId }) {
           <button
             type="button"
             className="crewBtn ghost"
-            onClick={() => { setDone(false); setPicked(null); setSignature(''); load(); }}
+            onClick={() => { setDone(false); setSigning(false); }}
           >
-            Sign another one
+            See the JSA again
+          </button>
+          <button
+            type="button"
+            className="crewBtn ghost"
+            onClick={() => { setDone(false); backToList(); load(); }}
+          >
+            Back to the list
           </button>
         </div>
       </div>
@@ -102,57 +124,60 @@ export default function CrewSignIn({ boardOwnerId }) {
   }
 
   if (picked) {
-    const expired = new Date() > new Date(picked.expires_at);
     return (
       <div className="crewWrap">
-        <form className="crewCard" onSubmit={submit}>
-          {/* Stated before anybody signs. See the header comment. */}
+        <div className="crewCard">
           <div className="crewConfirm">
-            <span className="crewEyebrow">You are signing</span>
+            <span className="crewEyebrow">{picked.live ? 'Job Safety Analysis' : 'Closed'}</span>
             <h1>{picked.area_label}</h1>
             <p>{fmtDate(picked.doc_date)}{picked.job_site ? ` · ${picked.job_site}` : ''}</p>
             {picked.version > 1 && (
               <p className="crewRevised">Revised — version {picked.version}</p>
             )}
-            {expired && (
+            {!picked.live && (
               <p className="crewLate">
-                This one already expired. You can still sign, and it will be recorded as late.
+                This one&apos;s finished for the day. You can still read it, but it can&apos;t be signed.
               </p>
             )}
           </div>
 
-          {/* The JSA itself, before he signs it. Added 2026-09-09 after a
-              real tester pointed out he was being asked to acknowledge a
-              document he could not read. The tailgate meeting still covers
-              it out loud -- this is so the words are in his hand too.
-
-              Laid out plainly and in full rather than behind a tab or an
-              inner scroll: it is the thing he is signing, so scrolling past
-              it is the honest gesture. */}
           <JsaContents jsa={picked.data} />
 
-          <label className="crewField">
-            <span>Your name</span>
-            <input
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="First and last"
-              autoComplete="name"
-              required
-            />
-          </label>
+          {/* Signing is a deliberate second step, not the screen you land
+              on -- see the header comment. */}
+          {picked.live && !signing && (
+            <button type="button" className="crewBtn primary" onClick={() => setSigning(true)}>
+              Sign this one
+            </button>
+          )}
 
-          <SignaturePad label="Your signature" value={signature} onChange={setSignature} />
+          {picked.live && signing && (
+            <form className="crewSignForm" onSubmit={submit}>
+              <label className="crewField">
+                <span>Your name</span>
+                <input
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  placeholder="First and last"
+                  autoComplete="name"
+                  required
+                />
+              </label>
 
-          {error && <p className="crewError">{error}</p>}
+              <SignaturePad label="Your signature" value={signature} onChange={setSignature} />
 
-          <button type="submit" className="crewBtn primary" disabled={busy || !name.trim()}>
-            {busy ? 'Signing…' : 'Finish'}
+              {error && <p className="crewError">{error}</p>}
+
+              <button type="submit" className="crewBtn primary" disabled={busy || !name.trim()}>
+                {busy ? 'Signing…' : 'Finish'}
+              </button>
+            </form>
+          )}
+
+          <button type="button" className="crewBtn ghost" onClick={backToList}>
+            {signing ? 'Not yet — go back' : 'Back to the list'}
           </button>
-          <button type="button" className="crewBtn ghost" onClick={() => { setPicked(null); setError(''); }}>
-            Wrong one — go back
-          </button>
-        </form>
+        </div>
       </div>
     );
   }
@@ -162,7 +187,7 @@ export default function CrewSignIn({ boardOwnerId }) {
       <div className="crewCard">
         <span className="crewEyebrow">Job Safety Analysis</span>
         <h1>Where are you working?</h1>
-        <p className="crewLead">Ask your foreman which one you&apos;re on, then tap it.</p>
+        <p className="crewLead">Tap yours to read it. Ask your foreman if you&apos;re not sure.</p>
 
         {status === 'loading' && <p className="crewFine">Loading…</p>}
 
@@ -182,9 +207,12 @@ export default function CrewSignIn({ boardOwnerId }) {
         )}
 
         {status === 'ready' && rows.map(r => (
-          <button key={r.id} type="button" className="crewPick" onClick={() => setPicked(r)}>
+          <button key={r.id} type="button" className="crewPick" onClick={() => { setPicked(r); setSigning(false); }}>
             <strong>{r.area_label}</strong>
-            <span>{fmtDate(r.doc_date)}{r.job_site ? ` · ${r.job_site}` : ''}</span>
+            <span>
+              {fmtDate(r.doc_date)}{r.job_site ? ` · ${r.job_site}` : ''}
+              {!r.live && ' · closed'}
+            </span>
           </button>
         ))}
       </div>
