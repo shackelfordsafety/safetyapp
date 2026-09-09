@@ -3222,3 +3222,6 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   margin-top: -4px;
   border-left: 3px solid var(--accent, #C51F3A);
 }
+
+/* The one finishing action on the JSA's Finish step. */
+.finishBlock { display: grid; gap: 8px; margin-top: 6px; }

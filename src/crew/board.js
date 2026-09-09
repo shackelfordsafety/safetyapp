@@ -260,3 +260,37 @@ export async function fetchSigners(publicationId) {
   if (error) throw new Error(error.message);
   return data || [];
 }
+
+/* The crew's signatures for a JSA, in the shape the printed sign-in sheet
+   expects.
+
+   The two live apart on purpose: a signature made on a phone lands in the
+   jsa_signatures table, while the printed sheet draws from the JSA's own
+   crewSignatures array on the device. Nothing joined them, which is why a
+   published JSA's PDF came out with blank lines even after fifty men had
+   signed (Fonzo, 2026-09-09: "after someone signs it doesn't show up on
+   the PDF").
+
+   Matched on client_doc_id -- the id the JSA carries on the device -- so
+   this works for whichever of the morning's JSAs is being finished, not
+   just the last one published. Ordered by signing time, so box 1 is the
+   first man who signed. */
+export async function fetchSignaturesForJsa(clientDocId) {
+  if (!clientDocId) return [];
+
+  const { data: pubs, error: pubErr } = await db
+    .from('jsa_publications')
+    .select('id')
+    .eq('client_doc_id', clientDocId);
+  if (pubErr) throw new Error(pubErr.message);
+  if (!pubs?.length) return [];
+
+  const { data, error } = await db
+    .from('jsa_signatures')
+    .select('signature_data, signed_at')
+    .in('publication_id', pubs.map(p => p.id))
+    .order('signed_at', { ascending: true });
+  if (error) throw new Error(error.message);
+
+  return (data || []).map(s => ({ dataUrl: s.signature_data, signedAt: s.signed_at }));
+}

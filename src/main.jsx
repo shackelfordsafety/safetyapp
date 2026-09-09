@@ -2045,10 +2045,81 @@ function App() {
         setPdfExportState({ phase: 'generating', status: 'rendering', pageIndex, totalPages });
       });
       setPdfExportState({ phase: 'ready', blob, filename, pageCount, fingerprint, shareMessage: null });
+      return { blob, pageCount, filename };
     } catch (err) {
       console.error('[pdf export]', err);
       showToast(`PDF export failed (${err?.message || 'unknown error'}). Try Legacy Browser Print instead.`);
       setPdfExportState(null);
+    }
+    return null;
+  }
+
+  /* ── Finishing a JSA ──────────────────────────────────────────────────
+     One action: pull the crew's signatures down from the board, make the
+     PDF with them on it, and file that to the archive.
+
+     Why the signatures have to be fetched first: a signature made on a
+     phone lives in the cloud, while the printed sign-in sheet draws from
+     the JSA's own crewSignatures on this device. Nothing joined the two,
+     so a published JSA's PDF came out with blank lines even after the
+     whole crew had signed (Fonzo, 2026-09-09).
+
+     Marking complete does NOT lock or clear the document -- Fonzo:
+     "marking as complete should just file it in the archive, that way it's
+     left open for fixes, corrections, etc." Correcting it and finishing
+     again files another copy; the archive is append-only, so both survive
+     and neither can be quietly rewritten.
+
+     Signatures are pulled on a best-effort basis: with no signal it files
+     what it has rather than refusing to finish. */
+  /* True once the export DOM holds the expected number of signature
+     images AND every one of them has decoded. Falls through on timeout
+     rather than blocking a superintendent from finishing. */
+  async function waitForExportSignatures(expected, timeoutMs = 8000) {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      const imgs = Array.from(document.querySelectorAll('.pdfExportRoot .attachedSigLineImg'));
+      if (imgs.length >= expected && imgs.every(i => i.complete && i.naturalWidth > 0)) {
+        // One more frame so layout settles after the last decode.
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        return true;
+      }
+      await new Promise(r => setTimeout(r, 150));
+    }
+    return false;
+  }
+
+  async function finishJsaAndFile() {
+    let pulled = 0;
+    try {
+      const { fetchSignaturesForJsa } = await loadModule(() => import('./crew/board'));
+      const sigs = await fetchSignaturesForJsa(jsa.id);
+      if (sigs.length) {
+        setJsa(prev => ({ ...prev, crewSignatures: sigs }));
+        pulled = sigs.length;
+        /* Wait for the off-screen EXPORT DOM to actually contain the
+           signatures and for their images to finish decoding.
+
+           A fixed sleep is not enough: html2canvas will happily photograph
+           an <img> that has not decoded yet, which is exactly how the first
+           attempt produced a sign-in sheet with blank boxes even though the
+           elements were present in the DOM. */
+        await waitForExportSignatures(sigs.length);
+      }
+    } catch {
+      // Offline, or never published. File what is on the device.
+    }
+
+    const made = await exportPdf();
+    if (!made) return { ok: false, reason: 'pdf' };
+
+    try {
+      const { fileDocument } = await loadModule(() => import('./archive/fileToArchive'));
+      await fileDocument({ docType: 'jsa', model: { ...jsa, crewSignatures: undefined }, pdfBlob: made.blob });
+      showToast(pulled ? `Filed with ${pulled} signature${pulled === 1 ? '' : 's'}.` : 'Filed to the archive.');
+      return { ok: true, pulled };
+    } catch (err) {
+      return { ok: false, reason: err?.name === 'NotSignedInError' ? 'signin' : (err?.message || 'file') };
     }
   }
 
@@ -2294,7 +2365,7 @@ function App() {
               allTemplates={allTemplates} templateId={templateId} setTemplateId={setTemplateId} selectedTemplate={selectedTemplate} loadTemplate={loadTemplate}
               saveName={saveName} setSaveName={setSaveName} saveTemplate={saveTemplate} updateTemplate={updateTemplate}
               updRow={updRow} removeRow={removeRow}
-              clearDraft={clearDraft} saveDraft={saveDraft} markReady={markReady} exportPdf={exportPdf}
+              clearDraft={clearDraft} saveDraft={saveDraft} markReady={markReady} exportPdf={exportPdf} finishAndFile={finishJsaAndFile}
               legacyBrowserPrint={legacyBrowserPrint} pdfExportState={pdfExportState} isPdfStale={isPdfStale}
               shareGeneratedPdfClick={shareGeneratedPdfClick} downloadGeneratedPdfClick={downloadGeneratedPdfClick}
               savedDraft={savedDraft} settings={settings} saveStatus={saveStatus} showToast={showToast}
@@ -2777,7 +2848,7 @@ function StickyActionBar({ idx, steps, prev, next, exportPdf, pdfExportState, is
 }
 
 /* ── JSA Workflow ── */
-function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, allTemplates, templateId, setTemplateId, selectedTemplate, loadTemplate, saveName, setSaveName, saveTemplate, updateTemplate, updRow, removeRow, clearDraft, saveDraft, markReady, exportPdf, legacyBrowserPrint, pdfExportState, isPdfStale, shareGeneratedPdfClick, downloadGeneratedPdfClick, savedDraft, settings, saveStatus, showToast }) {
+function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, allTemplates, templateId, setTemplateId, selectedTemplate, loadTemplate, saveName, setSaveName, saveTemplate, updateTemplate, updRow, removeRow, clearDraft, saveDraft, markReady, exportPdf, finishAndFile, legacyBrowserPrint, pdfExportState, isPdfStale, shareGeneratedPdfClick, downloadGeneratedPdfClick, savedDraft, settings, saveStatus, showToast }) {
   const plan = useJsaPagePlan(jsa);
   const fit = calcFitFromPlan(plan);
   // One-time heads-up the moment content crosses over into needing a
@@ -2937,7 +3008,7 @@ function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, allTem
           {jsaStep === 'job' && <StepJob jsa={jsa} upd={upd} prev={prev} next={next} />}
           {jsaStep === 'meeting' && <StepMeeting jsa={jsa} upd={upd} prev={prev} next={next} />}
           {jsaStep === 'work' && <StepWork jsa={jsa} upd={upd} updRow={updRow} removeRow={removeRow} customQuick={settings.customQuick || { task: [], hazard: [], control: [] }} prev={prev} next={next} />}
-          {jsaStep === 'finish' && <StepFinish jsa={jsa} upd={upd} checks={checks} plan={plan} fit={fit} setJsaStep={setJsaStep} saveName={saveName} setSaveName={setSaveName} saveTemplate={saveTemplate} updateTemplate={updateTemplate} saveDraft={saveDraft} markReady={markReady} clearDraft={clearDraft} exportPdf={exportPdf} legacyBrowserPrint={legacyBrowserPrint} pdfExportState={pdfExportState} isPdfStale={isPdfStale} downloadGeneratedPdfClick={downloadGeneratedPdfClick} onOpenKiosk={() => setKioskOpen(true)} prev={prev} />}
+          {jsaStep === 'finish' && <StepFinish jsa={jsa} upd={upd} checks={checks} plan={plan} fit={fit} setJsaStep={setJsaStep} saveName={saveName} setSaveName={setSaveName} saveTemplate={saveTemplate} updateTemplate={updateTemplate} saveDraft={saveDraft} markReady={markReady} clearDraft={clearDraft} exportPdf={exportPdf} legacyBrowserPrint={legacyBrowserPrint} pdfExportState={pdfExportState} isPdfStale={isPdfStale} downloadGeneratedPdfClick={downloadGeneratedPdfClick} onOpenKiosk={() => setKioskOpen(true)} finishAndFile={finishAndFile} prev={prev} />}
 
           {!canSideBySide && previewOpen && previewPanel}
         </div>
@@ -3413,13 +3484,27 @@ function StepFinish({
   jsa, upd, checks, plan, fit, setJsaStep,
   saveName, setSaveName, saveTemplate, updateTemplate, saveDraft, markReady, clearDraft,
   exportPdf, legacyBrowserPrint, pdfExportState, isPdfStale, downloadGeneratedPdfClick,
-  onOpenKiosk, prev,
+  onOpenKiosk, finishAndFile, prev,
 }) {
   const [showDocOptions, setShowDocOptions] = useState(false);
   // Which route he picked this session. Not persisted: signInMode below is
   // the durable record of "how does this one get signed", and it is what
   // the printed sheet actually reads.
   const [route, setRoute] = useState(null);
+  const [finishing, setFinishing] = useState(false);
+  const [finished, setFinished] = useState(false);
+  const [finishNote, setFinishNote] = useState('');
+
+  async function doFinish() {
+    setFinishing(true);
+    setFinishNote('');
+    const res = await finishAndFile();
+    setFinishing(false);
+    if (res?.ok) { setFinished(true); return; }
+    if (res?.reason === 'signin') setFinishNote('Sign in up top first — filing needs an account.');
+    else if (res?.reason === 'pdf') setFinishNote('The document could not be made. Try again.');
+    else setFinishNote(res?.reason || 'Could not file it. Check your connection and try again.');
+  }
   const [lineCountInput, setLineCountInput] = useState(String(jsa.signatureLineCount ?? 30));
   useEffect(() => { setLineCountInput(String(jsa.signatureLineCount ?? 30)); }, [jsa.signatureLineCount]);
 
@@ -3587,6 +3672,32 @@ function StepFinish({
               </div>
               <p className="helperText pdfReadyHelper">Download it, then open it to print.</p>
               <FileToArchiveButton docType="jsa" model={jsa} pdfBlob={pdfExportState.blob} />
+            </div>
+          )}
+
+          {/* Finishing is one action: pull the crew's signatures down from
+              the board, make the PDF with them on it, and file that. It
+              does NOT lock or clear the JSA -- corrections stay possible,
+              and finishing again files another copy. */}
+          {allGood && (
+            <div className="finishBlock">
+              {finished ? (
+                <div className="archiveFiled">
+                  <strong>Filed to the archive</strong>
+                  <span>Safety and HR can find it. Fix anything you need and finish again — the archive keeps both.</span>
+                </div>
+              ) : (
+                <>
+                  <button type="button" className="btn primary lg" onClick={doFinish} disabled={finishing || isGenerating}>
+                    {finishing ? 'Finishing…' : 'Complete and file it'}
+                  </button>
+                  <p className="helperText">
+                    Pulls in whoever signed, makes the document with their signatures on it,
+                    and files it. You can still fix it afterwards.
+                  </p>
+                  {finishNote && <p className="archiveError">{finishNote}</p>}
+                </>
+              )}
             </div>
           )}
 
