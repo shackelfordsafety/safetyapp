@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchMyBoard, fetchSigners, NotSignedInError } from './board';
+import JsaContents from './JsaContents';
 import './myboard.css';
 
 /* ── The superintendent's own board ──────────────────────────────────────
@@ -14,6 +15,27 @@ function fmtTime(t) {
   if (!t) return '';
   const d = new Date(t);
   return Number.isNaN(d.getTime()) ? '' : d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
+/* What was actually published, as the crew sees it. Same component the
+   crew sign-in page uses, so the two can never show different things about
+   the same document. */
+function JsaPreview({ row, onClose }) {
+  return (
+    <div className="dialogOverlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="dialogPanel" role="dialog" aria-modal="true" aria-label="Published JSA" style={{ maxWidth: 620, maxHeight: '88vh', overflowY: 'auto' }}>
+        <h3 style={{ margin: 0 }}>{row.area_label}</h3>
+        <p className="helperText">
+          This is exactly what a crew member reads before signing.
+          {row.version > 1 ? ` Version ${row.version}.` : ''}
+        </p>
+        <JsaContents jsa={row.data} title="Published JSA" />
+        <div className="dialogActions">
+          <button type="button" className="btn primary" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function SignerList({ publicationId, onClose }) {
@@ -65,6 +87,7 @@ export default function MyBoard() {
   const [state, setState] = useState({ status: 'loading', rows: [], boardUrl: '' });
   const [error, setError] = useState('');
   const [openList, setOpenList] = useState(null);
+  const [preview, setPreview] = useState(null);
   const [copied, setCopied] = useState(false);
 
   const load = useCallback(async () => {
@@ -139,13 +162,17 @@ export default function MyBoard() {
 
       {live.map(r => (
         <div key={r.id} className="brdCard">
-          <div className="brdCardMain">
+          {/* Tapping the row opens what was actually published -- the same
+              view the crew reads. Checking "did I put the right one up?"
+              without walking outside to scan your own QR. */}
+          <button type="button" className="brdCardMain" onClick={() => setPreview(r)}>
             <strong>{r.area_label}</strong>
             <span className="brdMeta">
               Published {fmtTime(r.published_at)} · good until {fmtTime(r.expires_at)}
               {r.version > 1 ? ` · version ${r.version}` : ''}
             </span>
-          </div>
+            <span className="brdSeeDoc">See the JSA</span>
+          </button>
           <button type="button" className="brdCount" onClick={() => setOpenList(r.id)}>
             <span className="brdCountNum">{r.signed}</span>
             <span className="brdCountLabel">signed</span>
@@ -158,10 +185,11 @@ export default function MyBoard() {
           <div className="brdSectionTitle">Finished today</div>
           {done.map(r => (
             <div key={r.id} className="brdCard done">
-              <div className="brdCardMain">
+              <button type="button" className="brdCardMain" onClick={() => setPreview(r)}>
                 <strong>{r.area_label}</strong>
                 <span className="brdMeta">Expired {fmtTime(r.expires_at)}</span>
-              </div>
+                <span className="brdSeeDoc">See the JSA</span>
+              </button>
               <button type="button" className="brdCount" onClick={() => setOpenList(r.id)}>
                 <span className="brdCountNum">{r.signed}</span>
                 <span className="brdCountLabel">signed</span>
@@ -185,6 +213,7 @@ export default function MyBoard() {
         </div>
       )}
 
+      {preview && <JsaPreview row={preview} onClose={() => setPreview(null)} />}
       {openList && <SignerList publicationId={openList} onClose={() => setOpenList(null)} />}
     </div>
   );

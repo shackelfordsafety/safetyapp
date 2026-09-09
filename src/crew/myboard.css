@@ -83,3 +83,22 @@
 .brdSignerName { min-width: 0; word-break: break-word; }
 .brdSignerName em { color: var(--text-3); font-style: italic; }
 .brdSignerTime { font-size: 14px; color: var(--text-3); white-space: nowrap; }
+
+/* The row body is a button now: tapping it opens the published JSA. Kept
+   visually flat so the card still reads as a card rather than sprouting a
+   second button next to the count. */
+button.brdCardMain {
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.brdSeeDoc {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent, #C51F3A);
+}
+button.brdCardMain:hover .brdSeeDoc { text-decoration: underline; }

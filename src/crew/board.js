@@ -207,7 +207,7 @@ export async function fetchMyBoard() {
 
   const { data, error } = await db
     .from('jsa_publications')
-    .select('id, area_label, job_site, location, job_number, doc_date, published_at, expires_at, version, client_doc_id')
+    .select('id, area_label, job_site, location, job_number, doc_date, published_at, expires_at, version, client_doc_id, data')
     .eq('board_owner', user.id)
     .gte('published_at', since.toISOString())
     .order('published_at', { ascending: false });

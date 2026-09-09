@@ -1,0 +1,59 @@
+/* ── The readable JSA ──
+   Shared by the crew sign-in page and the superintendent's board. Colors
+   are literal rather than token-based because the crew page renders
+   INSTEAD of the app and loads none of its stylesheet -- so this file has
+   to stand on its own. They are the same navy/crimson the app uses. */
+
+.jsaDoc {
+  display: grid;
+  gap: 10px;
+  padding: 16px 0 4px;
+  border-top: 2px solid #E4EAF0;
+  color: #0B1D2E;
+}
+.jsaDocTitle {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #C51F3A;
+  margin-top: 6px;
+}
+.jsaLine {
+  display: grid;
+  grid-template-columns: 128px 1fr;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 16px;
+}
+.jsaLine span { color: #56646F; font-size: 14px; }
+.jsaLine strong { font-weight: 600; word-break: break-word; }
+@media (max-width: 400px) {
+  .jsaLine { grid-template-columns: 1fr; gap: 1px; }
+}
+
+.jsaStep {
+  background: #F4F7FA;
+  border: 1px solid #D8E1E9;
+  border-radius: 9px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 6px;
+}
+.jsaStep strong { font-size: 17px; line-height: 1.25; }
+.jsaStep p { margin: 0; font-size: 15.5px; line-height: 1.4; white-space: pre-wrap; }
+.jsaStep p span {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #56646F;
+}
+
+.jsaAck {
+  margin: 0;
+  font-size: 15.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}

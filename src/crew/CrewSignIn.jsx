@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import SignaturePad from '../incident/SignaturePad';
-import { fetchBoard, signPublication, readableRows } from './board';
+import { fetchBoard, signPublication } from './board';
+import JsaContents from './JsaContents';
 import './crew.css';
 
 /* ── The crew sign-in page ───────────────────────────────────────────────
@@ -25,53 +26,6 @@ function fmtDate(d) {
   const parsed = new Date(`${d}T00:00:00`);
   return Number.isNaN(parsed.getTime()) ? d
     : parsed.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
-}
-
-function Line({ label, value }) {
-  if (!String(value || '').trim()) return null;
-  return <div className="crewLine"><span>{label}</span><strong>{value}</strong></div>;
-}
-
-/* What the JSA actually says, readable on a phone. */
-function JsaContents({ jsa }) {
-  if (!jsa) return null;
-  const rows = readableRows(jsa);
-  return (
-    <div className="crewDoc">
-      <div className="crewDocTitle">The JSA</div>
-
-      <Line label="Job site" value={jsa.jobSite} />
-      <Line label="Location" value={jsa.location} />
-      <Line label="Job #" value={jsa.jobNumber} />
-      <Line label="Supervisor" value={jsa.superintendentForeman} />
-      <Line label="Overall task" value={jsa.overallWorkTask} />
-      <Line label="Good from" value={[jsa.timeIssued, jsa.timeExpired].filter(Boolean).join(' to ')} />
-      <Line label="Emergency" value={jsa.emergencyPhone} />
-      <Line label="Nearest medical" value={jsa.nearestMedicalFacility} />
-      <Line label="Muster point" value={jsa.musterPoint} />
-      <Line label="Tailgate topic" value={jsa.tailgateTopic} />
-
-      {rows.length > 0 && (
-        <>
-          <div className="crewDocTitle">Steps, hazards and controls</div>
-          {rows.map((r, i) => (
-            <div className="crewStep" key={i}>
-              {r.step && <strong>{r.step}</strong>}
-              {r.hazards && <p><span>Hazards</span>{r.hazards}</p>}
-              {r.controls && <p><span>Controls</span>{r.controls}</p>}
-            </div>
-          ))}
-        </>
-      )}
-
-      {String(jsa.acknowledgement || '').trim() && (
-        <>
-          <div className="crewDocTitle">What you are signing</div>
-          <p className="crewAck">{jsa.acknowledgement}</p>
-        </>
-      )}
-    </div>
-  );
 }
 
 export default function CrewSignIn({ boardOwnerId }) {
