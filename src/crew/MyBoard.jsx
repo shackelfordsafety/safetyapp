@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchMyBoard, fetchSigners, signOnKiosk, NotSignedInError } from './board';
 import CrewSignInKiosk from '../jsa/CrewSignInKiosk';
+import BoardQr from './BoardQr';
 import { signedUrlFor } from '../archive/fileToArchive';
 import JsaContents from './JsaContents';
 import './myboard.css';
@@ -92,6 +93,9 @@ export default function MyBoard() {
   const [preview, setPreview] = useState(null);
   const [copied, setCopied] = useState(false);
   const [opening, setOpening] = useState('');
+  // What the printed sticker says under the code, so a trailer with more
+  // than one board posted stays tellable apart.
+  const profileLabel = state.rows[0]?.job_site || 'Job Safety Analysis';
   const [kiosk, setKiosk] = useState(null);
   const [kioskSigned, setKioskSigned] = useState(0);
 
@@ -239,17 +243,19 @@ export default function MyBoard() {
       )}
 
       {state.status === 'ready' && (
-        <div className="brdLink">
-          <span className="brdSectionTitle">Your board link</span>
-          <p className="helperText">
-            This never changes. It is what the QR code points at — print it once and it
-            works forever. Lost the sticker? Show this screen and let them scan it.
-          </p>
-          <code className="brdUrl">{state.boardUrl}</code>
-          <button type="button" className="btn ghost sm" onClick={copyLink}>
-            {copied ? 'Copied' : 'Copy link'}
-          </button>
-        </div>
+        <>
+          <BoardQr url={state.boardUrl} label={profileLabel} />
+          <div className="brdLink">
+            <span className="brdSectionTitle">Or send the link</span>
+            <p className="helperText">
+              Same destination as the code above — useful before the sticker is up.
+            </p>
+            <code className="brdUrl">{state.boardUrl}</code>
+            <button type="button" className="btn ghost sm" onClick={copyLink}>
+              {copied ? 'Copied' : 'Copy link'}
+            </button>
+          </div>
+        </>
       )}
 
       {kiosk && (

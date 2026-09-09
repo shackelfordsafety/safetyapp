@@ -1,0 +1,65 @@
+/* ── The board's QR code ──
+   Rides in the lazy board chunk with BoardQr.jsx. */
+
+.brdQr {
+  margin-top: 26px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 14px;
+}
+.brdQrTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.brdQrTop .helperText { max-width: 52ch; margin-top: 4px; }
+
+/* Big enough to scan straight off the iPad when the printed one is gone. */
+.brdQrImg {
+  width: 100%;
+  max-width: 320px;
+  image-rendering: pixelated;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+/* The printable sheet: hidden on screen, and the only thing on the page
+   while printing. */
+.brdQrSheet { display: none; }
+
+/* ── Printing the QR ──
+   Scoped to body.printingQr, which BoardQr adds only for the duration of
+   its own print dialog and removes afterwards. Nothing here is reachable
+   during a JSA print, so the app's one authoritative @media print block --
+   and every page-geometry constant it depends on -- is untouched. That
+   separation is deliberate: print is the most regression-prone part of
+   this codebase and a QR sticker has no business anywhere near it. */
+@media print {
+  body.printingQr > *:not(.brdQrSheet) { display: none !important; }
+
+  body.printingQr .brdQrSheet {
+    display: grid !important;
+    justify-items: center;
+    gap: 14px;
+    text-align: center;
+    padding: 0.6in;
+  }
+  body.printingQr .brdQrSheet img {
+    width: 6in;
+    height: 6in;
+    image-rendering: pixelated;
+  }
+  body.printingQr .brdQrSheet strong {
+    font-family: var(--font-condensed, sans-serif);
+    font-size: 34pt;
+    font-weight: 700;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+  }
+  body.printingQr .brdQrSheet span { font-size: 16pt; }
+  body.printingQr .brdQrSheet small { font-size: 10pt; color: #444; }
+}
