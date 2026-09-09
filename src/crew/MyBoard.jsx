@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { fetchMyBoard, fetchSigners, NotSignedInError } from './board';
+import { fetchMyBoard, fetchSigners, signOnKiosk, NotSignedInError } from './board';
+import CrewSignInKiosk from '../jsa/CrewSignInKiosk';
 import { signedUrlFor } from '../archive/fileToArchive';
 import JsaContents from './JsaContents';
 import './myboard.css';
@@ -91,6 +92,19 @@ export default function MyBoard() {
   const [preview, setPreview] = useState(null);
   const [copied, setCopied] = useState(false);
   const [opening, setOpening] = useState('');
+  const [kiosk, setKiosk] = useState(null);
+  const [kioskSigned, setKioskSigned] = useState(0);
+
+  /* Kiosk mode for one posting: the iPad in the trailer, for the handful
+     of men with no phone on them. They scrawl and walk off -- no name,
+     deliberately -- and it lands in the same place a phone signature
+     does. Not awaited, so nobody waits on the network holding the iPad;
+     the board reloads when he closes it. */
+  function signOnPad(dataUrl) {
+    setKioskSigned(n => n + 1);
+    signOnKiosk({ publicationId: kiosk.id, signatureData: dataUrl, expiresAt: kiosk.expires_at })
+      .catch(() => { /* the count on the board is the source of truth, not this screen */ });
+  }
 
   /* Tapping a row opens the JSA as it was actually published -- the real
      PDF, not a readable summary of it. Publications made before PDFs were
@@ -193,10 +207,15 @@ export default function MyBoard() {
             </span>
             <span className="brdSeeDoc">{opening === r.id ? 'Opening…' : 'See the JSA'}</span>
           </button>
-          <button type="button" className="brdCount" onClick={() => setOpenList(r.id)}>
-            <span className="brdCountNum">{r.signed}</span>
-            <span className="brdCountLabel">signed</span>
-          </button>
+          <div className="brdCardRight">
+            <button type="button" className="brdCount" onClick={() => setOpenList(r.id)}>
+              <span className="brdCountNum">{r.signed}</span>
+              <span className="brdCountLabel">signed</span>
+            </button>
+            <button type="button" className="btn secondary sm" onClick={() => { setKiosk(r); setKioskSigned(0); }}>
+              Sign on this iPad
+            </button>
+          </div>
         </div>
       ))}
 
@@ -233,6 +252,15 @@ export default function MyBoard() {
         </div>
       )}
 
+      {kiosk && (
+        <CrewSignInKiosk
+          jsa={kiosk.data}
+          upd={() => {}}
+          onSign={signOnPad}
+          signedCount={kiosk.signed + kioskSigned}
+          onExit={() => { setKiosk(null); load(); }}
+        />
+      )}
       {preview && <JsaPreview row={preview} onClose={() => setPreview(null)} />}
       {openList && <SignerList publicationId={openList} onClose={() => setOpenList(null)} />}
     </div>

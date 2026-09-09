@@ -3520,10 +3520,6 @@ function StepFinish({
     setRoute('paper');
     if (jsa.signInMode !== 'printout') upd({ signInMode: 'printout' });
   }
-  function chooseKiosk() {
-    setRoute('kiosk');
-    if (jsa.signInMode !== 'kiosk') upd({ signInMode: 'kiosk' });
-  }
   /* Publishing makes no PDF. It used to, so that "see the JSA" could open
      a real document -- but that PDF was made BEFORE anybody signed, so it
      was always the blank version, and it made publishing wait at 6am for
@@ -3581,6 +3577,12 @@ function StepFinish({
 
           <div className="signRoutes">
             <span className="formSectionHeading">How is this getting signed?</span>
+            {/* Two routes, not three. The iPad is no longer a separate way to
+                sign -- it is something you do FROM the board once the JSA is
+                up, for the handful of men with no phone on them. Fonzo,
+                2026-09-09: publish it or print it, and "once it's at the
+                board, that's where you can get the link or the QR code for
+                everybody to sign." */}
 
             <button type="button" className={`signRoute${route === 'board' ? ' active' : ''}`} onClick={chooseBoard}>
               <strong>On their phones</strong>
@@ -3589,23 +3591,6 @@ function StepFinish({
             {route === 'board' && (
               <div className="signRouteBody">
                 <PublishToBoardButton jsa={jsa} />
-              </div>
-            )}
-
-            <button type="button" className={`signRoute${route === 'kiosk' ? ' active' : ''}`} onClick={chooseKiosk}>
-              <strong>On this iPad</strong>
-              <span>Pass it around. Numbered, no names typed.</span>
-            </button>
-            {route === 'kiosk' && (
-              <div className="signRouteBody">
-                <p className="helperText">
-                  {crewSignedCount === 0
-                    ? 'Nobody has signed yet. 20 blank lines print after the digital ones for anyone who signs in ink later.'
-                    : `${crewSignedCount} signed so far — they print on the attached sign-in sheet.`}
-                </p>
-                <button type="button" className="btn primary" onClick={onOpenKiosk}>
-                  {crewSignedCount > 0 ? 'Keep signing' : 'Start crew sign-in'}
-                </button>
               </div>
             )}
 

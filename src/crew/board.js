@@ -373,3 +373,24 @@ export async function fetchUnfiledExpired() {
     };
   });
 }
+
+/* A signature taken on the superintendent's iPad for a board posting.
+
+   No name, deliberately. Fonzo, 2026-09-09: "if they're too fucking lazy
+   to do it on their goddamn phone, which is the easiest way possible,
+   asking them to type in their name is like asking for the world." The
+   database has enforced this shape since day one -- a phone signature must
+   carry a name, a kiosk one may not.
+
+   Lands in exactly the same table as a phone signature, which is the point:
+   the two used to live apart (cloud vs the JSA on the device) and that
+   split caused every blank sign-in sheet of 2026-09-09. */
+export async function signOnKiosk({ publicationId, signatureData, expiresAt }) {
+  return signPublication({
+    publicationId,
+    signerName: null,
+    signatureData,
+    source: 'kiosk',
+    expiresAt,
+  });
+}

@@ -69,7 +69,13 @@ function padHeightFor(width) {
   return Math.max(MIN_PAD_HEIGHT, Math.round(width / SIG_BOX_RATIO));
 }
 
-export default function CrewSignInKiosk({ jsa, upd, onExit }) {
+/* onSign is how a board posting uses this screen: given one, each
+   confirmed signature is handed over instead of being appended to the
+   JSA on this device. That is what lets an iPad signature land in the
+   same place a phone signature does, which is the whole reason the two
+   used to drift apart. Without it the component behaves exactly as
+   before. */
+export default function CrewSignInKiosk({ jsa, upd, onExit, onSign, signedCount: signedCountProp }) {
   const canvasRef = useRef(null);
   const wrapRef = useRef(null);
   const drawingRef = useRef(false);
@@ -98,7 +104,7 @@ export default function CrewSignInKiosk({ jsa, upd, onExit }) {
     };
   }, []);
 
-  const signedCount = jsa.crewSignatures?.length || 0;
+  const signedCount = typeof signedCountProp === 'number' ? signedCountProp : (jsa.crewSignatures?.length || 0);
   const currentNumber = signedCount + 1;
 
   // Header number deliberately does NOT track currentNumber live -- during
@@ -252,8 +258,14 @@ export default function CrewSignInKiosk({ jsa, upd, onExit }) {
   function confirmSignature() {
     if (!hasStrokeRef.current) return;
     const dataUrl = canvasRef.current.toDataURL('image/png');
-    const next = [...(jsa.crewSignatures || []), { dataUrl, signedAt: new Date().toISOString() }];
-    upd({ crewSignatures: next });
+    if (onSign) {
+      // Deliberately not awaited: the man in front of the iPad should not
+      // wait on a network round trip to hand it to the next guy.
+      onSign(dataUrl);
+    } else {
+      const next = [...(jsa.crewSignatures || []), { dataUrl, signedAt: new Date().toISOString() }];
+      upd({ crewSignatures: next });
+    }
     setPhase('confirmed');
     window.setTimeout(() => setPhase('signing'), CONFIRM_PAUSE_MS);
   }
