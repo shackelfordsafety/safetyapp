@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './boardqr.css';
 
+const LOGO = `${import.meta.env.BASE_URL}icons/shackelford-logo.webp`;
+
 /* ── The QR code for a superintendent's board ────────────────────────────
    Printed once and stuck on the trailer door, where it stays forever. The
    code is built from the account itself, so it cannot expire, cannot point
@@ -89,10 +91,27 @@ export default function BoardQr({ url, label }) {
           with its own ancestors. */}
       {png && createPortal(
         <div className="brdQrSheet" aria-hidden="true">
-          <img src={png} alt="" />
-          <strong>SCAN TO SIGN THE JSA</strong>
-          <span>{label}</span>
-          <small>Shackelford Construction and Hauling, LLC</small>
+          {/* The logo sits on black because its second line is white type
+              on transparent -- on white paper that line simply vanishes.
+              Same reason the crew page carries a black brand bar. */}
+          <div className="brdQrSheetHead">
+            <img className="brdQrSheetLogo" src={LOGO} alt="" />
+          </div>
+          <div className="brdQrSheetRule" />
+
+          <strong className="brdQrSheetTitle">Scan to sign in</strong>
+          <span className="brdQrSheetSub">Job Safety Analysis</span>
+
+          <img className="brdQrSheetCode" src={png} alt="" />
+
+          <span className="brdQrSheetBoard">{label}</span>
+          <span className="brdQrSheetHow">
+            Point your phone camera at the code. No app, no password.
+          </span>
+
+          <div className="brdQrSheetFoot">
+            Shackelford Construction and Hauling, LLC
+          </div>
         </div>,
         document.body,
       )}

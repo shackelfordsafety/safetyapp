@@ -69,3 +69,12 @@
   text-decoration: underline;
   word-break: break-word;
 }
+
+/* Tap-to-call. Same red-underlined treatment as the directions link so
+   the two read as one family of "this is live, touch it" affordances. */
+.jsaTelLink {
+  font-weight: 600;
+  color: #C1121F;
+  text-decoration: underline;
+  white-space: nowrap;
+}

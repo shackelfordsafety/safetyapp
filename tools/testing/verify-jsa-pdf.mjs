@@ -39,7 +39,7 @@ const repoRoot = path.resolve(__dirname, '..', '..');
 const outDir = path.join(__dirname, process.env.JSA_VERIFY_OUTDIR || 'output');
 mkdirSync(outDir, { recursive: true });
 
-const draftJson = readFileSync(path.join(__dirname, 'fixtures', 'entergy-taps-draft.json'), 'utf8');
+const draftJson = readFileSync(path.join(__dirname, 'fixtures', process.env.JSA_VERIFY_FIXTURE || 'entergy-taps-draft.json'), 'utf8');
 // Fail fast if the fixture isn't valid JSON rather than silently seeding garbage.
 JSON.parse(draftJson);
 

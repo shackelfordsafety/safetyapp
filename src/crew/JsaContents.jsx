@@ -38,6 +38,32 @@ function MapLine({ label, name, address }) {
   );
 }
 
+/* A tappable phone number. Every device that can open this page is a
+   phone, so a printed number a man has to memorise and retype is a number
+   he gets wrong at the worst possible moment.
+
+   Only ONE number gets linked, though. These fields are free text and
+   supers really do write "911 / 601-555-0199" in them -- stripping the
+   punctuation out of that gives 13 digits of nonsense, and a tap-to-call
+   that dials nonsense in an emergency is worse than no link at all. So
+   anything that isn't a single plausible number (7 local, 10 with area
+   code, 11 with a country digit) stays plain printed text. */
+function PhoneLine({ label, value }) {
+  const text = String(value || '').trim();
+  if (!text) return null;
+  const dialable = text.replace(/[^\d+]/g, '');
+  const digitCount = dialable.replace(/\D/g, '').length;
+  if (digitCount !== 7 && digitCount !== 10 && digitCount !== 11) {
+    return <Line label={label} value={text} />;
+  }
+  return (
+    <div className="jsaLine">
+      <span>{label}</span>
+      <strong><a className="jsaTelLink" href={`tel:${dialable}`}>{text}</a></strong>
+    </div>
+  );
+}
+
 function Line({ label, value }) {
   if (!String(value || '').trim()) return null;
   return <div className="jsaLine"><span>{label}</span><strong>{value}</strong></div>;
@@ -57,7 +83,8 @@ export default function JsaContents({ jsa, title = 'The JSA' }) {
       <Line label="Supervisor" value={jsa.superintendentForeman} />
       <Line label="Overall task" value={jsa.overallWorkTask} />
       <Line label="Good from" value={[jsa.timeIssued, jsa.timeExpired].filter(Boolean).join(' to ')} />
-      <Line label="Emergency" value={jsa.emergencyPhone} />
+      <PhoneLine label="Superintendent" value={jsa.siteContactPhone} />
+      <PhoneLine label="Emergency" value={jsa.emergencyPhone} />
       <MapLine label="Nearest medical" name={jsa.nearestMedicalFacility} address={jsa.nearestMedicalAddress} />
       <Line label="Muster point" value={jsa.musterPoint} />
       <Line label="Tailgate topic" value={jsa.tailgateTopic} />
