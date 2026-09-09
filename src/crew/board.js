@@ -294,3 +294,82 @@ export async function fetchSignaturesForJsa(clientDocId) {
 
   return (data || []).map(s => ({ dataUrl: s.signature_data, signedAt: s.signed_at }));
 }
+
+/* ── What still needs archiving ───────────────────────────────────────────
+   Every JSA on my board whose time is up and which has not yet reached the
+   archive, with its crew's signatures already merged in and ready to print.
+
+   This is what makes a night crew work: Fonzo does not show up, so nobody
+   is there to press anything. Today he prints a JSA and hopes they sign it.
+   With this, they scan, they sign, and the signed record files itself.
+
+   "Already filed" is DERIVED, not stored: the publications table is
+   append-only so a row can never be marked done, but documents.client_doc_id
+   records which JSA a filed record came from. Comparing the two is what
+   makes this safe to run over and over -- reopening the app cannot produce
+   a second copy.
+
+   signInMode is forced to 'kiosk' when signatures exist, because the
+   printed sheet deliberately ignores captured signatures in 'printout'
+   mode. Archiving must never route through paper or it files a blank
+   sign-in sheet. */
+export async function fetchUnfiledExpired() {
+  const user = await currentUser();
+  if (!user) return [];
+
+  const { data: expired, error } = await db
+    .from('jsa_publications')
+    .select('id, client_doc_id, area_label, data, expires_at')
+    .eq('board_owner', user.id)
+    .lt('expires_at', new Date().toISOString())
+    .order('expires_at', { ascending: true })
+    .limit(20);
+  if (error) throw new Error(error.message);
+  if (!expired?.length) return [];
+
+  /* Deduped per PUBLICATION, not per JSA. Republishing the same JSA --
+     correcting a time, putting it back up for a second crew -- produces
+     several board postings that share one client_doc_id, and each posting
+     carries its own signatures and deserves its own record. Keying on the
+     JSA would file the first and silently swallow the rest.
+
+     The marker lives inside the filed document's own data because the
+     archive is append-only and has no column to add. */
+  const { data: filed, error: filedErr } = await db
+    .from('documents')
+    .select('marker:data->>archivedPublicationId')
+    .eq('doc_type', 'jsa');
+  if (filedErr) throw new Error(filedErr.message);
+  const already = new Set((filed || []).map(r => r.marker).filter(Boolean));
+
+  const pending = expired.filter(p => !already.has(p.id));
+  if (!pending.length) return [];
+
+  const { data: sigs, error: sigErr } = await db
+    .from('jsa_signatures')
+    .select('publication_id, signature_data, signed_at')
+    .in('publication_id', pending.map(p => p.id))
+    .order('signed_at', { ascending: true });
+  if (sigErr) throw new Error(sigErr.message);
+
+  const byPub = (sigs || []).reduce((acc, s) => {
+    (acc[s.publication_id] = acc[s.publication_id] || []).push({ dataUrl: s.signature_data, signedAt: s.signed_at });
+    return acc;
+  }, {});
+
+  return pending.map(p => {
+    const crewSignatures = byPub[p.id] || [];
+    return {
+      publicationId: p.id,
+      label: p.area_label,
+      signedCount: crewSignatures.length,
+      jsa: {
+        ...p.data,
+        crewSignatures,
+        signInMode: crewSignatures.length ? 'kiosk' : (p.data?.signInMode || 'kiosk'),
+        // What stops this being filed twice. See the dedupe above.
+        archivedPublicationId: p.id,
+      },
+    };
+  });
+}

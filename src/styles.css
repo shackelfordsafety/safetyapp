@@ -3225,3 +3225,8 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 
 /* The one finishing action on the JSA's Finish step. */
 .finishBlock { display: grid; gap: 8px; margin-top: 6px; }
+
+/* Host for the auto-archive export root. Its child is position:fixed and
+   parked off-screen, so this contributes no layout of its own -- stated
+   explicitly so nobody "tidies" it into something that does. */
+.pdfArchiveHost { position: absolute; width: 0; height: 0; overflow: hidden; }

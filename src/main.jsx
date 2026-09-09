@@ -2033,6 +2033,81 @@ function App() {
   // the completed PDF in pdfExportState (phase: 'ready') and waits for a
   // SEPARATE, fresh tap on Share / Print PDF (shareGeneratedPdf below) —
   // that tap's own activation is what navigator.share() actually needs.
+  /* ── Archiving expired JSAs by itself ─────────────────────────────────
+     A JSA's time runs out and the signed record files itself. Nobody
+     presses anything.
+
+     This is what makes night crews work at all. Fonzo does not show up for
+     them: today he prints a JSA and hopes they sign it. Now they scan,
+     they sign, and the finished document is in the archive before he
+     arrives.
+
+     It cannot run on a server -- the PDF is a raster of this app's own DOM
+     -- so it runs the next time the app is open. That is why it must stay
+     completely out of the way: it renders its OWN hidden export root for
+     the JSA being filed, never touching the draft on screen, and it waits
+     until the user is not generating a PDF of their own. */
+  const [archiveQueue, setArchiveQueue] = useState([]);
+  const archiveRefsRef = useRef([]);
+  const archiveBusyRef = useRef(false);
+  const archiveTarget = archiveQueue[0] || null;
+  const archivePlan = useMemo(() => (archiveTarget ? getPagePlan(archiveTarget.jsa) : null), [archiveTarget]);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const { fetchUnfiledExpired } = await loadModule(() => import('./crew/board'));
+        const items = await fetchUnfiledExpired();
+        if (alive && items.length) setArchiveQueue(items);
+      } catch {
+        // Signed out, or no signal. Nothing to report -- it retries on the
+        // next open, and the work is derived fresh each time.
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!archiveTarget || archiveBusyRef.current) return undefined;
+    // Never compete with a PDF the user asked for.
+    if (pdfExportState?.phase === 'generating') return undefined;
+
+    archiveBusyRef.current = true;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const expected = archiveTarget.jsa?.crewSignatures?.length || 0;
+        const deadline = Date.now() + 10000;
+        while (Date.now() < deadline) {
+          const host = document.querySelector('.pdfArchiveHost');
+          const imgs = host ? Array.from(host.querySelectorAll('.attachedSigLineImg')) : [];
+          const ready = host && archiveRefsRef.current.length
+            && imgs.length >= expected && imgs.every(i => i.complete && i.naturalWidth > 0);
+          if (ready) break;
+          await new Promise(r => setTimeout(r, 150));
+        }
+        const { blob } = await generateJsaPdf(archiveRefsRef, () => {});
+        const { fileDocument } = await loadModule(() => import('./archive/fileToArchive'));
+        await fileDocument({ docType: 'jsa', model: archiveTarget.jsa, pdfBlob: blob });
+        if (!cancelled) {
+          showToast(archiveTarget.signedCount
+            ? `Filed "${archiveTarget.label}" with ${archiveTarget.signedCount} signature${archiveTarget.signedCount === 1 ? '' : 's'}.`
+            : `Filed "${archiveTarget.label}".`);
+        }
+      } catch {
+        // Left unfiled on purpose: it is still expired and still missing
+        // from the archive, so the next open picks it up again.
+      } finally {
+        archiveBusyRef.current = false;
+        if (!cancelled) setArchiveQueue(q => q.slice(1));
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [archiveTarget, pdfExportState?.phase]);
+
   async function exportPdf() {
     if (pdfExportState?.phase === 'generating') return; // guard against duplicate concurrent generation
     if (!exportPreflight()) return;
@@ -2409,6 +2484,15 @@ function App() {
       <PaginationMeasureRig jsa={jsa} />
       <PrintableJsa jsa={jsa} />
       <PdfExportRoot jsa={jsa} plan={pdfExportPlan} pageRefsRef={pdfExportPageRefsRef} />
+      {/* A SECOND export root, for a JSA being filed automatically after it
+          expired. Separate on purpose: the archive worker must never touch
+          the draft on screen, and generateJsaPdf works off whichever refs
+          it is handed. Only mounted while there is something to file. */}
+      {archiveTarget && archivePlan && (
+        <div className="pdfArchiveHost">
+          <PdfExportRoot jsa={archiveTarget.jsa} plan={archivePlan} pageRefsRef={archiveRefsRef} />
+        </div>
+      )}
       <IncidentPdfExportRoot incident={incident} pageRefsRef={incidentPdfPageRefsRef} />
       {/* The four Superintendent documents draw their PDFs directly
           (renderPdf passed to usePdfExport below) — no hidden export DOM to
