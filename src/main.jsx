@@ -2743,26 +2743,6 @@ function pdfExportStatusLabel(state) {
   return 'Working…';
 }
 
-// Compact locations (sticky action bar, Live Preview header) get a single
-// "smart" button rather than the full ready-panel StepExport shows — space
-// is tight there, and Export is one tap away for the fuller experience.
-// Download (not Share) is the one primary action app-wide now, and unlike
-// navigator.share() it has no "fresh user activation" timing requirement,
-// so this can safely reuse the same already-generated PDF regardless of
-// how long ago generation finished.
-function compactExportLabel(pdfExportState, isPdfStale) {
-  const generating = pdfExportStatusLabel(pdfExportState);
-  if (generating) return generating;
-  if (pdfExportState?.phase === 'ready') return isPdfStale ? 'Make it again' : 'Download';
-  // Matches the Finish step's wording -- "Create Document" is gone as a
-  // concept, so the sticky bar must not be the one place it survives.
-  return 'Make the printout';
-}
-function compactExportAction(pdfExportState, isPdfStale, exportPdf, downloadGeneratedPdfClick) {
-  if (pdfExportState?.phase === 'ready' && !isPdfStale) return downloadGeneratedPdfClick;
-  return exportPdf;
-}
-
 /* ── Sticky workflow action bar (touch devices): one Back/Next location,
    quiet save status, reachable above the keyboard and Safari's bottom UI. ── */
 function StickyActionBar({ idx, steps, prev, next, exportPdf, pdfExportState, isPdfStale, downloadGeneratedPdfClick, showPreview, setShowPreview, saveStatus }) {
@@ -2784,16 +2764,11 @@ function StickyActionBar({ idx, steps, prev, next, exportPdf, pdfExportState, is
           </button>
         )}
         {!isLast && nextStep && <button className="btn primary sm" onClick={next}>{nextStep.id === 'finish' ? 'Ready for Crew to Sign' : `Next: ${nextStep.label}`}</button>}
-        {isLast && (
-          <button
-            className="btn primary sm"
-            onClick={compactExportAction(pdfExportState, isPdfStale, exportPdf, downloadGeneratedPdfClick)}
-            disabled={isGenerating}
-            aria-busy={isGenerating}
-          >
-            {compactExportLabel(pdfExportState, isPdfStale)}
-          </button>
-        )}
+        {/* No export button here. Making a document is something ONE route
+            does -- the paper one -- and a second "make it" floating in the
+            header made it unclear what was being made or why (Fonzo,
+            2026-09-09: "why is there a make it again button? whats it
+            making... im so confused"). */}
       </div>
     </div>
   );
@@ -2916,14 +2891,7 @@ function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, allTem
           <strong>{isReviewStep ? 'What Will Print' : 'Live Preview'}</strong>
           <span>{isReviewStep ? 'The real printed page, scaled to fit' : 'Scaled preview of the printed layout'}</span>
         </div>
-        <button
-          className="btn sm outline"
-          onClick={compactExportAction(pdfExportState, isPdfStale, exportPdf, downloadGeneratedPdfClick)}
-          disabled={pdfExportState?.phase === 'generating'}
-          aria-busy={pdfExportState?.phase === 'generating'}
-        >
-          {compactExportLabel(pdfExportState, isPdfStale)}
-        </button>
+
       </div>
       <JsaPreview jsa={jsa} />
     </div>
@@ -3583,11 +3551,12 @@ function StepFinish({
             )}
           </div>
 
-          {isReady && isPdfStale && (
+          {/* Only the paper route ever produced a printout, so it is the
+              only route that can have a stale one. */}
+          {isReady && isPdfStale && route === 'paper' && (
             <div className="pdfStaleWarning">
-              <strong>It changed — make it again before printing.</strong>
-              <p>The JSA was edited after this printout was made, so it no longer matches.</p>
-              <button className="btn primary sm" onClick={exportPdf} disabled={isGenerating} aria-busy={isGenerating}>{exportLabel || 'Make it again'}</button>
+              <strong>You changed the JSA — print it again.</strong>
+              <button className="btn primary sm" onClick={exportPdf} disabled={isGenerating} aria-busy={isGenerating}>{exportLabel || 'Make the printout'}</button>
             </div>
           )}
 
