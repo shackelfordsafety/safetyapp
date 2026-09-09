@@ -56,8 +56,31 @@ function isImageData(v) {
   return typeof v === 'string' && v.startsWith('data:image/');
 }
 
+/* Crew sign-in is stored as [{ dataUrl, signedAt }] -- the signature image
+   plus when it was made. Rendered naively that came out as a list of
+   "[object Object]", so the one thing a reader actually wants to know from
+   this section -- did the crew sign, and when -- was the one thing missing
+   (Fonzo, 2026-09-09: "just doesn't show on the details easy reader").
+   The signatures themselves are on the PDF, which is one tap away. */
+function isSignatureList(v) {
+  return Array.isArray(v) && v.length > 0 && v.every(x => x && typeof x === 'object' && 'dataUrl' in x);
+}
+
+function renderSignatureList(v) {
+  const times = v
+    .map(s => {
+      const d = new Date(s.signedAt);
+      return Number.isNaN(d.getTime()) ? null : d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    })
+    .filter(Boolean);
+  const head = `${v.length} signed`;
+  if (!times.length) return head;
+  return `${head} — first at ${times[0]}, last at ${times[times.length - 1]}`;
+}
+
 function renderValue(v) {
   if (isImageData(v)) return 'Signed';
+  if (isSignatureList(v)) return renderSignatureList(v);
   if (Array.isArray(v)) return v.map(x => (isImageData(x) ? 'Signed' : x)).join('\n');
   if (v && typeof v === 'object') return JSON.stringify(v, null, 2);
   return String(v);
