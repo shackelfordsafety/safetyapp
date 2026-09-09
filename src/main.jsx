@@ -19,6 +19,8 @@ import { StepNav } from './documents/FormPrimitives';
 import PublishToBoardButton from './crew/PublishToBoardButton';
 import { loadModule } from './shared/loadModule';
 import ErrorBoundary from './shared/ErrorBoundary';
+import { useUserSync } from './sync/useUserSync';
+import { recordTemplateDeletion, markSettingsChanged } from './sync/syncMeta';
 import AccountButton from './account/AccountButton';
 import { DOCUMENT_STORAGE_KEYS } from './documents/storage';
 import { useDraftDocument, saveStatusLabel } from './documents/useDraftDocument';
@@ -1302,6 +1304,17 @@ function RemoveBundleModal({ task, hazards, controls, onCancel, onRemoveTaskOnly
 function App() {
   const [settings, setSettings] = useState(() => ({ theme: 'light', customQuick: { task: [], hazard: [], control: [] }, ...safeJson(localStorage.getItem(KEYS.settings), {}) }));
   const [customTemplates, setCustomTemplates] = useState(() => safeJson(localStorage.getItem(KEYS.templates), []));
+
+  /* Templates and settings follow the account across devices. Silent by
+     design: nothing loads while signed out, it never blocks a screen, and
+     a failure just means this device keeps using its own copy. */
+  useUserSync({
+    templates: customTemplates,
+    setTemplates: setCustomTemplates,
+    settings,
+    setSettings,
+  });
+
   const [savedDraft, setSavedDraft] = useState(() => safeJson(localStorage.getItem(KEYS.draft), null));
   const [jsa, setJsa] = useState(() => emptyJsa());
   const [tab, setTab] = useState('home');
@@ -1417,6 +1430,9 @@ function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = settings.theme || 'light';
     localStorage.setItem(KEYS.settings, JSON.stringify(settings));
+    // Records WHEN this device last changed settings, so sync can tell
+    // whose copy is newer. localStorage only -- see syncMeta.js.
+    markSettingsChanged();
   }, [settings]);
 
   useEffect(() => {
@@ -1951,6 +1967,10 @@ function App() {
     const t = customTemplates.find(x => x.id === id);
     if (!t) return;
     if (!confirm(`Delete template "${t.name}"?`)) return;
+    // Leave a marker saying this was deleted. Without it, sync only ever
+    // unions two lists and this template comes back from the other iPad
+    // the next time they meet -- see syncMeta.js.
+    recordTemplateDeletion(id);
     setCustomTemplates(prev => prev.filter(x => x.id !== id));
     if (templateId === id) setTemplateId('blank-jsa');
     showToast('Template deleted.');
