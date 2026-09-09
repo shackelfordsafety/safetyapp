@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { fetchFiledToday } from '../archive/fileToArchive';
+import { fetchFiledToday, signedUrlFor } from '../archive/fileToArchive';
 import { fetchMyBoard } from '../crew/board';
+import JsaContents from '../crew/JsaContents';
 import './today.css';
 
 /* ── Today ───────────────────────────────────────────────────────────────
@@ -12,14 +13,25 @@ import './today.css';
    Replaces the old Drafts tab rather than sitting beside it. Same
    observation, his words: drafts "stay even tho we're done with them" --
    a list of things you have already finished, presented as unfinished
-   work. Splitting the day into STILL OPEN and DONE TODAY answers that
-   without deleting anything: a document that has been filed simply moves
-   from the first list to the second.
+   work. Splitting the day answers that without deleting anything: a
+   document that gets finished simply moves down the page.
 
-   Signing in is not required to see what is open on this device. It is
-   required to see what was filed or published, because that lives in the
-   company archive -- so a signed-out device shows the top half and a
-   quiet note rather than an error. */
+   Three sections, and the split matters:
+     Still open      on this device, unfinished
+     Out for signing LIVE board entries only -- an expired one is not out
+                     for signing any more, so it moves down (Fonzo: "a
+                     closed one that expired is still under out for signing
+                     as well, maybe the closed ones should go under filed")
+     Done today      filed to the archive, plus board entries that closed
+
+   Every row here opens something. The first version listed the day without
+   letting you touch any of it, which Fonzo rightly said did not beat
+   digging through the Archive: "you can't tap on anything and bring up the
+   final PDF to download". A filed document opens its PDF; a board entry
+   opens the JSA the crew signed.
+
+   Signing in is not required for the top section -- that is local, and a
+   device that only builds documents should still show its own work. */
 
 const DOC_LABELS = {
   jsa: 'JSA',
@@ -36,35 +48,67 @@ function fmtTime(t) {
   return Number.isNaN(d.getTime()) ? '' : d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
+function Section({ label, count, children }) {
+  return (
+    <div className="todaySection">
+      <div className="todayHead">
+        <span className="todayLabel">{label}</span>
+        {typeof count === 'number' && <span className="todayCount">{count}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
 export default function TodayView({ entries = [], goDocs }) {
   const [filed, setFiled] = useState(undefined);   // undefined = loading, null = signed out
-  const [published, setPublished] = useState(undefined);
+  const [board, setBoard] = useState(undefined);
   const [error, setError] = useState('');
+  const [preview, setPreview] = useState(null);
+  const [opening, setOpening] = useState('');
+  const [openError, setOpenError] = useState('');
 
   const load = useCallback(async () => {
     setError('');
     try {
       const rows = await fetchFiledToday();
       setFiled(rows);
-      if (rows === null) { setPublished(null); return; }
+      if (rows === null) { setBoard(null); return; }
       try {
         const { rows: boardRows } = await fetchMyBoard();
-        setPublished(boardRows);
+        setBoard(boardRows);
       } catch {
-        // A superintendent with no board is normal; never let it break the page.
-        setPublished([]);
+        // A superintendent with no board is normal; never break the page.
+        setBoard([]);
       }
     } catch (ex) {
       setError(ex?.message || 'Could not load today.');
       setFiled([]);
-      setPublished([]);
+      setBoard([]);
     }
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
+  async function openFiled(row) {
+    if (!row.pdf_path) { setOpenError('That one was filed without a PDF.'); return; }
+    setOpening(row.id);
+    setOpenError('');
+    try {
+      const url = await signedUrlFor(row.pdf_path);
+      if (url) window.open(url, '_blank', 'noopener');
+    } catch (ex) {
+      setOpenError(ex?.message || 'Could not open it. Check your connection.');
+    } finally {
+      setOpening('');
+    }
+  }
+
   const stillOpen = entries.filter(e => e.savedDraft);
   const signedOut = filed === null;
+  const live = Array.isArray(board) ? board.filter(r => r.live) : [];
+  const closed = Array.isArray(board) ? board.filter(r => !r.live) : [];
+  const doneCount = (Array.isArray(filed) ? filed.length : 0) + closed.length;
   const today = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
   return (
@@ -75,11 +119,7 @@ export default function TodayView({ entries = [], goDocs }) {
         <p>What you started and what you finished. Older paperwork lives in the Archive.</p>
       </div>
 
-      <div className="todaySection">
-        <div className="todayHead">
-          <span className="todayLabel">Still open</span>
-          <span className="todayCount">{stillOpen.length}</span>
-        </div>
+      <Section label="Still open" count={stillOpen.length}>
         {stillOpen.length ? (
           <div className="listStack">
             {stillOpen.map(e => (
@@ -106,51 +146,46 @@ export default function TodayView({ entries = [], goDocs }) {
             <button className="btn primary sm" onClick={goDocs}>Start a document</button>
           </div>
         )}
-      </div>
+      </Section>
 
-      <div className="todaySection">
-        <div className="todayHead">
-          <span className="todayLabel">Out for signing</span>
-          {Array.isArray(published) && <span className="todayCount">{published.length}</span>}
-        </div>
+      <Section label="Out for signing" count={signedOut ? undefined : live.length}>
         {signedOut ? (
           <p className="todayNote">Sign in up top to see what you put on your board today.</p>
-        ) : published === undefined ? (
+        ) : board === undefined ? (
           <p className="todayNote">Loading…</p>
-        ) : published.length === 0 ? (
-          <p className="todayNote">Nothing published to your board today.</p>
+        ) : live.length === 0 ? (
+          <p className="todayNote">Nothing live on your board right now.</p>
         ) : (
           <div className="listStack">
-            {published.map(r => (
+            {live.map(r => (
               <div className="listItem" key={r.id}>
                 <div className="itemInfo">
                   <div className="itemInfoTitleRow">
                     <strong>{r.area_label}</strong>
-                    <span className={`badge ${r.live ? 'draft' : 'ready'}`}>{r.live ? 'Live' : 'Closed'}</span>
+                    <span className="badge draft">Live</span>
                   </div>
-                  <p>Published {fmtTime(r.published_at)} · {r.signed} signed</p>
+                  <p>Published {fmtTime(r.published_at)} · {r.signed} signed · good until {fmtTime(r.expires_at)}</p>
+                </div>
+                <div className="itemActions">
+                  <button className="btn secondary sm" onClick={() => setPreview(r)}>See the JSA</button>
                 </div>
               </div>
             ))}
           </div>
         )}
-      </div>
+      </Section>
 
-      <div className="todaySection">
-        <div className="todayHead">
-          <span className="todayLabel">Filed today</span>
-          {Array.isArray(filed) && <span className="todayCount">{filed.length}</span>}
-        </div>
-        {error && <p className="todayNote">{error}</p>}
+      <Section label="Done today" count={signedOut ? undefined : doneCount}>
+        {(error || openError) && <p className="todayNote">{error || openError}</p>}
         {signedOut ? (
-          <p className="todayNote">Sign in up top to see what was filed to the archive.</p>
+          <p className="todayNote">Sign in up top to see what was finished and filed.</p>
         ) : filed === undefined ? (
           <p className="todayNote">Loading…</p>
-        ) : filed.length === 0 ? (
-          <p className="todayNote">Nothing filed yet today.</p>
+        ) : doneCount === 0 ? (
+          <p className="todayNote">Nothing finished yet today.</p>
         ) : (
           <div className="listStack">
-            {filed.map(r => (
+            {(filed || []).map(r => (
               <div className="listItem" key={r.id}>
                 <div className="itemInfo">
                   <div className="itemInfoTitleRow">
@@ -159,11 +194,47 @@ export default function TodayView({ entries = [], goDocs }) {
                   </div>
                   <p>Filed {fmtTime(r.submitted_at)}</p>
                 </div>
+                <div className="itemActions">
+                  <button
+                    className="btn secondary sm"
+                    onClick={() => openFiled(r)}
+                    disabled={opening === r.id}
+                  >
+                    {opening === r.id ? 'Opening…' : 'Open the PDF'}
+                  </button>
+                </div>
+              </div>
+            ))}
+            {closed.map(r => (
+              <div className="listItem" key={r.id}>
+                <div className="itemInfo">
+                  <div className="itemInfoTitleRow">
+                    <strong>{r.area_label}</strong>
+                    <span className="badge ready">Closed</span>
+                  </div>
+                  <p>Expired {fmtTime(r.expires_at)} · {r.signed} signed</p>
+                </div>
+                <div className="itemActions">
+                  <button className="btn secondary sm" onClick={() => setPreview(r)}>See the JSA</button>
+                </div>
               </div>
             ))}
           </div>
         )}
-      </div>
+      </Section>
+
+      {preview && (
+        <div className="dialogOverlay" onMouseDown={e => { if (e.target === e.currentTarget) setPreview(null); }}>
+          <div className="dialogPanel" role="dialog" aria-modal="true" aria-label="Published JSA" style={{ maxWidth: 620, maxHeight: '88vh', overflowY: 'auto' }}>
+            <h3 style={{ margin: 0 }}>{preview.area_label}</h3>
+            <p className="helperText">{preview.signed} signed · published {fmtTime(preview.published_at)}</p>
+            <JsaContents jsa={preview.data} title="Published JSA" />
+            <div className="dialogActions">
+              <button type="button" className="btn primary" onClick={() => setPreview(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

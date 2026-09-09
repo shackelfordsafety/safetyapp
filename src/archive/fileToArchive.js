@@ -198,3 +198,15 @@ export async function fetchFiledToday() {
   if (error) throw new Error(error.message);
   return data || [];
 }
+
+/* A short-lived link to a filed document's PDF.
+
+   The bucket is private, so a stored file cannot simply be linked to --
+   every view has to mint its own signed URL. Shared here rather than
+   duplicated in each screen that offers a download. */
+export async function signedUrlFor(pdfPath, seconds = 120) {
+  if (!pdfPath) return null;
+  const { data, error } = await db.storage.from('documents').createSignedUrl(pdfPath, seconds);
+  if (error) throw new Error(error.message);
+  return data?.signedUrl || null;
+}
