@@ -55,9 +55,18 @@
   --accent-ink: #FFFFFF;
   --accent-tint: #FBE7E9;
   --accent-border-tint: #E8A8AD;
-  --focus: #2F6398;
-  --focus-hover: #285681;
-  --focus-tint: #E8F0F8;
+  /* Red WORDS, as opposed to a red button. Darker than --accent so it
+     still reads at body size on white or on the red tint. The dark theme
+     defines its own, far lighter, for the same reason in reverse. */
+  --accent-text: #A00E19;
+  /* Neutral, not blue. Blue focus rings are the convention, but this app
+     is red, white and black now and a blue ring was the last coloured
+     thing left on a light screen. A near-black ring is unmistakable
+     against white, and stays clearly distinct from the red that means
+     "this is the button you want". */
+  --focus: #3A3A42;
+  --focus-hover: #17181A;
+  --focus-tint: #EDEDEF;
   --danger: #A92238;
   --danger-tint: #FBE8EB;
   /* C2 spec's sunlight-tested done/attention pair — was #2E7656/#A87521,
@@ -87,7 +96,7 @@
      should fold these together once the rest of the app adopts them. */
   --text-2: #46464C;
   --text-3: #5F5F66;
-  --text-on-navy-2: #B4C4D3;
+  --text-on-dark-2: #B6B6BE;
   --border-obj: #C2C2C7;
   --border-input: #B0B0B6;
   --rule-2: #DEDEE1;
@@ -115,68 +124,81 @@
   --sidebar-text: #F4F7FA;
   /* Was an ad-hoc color-mix (~#929BA4, unverified contrast); now the C2
      spec's own sunlight-tested secondary-on-navy color (5.9:1). */
-  --sidebar-text-muted: var(--text-on-navy-2);
+  --sidebar-text-muted: var(--text-on-dark-2);
   --action-dock-height: 64px;
   --bottom-nav-height: 58px;
   --input-bg: var(--surface);
 }
 
-/* Dark mode: kept functional (this pass is not a full rebuild), with
-   distinct layered surfaces per spec — canvas/workspace/surface/raised
-   surface/input are five genuinely different tones, not one flat navy
-   field. Accent uses the given dark-specific red pair so bare red text
-   passes readable contrast against dark navy (the light-theme red, mixed
-   with a dark navy surface, produced a muddy purple — the exact bug this
-   replaces: dark tokens are explicit literal values now, never colors
-   mixed across the light/dark boundary). */
+/* Dark mode, rebuilt 2026-09-09 in the company palette.
+
+   It was still the old navy system — #071629 canvas, #123153 cards, a blue
+   focus ring, blue-grey type — so flipping the switch undid the whole
+   red/white/black pass and put the app back in a colour Shackelford
+   doesn't use.
+
+   Same idea as the light theme: neutral greys carry everything, red is the
+   only colour on screen, and it means one thing. Five genuinely different
+   tones (canvas / workspace / card / raised / input) rather than one flat
+   field, so depth still reads.
+
+   Two values are NOT just their light counterparts darkened. Red FILLS
+   lift to #D42030, because #C1121F against near-black goes muddy while
+   white type on it still clears 5:1. And bare red TEXT takes
+   --accent-text, a far lighter tone — dark red words on a dark surface are
+   unreadable. Every value here is an explicit literal: mixing a
+   light-theme colour into a dark surface is what produced the muddy purple
+   this system had once before. */
 html[data-theme='dark'] {
-  --bg: #071629;
-  --workspace: #0B203A;
-  --workspace-2: #0D2846;
-  --surface: #123153;
-  --surface-2: #173B63;
-  --surface-3: #173B63;
-  --text: #F5F7FA;
-  --muted: #BBC8D7;
-  --text-faint: #91A3B8;
-  --text-very-faint: #7690A8;
-  --line: #2A4A6D;
-  --line-strong: color-mix(in srgb, #2A4A6D 65%, #F5F7FA 35%);
-  --accent: #C1121F;
-  --accent-2: #E0303C;
-  --accent-3: #E0303C;
+  --bg: #0A0A0B;
+  --workspace: #0F0F11;
+  --workspace-2: #151518;
+  --surface: #1A1A1D;
+  --surface-2: #212125;
+  --surface-3: #292930;
+  --text: #F4F4F5;
+  --muted: #ABABB3;
+  --text-faint: #8A8A93;
+  --text-very-faint: #6E6E77;
+  --line: #2E2E34;
+  --line-strong: #45454C;
+  --accent: #D42030;
+  --accent-2: #E2323F;
+  --accent-3: #F04A55;
   --accent-ink: #FFFFFF;
-  --accent-tint: #173B63;
-  --accent-border-tint: #DC2E4B;
-  --accent-text: #FF7588;
-  --focus: #6EA8E0;
-  --focus-hover: #8CBAE8;
-  --focus-tint: #0D2846;
-  --danger: #FF7588;
-  --danger-tint: #173B63;
-  --good: #4C9172;
-  --good-tint: #123153;
-  --good-border: #4C9172;
+  --accent-tint: #2A1417;
+  --accent-border-tint: #6B222A;
+  --accent-text: #FF7A84;
+  /* A pale ring, not the old blue one. Focus has to stay tellable apart
+     from the red that means "this is the button you want", and against
+     near-black the clearest thing available is near-white. */
+  --focus: #E9E9EC;
+  --focus-hover: #FFFFFF;
+  --focus-tint: #232327;
+  --danger: #FF7A84;
+  --danger-tint: #2A1417;
+  /* Green and amber stay. They are status, not brand, and colour is doing
+     real work when a thing says done or says look at me. */
+  --good: #4FA97B;
+  --good-tint: #12241B;
+  --good-border: #3E7F5F;
   --success: var(--good);
-  --warn: #C79A4B;
-  --warn-tint: #123153;
-  --warn-border: #C79A4B;
-  --shadow: 0 8px 24px rgba(0,0,0,.4);
-  --shadow-hover: 0 10px 28px rgba(0,0,0,.48);
-  --shadow-lg: 0 20px 48px rgba(0,0,0,.5);
+  --warn: #D8A94E;
+  --warn-tint: #262013;
+  --warn-border: #8A6B2E;
+  --shadow: 0 8px 24px rgba(0,0,0,.5);
+  --shadow-hover: 0 10px 28px rgba(0,0,0,.58);
+  --shadow-lg: 0 20px 48px rgba(0,0,0,.62);
   --glow-accent: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
-  /* Input surface distinct from card surface, per spec ("Dark Input"),
-     read by the input rules further down this file. */
-  --input-bg: #0D2846;
-  /* Dark equivalents of the C2 phase-1 tokens (--text-2/--text-3/border
-     tokens defined in the light :root above) — Home/sidebar render in both
-     themes, so these need real dark values rather than inheriting the
-     light-theme hex (which would be near-invisible on a dark surface). */
-  --text-2: #C3C3C9;
-  --text-3: #91A3B8;
-  --border-obj: #2A4A6D;
-  --border-input: color-mix(in srgb, #2A4A6D 65%, #F5F7FA 35%);
-  --rule-2: #2A4A6D;
+  /* Inputs sit BELOW the card they're on — a well a value goes into.
+     Reversed from the light theme, where the card is the white thing and
+     the input is what carries the border. */
+  --input-bg: #141417;
+  --text-2: #C6C6CC;
+  --text-3: #93939B;
+  --border-obj: #2E2E34;
+  --border-input: #45454C;
+  --rule-2: #2E2E34;
 }
 
 /* ── Type scale (used for the "confident heading" treatment on Home, the
@@ -776,7 +798,9 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   flex-shrink: 0;
   color: var(--text-3);
 }
-.homeSearch:focus-within { border-color: var(--sidebar-bg); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sidebar-bg) 18%, transparent); outline: none; }
+/* Focus ring, so it follows the theme's focus colour rather than the fixed
+   brand black -- which is invisible against a near-black canvas. */
+.homeSearch:focus-within { border-color: var(--focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 22%, transparent); outline: none; }
 .homeSearchIcon { width: 18px; height: 18px; flex-shrink: 0; }
 .homeSearchInput { flex: 1; min-width: 0; border: none; background: none; font-size: 15px; color: var(--text); }
 .homeSearchInput::placeholder { color: var(--text-3); }
@@ -884,7 +908,7 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   padding: 0 4px;
   font-size: 14.5px;
   font-weight: 600;
-  color: var(--sidebar-bg);
+  color: var(--text);
 }
 .homeSeeAll:hover { text-decoration: underline; }
 
@@ -895,7 +919,11 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 .startDocTile {
   background: var(--surface);
   border: 1px solid var(--border-obj);
-  border-top: 4px solid var(--sidebar-bg);
+  /* The cap that gives each tile its weight. It was fixed brand black,
+     which is a strong bar on a white card and completely invisible on a
+     dark one -- so it follows the text colour, which is near-black in
+     light and near-white in dark. */
+  border-top: 4px solid var(--text);
   border-radius: 6px;
   padding: 18px 20px 14px;
   display: grid;
@@ -907,7 +935,7 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   min-width: 0;
 }
 .startDocTileHead { display: flex; align-items: center; justify-content: space-between; }
-.startDocTileIcon { width: 30px; height: 30px; color: var(--sidebar-bg); }
+.startDocTileIcon { width: 30px; height: 30px; color: var(--text); }
 .startDocTileNum { font-family: var(--font-condensed); font-size: 21px; font-weight: 600; color: var(--text-3); }
 .startDocTile h2 {
   margin: 0;
@@ -935,7 +963,7 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   font-family: var(--font);
   font-size: 15px;
   font-weight: 600;
-  color: var(--sidebar-bg);
+  color: var(--text);
   min-height: 44px;
   text-align: left;
 }
@@ -1163,7 +1191,7 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 }
 .builderHeaderTitleRow { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .builderHeaderTitleBlock { display: grid; gap: 3px; min-width: 0; }
-.builderHeaderKicker { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .14em; color: var(--text-on-navy-2); }
+.builderHeaderKicker { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .14em; color: var(--text-on-dark-2); }
 .builderHeaderTitle {
   font-family: var(--font-condensed);
   font-size: clamp(20px, 2.2vw, 26px);
@@ -1179,7 +1207,7 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 }
 .builderHeaderTop { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .builderHeaderBadges { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.builderHeaderSaved { font-size: 13px; color: var(--text-on-navy-2); white-space: nowrap; }
+.builderHeaderSaved { font-size: 13px; color: var(--text-on-dark-2); white-space: nowrap; }
 /* Navy-safe variants of shared chrome that would otherwise render as a
    pale-tinted-transparent chip on a pale-tinted-transparent background —
    scoped to inside the header only, not a change to .backBtn/.btn/.badge
@@ -1271,7 +1299,9 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 
 .stepNavRow.current { background: var(--accent-tint); border-color: var(--accent-border-tint); }
 .stepNavRow.current .stepNavDot { background: var(--accent); color: var(--accent-ink); }
-.stepNavRow.current .stepNavText strong { color: var(--accent-2); }
+/* Red words on the red tint, so this takes the text red rather than the
+   fill red -- --accent-2 on the dark tint measured 3.93:1. */
+.stepNavRow.current .stepNavText strong { color: var(--accent-text); }
 
 .stepNavRow.attention { background: var(--warn-tint); border-color: var(--warn-border); }
 .stepNavRow.attention .stepNavDot { background: var(--warn-border); color: #4E3A0C; font-size: 13.5px; }
@@ -2111,7 +2141,11 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   place-items: center;
   border-radius: 50%;
   background: var(--good);
-  color: #fff;
+  /* Ink is the canvas colour, not white. The green is DARK in the light
+     theme and LIGHT in the dark theme, so a fixed white tick reads fine on
+     one and washes out to 2.9:1 on the other. Painting it in the canvas
+     colour inverts along with the green and clears 7:1 either way. */
+  color: var(--bg);
   font-weight: 700;
   font-size: 14px;
 }
@@ -3096,7 +3130,7 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   font: 600 13px 'Barlow', sans-serif;
   letter-spacing: .16em;
   text-transform: uppercase;
-  color: var(--text-on-navy-2, #B4C4D3);
+  color: var(--text-on-dark-2, #B6B6BE);
 }
 .crewKioskNumber {
   margin: 0;
@@ -3104,7 +3138,7 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   text-transform: uppercase;
   letter-spacing: .01em;
 }
-.crewKioskHint { margin: 0; font-size: 16px; color: var(--text-on-navy-2, #B4C4D3); }
+.crewKioskHint { margin: 0; font-size: 16px; color: var(--text-on-dark-2, #B6B6BE); }
 .crewKioskPadWrap {
   position: relative;
   width: 100%;
@@ -3174,7 +3208,7 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   text-transform: uppercase;
   letter-spacing: .01em;
 }
-.crewKioskExitConfirmPanel p { margin: 0; font-size: 15px; color: var(--text-on-navy-2, #B4C4D3); line-height: 1.5; }
+.crewKioskExitConfirmPanel p { margin: 0; font-size: 15px; color: var(--text-on-dark-2, #B6B6BE); line-height: 1.5; }
 .crewKioskExitConfirmActions { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
 .crewKioskExitConfirmActions .btn { min-height: 60px; font-size: 16px; }
 .crewKioskExitConfirmActions .btn.ghost { background: transparent; border-color: rgba(255,255,255,.34); color: #fff; }
@@ -3187,7 +3221,7 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   right: 0;
   text-align: center;
   font-size: 13px;
-  color: var(--text-on-navy-2, #B4C4D3);
+  color: var(--text-on-dark-2, #B6B6BE);
 }
 
 /* ── "How is this getting signed?" (Finish step) ──
