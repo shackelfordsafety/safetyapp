@@ -106,3 +106,23 @@ button.brdCardMain:hover .brdSeeDoc { text-decoration: underline; }
 /* The count and the kiosk button sit together on the right of a live row. */
 .brdCardRight { display: grid; gap: 8px; justify-items: stretch; }
 .brdCardRight .btn { white-space: nowrap; }
+
+/* Take a posting down. Deliberately quiet -- it sits under the kiosk
+   button, reads as a link rather than a third competing button, and only
+   appears while nobody has signed. Destructive-looking styling would put
+   it in the same visual weight class as "Sign on this iPad", which is the
+   button a man actually reaches for fifty times a morning. */
+.brdTakeDown {
+  margin-top: 8px;
+  background: none;
+  border: 0;
+  padding: 4px 2px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.brdTakeDown:hover:not(:disabled) { color: var(--brand-red, #C1121F); }
+.brdTakeDown:disabled { opacity: .6; cursor: default; text-decoration: none; }

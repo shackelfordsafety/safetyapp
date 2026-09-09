@@ -44,6 +44,34 @@ export function computeExpiry(jsa, now = new Date()) {
   return expires;
 }
 
+/* How long a posting will stay open, in hours. The number that would have
+   caught the 5:00 PM / 5:00 AM mix-up: a night shift is ten hours, the
+   typo was twenty-five, and nothing Shackelford runs is in between. */
+export function windowHours(jsa, now = new Date()) {
+  const ms = computeExpiry(jsa, now).getTime() - now.getTime();
+  return Math.max(0, ms / 3600000);
+}
+
+/* Anything past this is almost certainly a typed time, not a real shift.
+   Deliberately generous -- a genuine long day should never nag. */
+export const LONG_WINDOW_HOURS = 16;
+
+/* "5:00 AM Thu · 10 hours".
+
+   The board used to say only "good until 5:00 PM", which reads like this
+   afternoon and was in fact 5:00 PM TOMORROW -- so the one detail that
+   would have made a 25-hour window obvious was the detail it left out.
+   Day and length now always show. */
+export function describeWindow(expiresAt, from = new Date()) {
+  const end = expiresAt instanceof Date ? expiresAt : new Date(expiresAt);
+  if (Number.isNaN(end.getTime())) return '';
+  const time = end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const sameDay = end.toDateString() === from.toDateString();
+  const day = sameDay ? '' : ` ${end.toLocaleDateString([], { weekday: 'short' })}`;
+  const hours = Math.round(Math.max(0, end.getTime() - from.getTime()) / 3600000);
+  return `${time}${day} · ${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+}
+
 /* What a crew member reads on the board to find his line.
 
    The AREA leads, not the overall task. A job site can run five JSAs in one
@@ -267,6 +295,38 @@ export async function fetchSignatureCounts(publicationIds) {
    happened this morning rather than watching them vanish at their expiry
    time. Requires an account -- this is the office side of the same data
    the crew reads anonymously. */
+/* Takes a posting off the board. Only your own, and only while nobody has
+   signed it -- both enforced in the database, not here, so a mistake in
+   this file can't widen it (see the take_down_unsigned_posting migration).
+
+   This exists because catching your own mistake and then being unable to
+   fix it is its own kind of broken. The moment somebody has signed, this
+   stops working on purpose: that is a record of who agreed to what, and
+   the way to correct it is a new version, not an eraser. */
+export async function takeDownPublication(publicationId) {
+  const user = await currentUser();
+  if (!user) throw new NotSignedInError();
+
+  const { error } = await db
+    .from('jsa_publications')
+    .delete()
+    .eq('id', publicationId)
+    .eq('board_owner', user.id);
+  if (error) throw new Error(`Could not take it down: ${error.message}`);
+
+  // A delete that matched no row comes back clean, so confirm it is
+  // actually gone rather than reporting a success we did not verify --
+  // the usual cause would be somebody signing it a second before.
+  const { data: still } = await db
+    .from('jsa_publications')
+    .select('id')
+    .eq('id', publicationId)
+    .maybeSingle();
+  if (still) {
+    throw new Error('Somebody signed it just now, so it has to stay. Publish a corrected version instead.');
+  }
+}
+
 export async function fetchMyBoard() {
   const user = await currentUser();
   if (!user) throw new NotSignedInError();
