@@ -209,6 +209,7 @@ export default function ArchiveView() {
   const [error, setError] = useState('');
   const [selected, setSelected] = useState(null);
   const [opening, setOpening] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
 
   /* Opening the real document is what a tap is for. The bucket is private,
      so it needs a short-lived signed link rather than a plain href. A row
@@ -303,6 +304,17 @@ export default function ArchiveView() {
     return { from: null, to: null };
   }, [period]);
 
+  /* How many of each kind are in here. A library shows you its shelves
+     before it shows you every book -- Fonzo, 2026-09-09: "archive should be
+     like a library, right now im guessing that docs will just be flooded
+     till the end of the page, we need to organize by file types". */
+  const counts = useMemo(() => rows.reduce((acc, r) => {
+    acc[r.doc_type] = (acc[r.doc_type] || 0) + 1;
+    return acc;
+  }, {}), [rows]);
+
+  const activeFilters = (period ? 1 : 0) + (q.trim() ? 1 : 0);
+
   const visible = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return rows.filter(r => {
@@ -372,31 +384,46 @@ export default function ArchiveView() {
           : 'You can see the documents you filed. Safety and HR can see everything.'}
       </div>
 
-      <div className="arcFilters">
-        <label className="arcField">
-          <span>Search</span>
-          <input value={q} onChange={e => setQ(e.target.value)} placeholder="Employee or job site" />
-        </label>
-        <label className="arcField">
-          <span>Document type</span>
-          <select value={type} onChange={e => setType(e.target.value)}>
-            <option value="">All types</option>
-            {Object.entries(DOC_LABELS).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
-          </select>
-        </label>
-        <label className="arcField">
-          <span>Time period</span>
-          <select value={period} onChange={e => setPeriod(e.target.value)}>
-            <option value="">Any time</option>
-            <option value="30d">Last 30 days</option>
-            <option value="90d">Last 3 months</option>
-            <option value="year">This year</option>
-            <option value="lastyear">Last year</option>
-          </select>
-        </label>
+      {/* Search stays on the surface -- "find everything on this person"
+          is the move -- while the narrowing controls move into a popup so
+          the page is not three dropdowns before you reach a document. */}
+      <div className="arcSearchBar">
+        <input
+          className="arcSearchInput"
+          value={q}
+          onChange={e => setQ(e.target.value)}
+          placeholder="Search an employee or job site"
+        />
+        <button type="button" className="btn ghost" onClick={() => setShowFilters(true)}>
+          Filters{activeFilters ? ` (${activeFilters})` : ''}
+        </button>
       </div>
 
-      <div className="arcCount">{visible.length} document{visible.length === 1 ? '' : 's'}</div>
+      {/* The shelves. Shown until something narrows the view, so opening
+         the archive is "which kind of document?" rather than a wall of
+         every document ever filed. */}
+      {!type && !q.trim() && !period ? (
+        <>
+          <div className="arcShelves">
+            {Object.entries(DOC_LABELS).map(([k, label]) => (
+              <button type="button" className="arcShelf" key={k} onClick={() => setType(k)} disabled={!counts[k]}>
+                <span className="arcShelfCount">{counts[k] || 0}</span>
+                <span className="arcShelfName">{label}</span>
+              </button>
+            ))}
+          </div>
+          <div className="arcCount">Most recent</div>
+        </>
+      ) : (
+        <div className="arcResultsHead">
+          <button type="button" className="btn ghost sm" onClick={() => { setType(''); setQ(''); setPeriod(''); }}>
+            &lsaquo; All documents
+          </button>
+          <span className="arcCount">
+            {visible.length} {type ? (DOC_LABELS[type] || type) : 'document'}{visible.length === 1 ? '' : 's'}
+          </span>
+        </div>
+      )}
 
       {visible.length === 0 ? (
         <div className="arcEmpty">
@@ -451,6 +478,34 @@ export default function ArchiveView() {
         </div>
       )}
 
+      {showFilters && (
+        <div className="dialogOverlay" onMouseDown={e => { if (e.target === e.currentTarget) setShowFilters(false); }}>
+          <div className="dialogPanel" role="dialog" aria-modal="true" aria-label="Filters" style={{ maxWidth: 460 }}>
+            <h3 style={{ margin: 0 }}>Filters</h3>
+            <label className="arcField">
+              <span>Document type</span>
+              <select value={type} onChange={e => setType(e.target.value)}>
+                <option value="">Every type</option>
+                {Object.entries(DOC_LABELS).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+              </select>
+            </label>
+            <label className="arcField">
+              <span>Time period</span>
+              <select value={period} onChange={e => setPeriod(e.target.value)}>
+                <option value="">Any time</option>
+                <option value="30d">Last 30 days</option>
+                <option value="90d">Last 3 months</option>
+                <option value="year">This year</option>
+                <option value="lastyear">Last year</option>
+              </select>
+            </label>
+            <div className="dialogActions">
+              <button type="button" className="btn ghost" onClick={() => { setType(''); setQ(''); setPeriod(''); }}>Clear</button>
+              <button type="button" className="btn primary" onClick={() => setShowFilters(false)}>Done</button>
+            </div>
+          </div>
+        </div>
+      )}
       {selected && <DocumentDetail row={selected} onClose={() => setSelected(null)} />}
     </div>
   );

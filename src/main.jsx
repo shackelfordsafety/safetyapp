@@ -3513,7 +3513,16 @@ function StepFinish({
             </button>
             {route === 'board' && (
               <div className="signRouteBody">
-                <PublishToBoardButton jsa={jsa} pdfBlob={isReady && !isPdfStale ? pdfExportState.blob : null} />
+                {/* Publishing must not run before the PDF exists, or the board
+                    entry is stored without one and "see the JSA" falls back
+                    to the readable summary forever. Generation starts the
+                    moment this route is picked, so the wait is usually
+                    already over by the time he looks up. */}
+                <PublishToBoardButton
+                  jsa={jsa}
+                  pdfBlob={isReady && !isPdfStale ? pdfExportState.blob : null}
+                  pdfPending={!isReady || isPdfStale}
+                />
               </div>
             )}
 
