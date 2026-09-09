@@ -386,8 +386,27 @@ function paginateTaskContent(jsa) {
 // priority) -- only the manually-typed "extra blank lines" count is capped.
 // Shared by getSignaturePages and MainJsaDocumentPage's own "generated for
 // N signatures" note, so the two can't drift apart.
+/* Which digitally-captured signatures actually belong on the printed
+   sign-in sheet.
+
+   'printout' mode means "nobody signs on this device" -- the sheet is
+   blank ruled lines for pen signing, exactly as the Signatures step
+   promises. Before this existed, both builders below read crewSignatures
+   unconditionally, so a JSA that had ANY kiosk signature captured (even
+   one, even before the mode was switched to Print & Sign) still printed
+   that signature into box #1 of a sheet meant to be blank. Reported from
+   the field 2026-09-09.
+
+   Nothing is deleted: the signatures stay on the draft, and switching back
+   to kiosk mode prints them again. The mode decides what the sheet shows,
+   not what the record holds. */
+function printedCrewSignatures(jsa) {
+  if (jsa?.signInMode === 'printout') return [];
+  return Array.isArray(jsa?.crewSignatures) ? jsa.crewSignatures : [];
+}
+
 function signInLineTotal(jsa) {
-  const crew = Array.isArray(jsa.crewSignatures) ? jsa.crewSignatures : [];
+  const crew = printedCrewSignatures(jsa);
   const extraBlank = Math.max(1, Math.min(100, Number(jsa.signatureLineCount) || 1));
   return crew.length > 0 ? crew.length + extraBlank : extraBlank;
 }
@@ -405,7 +424,7 @@ function signInLineTotal(jsa) {
 // point: nothing left to get wrong between "looks right in a test" and
 // "looks right in the field."
 function getSignaturePages(jsa) {
-  const crew = Array.isArray(jsa.crewSignatures) ? jsa.crewSignatures : [];
+  const crew = printedCrewSignatures(jsa);
   const total = signInLineTotal(jsa);
   const maxPerPage = SIGNIN_ROWS_PER_PAGE * 2;
   const pageCount = Math.ceil(total / maxPerPage);
@@ -451,7 +470,12 @@ function fingerprintPaginationInput(jsa) {
     // crewSignatures only ever grows by append (see CrewSignInKiosk.jsx), so
     // length alone fully captures "did the sign-in sheet's content change" --
     // stringifying the actual dataUrls would be expensive for no benefit.
-    jsa.crewSignatures?.length || 0,
+    // Counted through printedCrewSignatures so it reflects what actually
+    // prints: flipping to Print & Sign drops every captured signature off
+    // the sheet, which changes its page count and must invalidate a stale
+    // measurement rather than silently reusing the kiosk-mode layout.
+    printedCrewSignatures(jsa).length,
+    jsa.signInMode === 'printout' ? 'printout' : 'kiosk',
   ]);
 }
 /* Real rendered-height pagination — the packing algorithm is the same
