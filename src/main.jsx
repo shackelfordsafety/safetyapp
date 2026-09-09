@@ -66,6 +66,7 @@ import SeparationWorkflow from './documents/separation/SeparationWorkflow';
    src/shared/loadModule.js. */
 const ArchiveView = lazy(() => loadModule(() => import('./archive/ArchiveView')));
 const MyBoard = lazy(() => loadModule(() => import('./crew/MyBoard')));
+const TodayView = lazy(() => loadModule(() => import('./today/TodayView')));
 
 const DOCUMENT_CATEGORY_ORDER = ['fieldSafety', 'employeeAction'];
 
@@ -959,7 +960,7 @@ function nextStepHint(jsa) {
     if (step.id === 'finish') break;
     if (stepStatus(jsa, step.id) !== 'complete') return step.label;
   }
-  return 'Finish & Export';
+  return 'Finish';
 }
 // Lightweight completion count for the Home screen's progress indicator —
 // deliberately coarser than getReviewChecks (which needs live pagination
@@ -2246,8 +2247,8 @@ function App() {
             <button className={`sidebarNavItem${tab === 'documents' ? ' active' : ''}`} onClick={goDocs}>
               <IconDocuments className="sidebarNavIcon" /><span className="sidebarNavLabel">Documents</span>
             </button>
-            <button className={`sidebarNavItem${tab === 'drafts' ? ' active' : ''}`} onClick={() => setTab('drafts')}>
-              <IconDrafts className="sidebarNavIcon" /><span className="sidebarNavLabel">Drafts</span>
+            <button className={`sidebarNavItem${tab === 'today' ? ' active' : ''}`} onClick={() => setTab('today')}>
+              <IconDrafts className="sidebarNavIcon" /><span className="sidebarNavLabel">Today</span>
             </button>
             <button className={`sidebarNavItem${tab === 'templates' ? ' active' : ''}`} onClick={() => setTab('templates')}>
               <IconTemplates className="sidebarNavIcon" /><span className="sidebarNavLabel">Templates</span>
@@ -2348,7 +2349,11 @@ function App() {
               onMarkReady={markSeparationReady} onMarkIncomplete={markSeparationIncomplete} onStartNew={startNewSeparation}
             />
           )}
-          {tab === 'drafts' && <DraftsView entries={draftEntries} goDocs={goDocs} />}
+          {tab === 'today' && (
+            <Suspense fallback={<p className="helperText">Loading today…</p>}>
+              <TodayView entries={draftEntries} goDocs={goDocs} />
+            </Suspense>
+          )}
           {tab === 'templates' && <TemplatesView allTemplates={allTemplates} customTemplates={customTemplates} loadTemplate={requestLoadTemplate} deleteTemplate={deleteTemplate} startBlank={requestStartBlank} shareTemplate={shareTemplate} importTemplateFile={importTemplateFile} />}
           {tab === 'board' && (
             <Suspense fallback={<p className="helperText">Loading your board…</p>}>
@@ -2408,8 +2413,8 @@ function MobileBottomNav({ tab, goHome, goDocs, setTab }) {
       <button className={`mobileNavItem${tab === 'documents' ? ' active' : ''}`} onClick={goDocs}>
         <IconDocuments className="mobileNavIcon" /><span>Documents</span>
       </button>
-      <button className={`mobileNavItem${tab === 'drafts' ? ' active' : ''}`} onClick={() => setTab('drafts')}>
-        <IconDrafts className="mobileNavIcon" /><span>Drafts</span>
+      <button className={`mobileNavItem${tab === 'today' ? ' active' : ''}`} onClick={() => setTab('today')}>
+        <IconDrafts className="mobileNavIcon" /><span>Today</span>
       </button>
       <button className={`mobileNavItem${tab === 'archive' ? ' active' : ''}`} onClick={() => setTab('archive')}>
         <IconArchive className="mobileNavIcon" /><span>Archive</span>
@@ -2520,7 +2525,7 @@ function HomeView({ customTemplates, setTab, docEntries }) {
               })}
             </div>
             {overflowCount > 0 && (
-              <button type="button" className="homeSeeAll" onClick={() => setTab('drafts')}>
+              <button type="button" className="homeSeeAll" onClick={() => setTab('today')}>
                 See all {sorted.length} &rsaquo;
               </button>
             )}
@@ -2563,9 +2568,9 @@ function HomeView({ customTemplates, setTab, docEntries }) {
             <span className="accessRowText"><strong>Documents</strong><small>Every document type, with details</small></span>
             <IconChevronRight className="accessRowChevron" />
           </button>
-          <button className="accessRow" onClick={() => setTab('drafts')}>
+          <button className="accessRow" onClick={() => setTab('today')}>
             <IconDrafts className="accessRowIcon" />
-            <span className="accessRowText"><strong>Drafts</strong><small>Work in progress on this device</small></span>
+            <span className="accessRowText"><strong>Today</strong><small>What you started and finished today</small></span>
             <IconChevronRight className="accessRowChevron" />
           </button>
           <button className="accessRow" onClick={() => setTab('templates')}>
@@ -3622,53 +3627,6 @@ function StepFooter({ prev, next, hasPrev, hasNext }) {
 }
 
 /* ── Drafts view ── */
-/* ── Drafts view ──
-   `entries` is one row descriptor per document type that supportsDrafts in
-   DOCUMENT_REGISTRY (see App()'s draftEntries) — a new document only needs
-   to add its own entry object to that array to show up here, instead of
-   this component growing a hardcoded block per document type. Only
-   documents with an actual saved draft render a row; if none exist, one
-   shared empty state points at Documents. */
-function DraftsView({ entries, goDocs }) {
-  const withDrafts = entries.filter(e => e.savedDraft);
-  return (
-    <div className="sectionStack">
-      <div className="sectionTitle">
-        <div className="eyebrow">Drafts</div>
-        <h2>Saved Drafts</h2>
-        <p>Drafts are editable documents saved on this device. Export final PDFs outside the app.</p>
-      </div>
-      {withDrafts.length ? (
-        <div className="listStack">
-          {withDrafts.map(e => (
-            <div className="listItem" key={e.id}>
-              <div className="itemInfo">
-                <div className="itemInfoTitleRow">
-                  <strong>{e.draftTitle}</strong>
-                  <span className={`badge ${e.savedDraft.status === 'ready' || e.savedDraft.status === 'completed' ? 'ready' : 'draft'}`}>
-                    {e.savedDraft.status === 'completed' ? 'Completed' : e.savedDraft.status === 'ready' ? 'Ready to Export' : 'Draft'}
-                  </span>
-                </div>
-                <p>{e.metaLine}</p>
-              </div>
-              <div className="itemActions">
-                <button className="btn secondary sm" onClick={e.onOpen}>Open Draft</button>
-                <button className="btn ghost sm" onClick={e.onDelete}>Delete</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="emptyState">
-          <p>No saved drafts on this device.</p>
-          <button className="btn primary sm" onClick={goDocs}>Browse Documents</button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ── Templates view ── */
 function TemplatesView({ allTemplates, customTemplates, loadTemplate, deleteTemplate, startBlank, shareTemplate, importTemplateFile }) {
   const importInputRef = useRef(null);
   function onImportInputChange(e) {
@@ -3717,7 +3675,7 @@ function TemplatesView({ allTemplates, customTemplates, loadTemplate, deleteTemp
           </div>
         )) : (
           <div className="emptyState">
-            <p>No custom templates yet. Save one from the Finish & Export step after filling in recurring job information.</p>
+            <p>No custom templates yet. Save one from the Finish step after filling in recurring job information.</p>
             <button className="btn primary sm" onClick={startBlank}>Start a JSA</button>
           </div>
         )}
@@ -3725,7 +3683,7 @@ function TemplatesView({ allTemplates, customTemplates, loadTemplate, deleteTemp
       <div className="card">
         <div className="cardHeader"><h3>How Templates Work</h3></div>
         <div className="cardBody">
-          <p>A template captures job info, hazards, and controls so you don't retype them every day. Day-specific details — the date, times, tailgate topic, and signatures — reset automatically so each new JSA starts fresh. Save a template anytime from the Finish & Export step of a JSA you've filled in.</p>
+          <p>A template captures job info, hazards, and controls so you don't retype them every day. Day-specific details — the date, times, tailgate topic, and signatures — reset automatically so each new JSA starts fresh. Save a template anytime from the Finish step of a JSA you've filled in.</p>
         </div>
       </div>
     </div>

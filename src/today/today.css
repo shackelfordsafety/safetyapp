@@ -1,0 +1,40 @@
+/* ── Today ──
+   Three plain sections, no cards inside cards. The whole point of this
+   screen is finding one document fast, so the section labels do the work
+   and the rows stay identical to the ones the rest of the app already
+   uses. Rides in its own lazy chunk with TodayView.jsx. */
+
+.todaySection { margin-bottom: 26px; }
+
+.todayHead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.todayLabel {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.todayCount {
+  font-family: var(--font-condensed);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text-2);
+}
+
+.todayNote {
+  margin: 0;
+  padding: 14px 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  font-size: 15.5px;
+  color: var(--text-2);
+}
