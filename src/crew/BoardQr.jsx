@@ -22,7 +22,7 @@ const LOGO = `${import.meta.env.BASE_URL}icons/shackelford-logo.webp`;
    Lost the sticker? This screen IS the fallback -- hold the iPad up and
    let the crew scan it off the glass, print a replacement whenever. */
 
-export default function BoardQr({ url, label }) {
+export default function BoardQr({ url }) {
   const [png, setPng] = useState('');
   const [error, setError] = useState('');
 
@@ -104,7 +104,11 @@ export default function BoardQr({ url, label }) {
 
           <img className="brdQrSheetCode" src={png} alt="" />
 
-          <span className="brdQrSheetBoard">{label}</span>
+          {/* No job site on here, deliberately. This sticker goes on a
+              trailer once and stays for good, but the label it used to
+              carry came from TODAY's posting -- so the day the crew moved
+              jobs, the sticker would start naming a job they had left.
+              A permanent sign must only say permanent things. */}
           <span className="brdQrSheetHow">
             Point your phone camera at the code. No app, no password.
           </span>

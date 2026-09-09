@@ -95,7 +95,6 @@ export default function MyBoard() {
   const [opening, setOpening] = useState('');
   // What the printed sticker says under the code, so a trailer with more
   // than one board posted stays tellable apart.
-  const profileLabel = state.rows[0]?.job_site || 'Job Safety Analysis';
   const [kiosk, setKiosk] = useState(null);
   const [kioskSigned, setKioskSigned] = useState(0);
   const [takingDown, setTakingDown] = useState(null);
@@ -275,7 +274,7 @@ export default function MyBoard() {
 
       {state.status === 'ready' && (
         <>
-          <BoardQr url={state.boardUrl} label={profileLabel} />
+          <BoardQr url={state.boardUrl} />
           <div className="brdLink">
             <span className="brdSectionTitle">Or send the link</span>
             <p className="helperText">

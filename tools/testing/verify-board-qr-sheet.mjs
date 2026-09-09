@@ -50,7 +50,6 @@ async function main() {
     <strong class="brdQrSheetTitle">Scan to sign in</strong>
     <span class="brdQrSheetSub">Job Safety Analysis</span>
     <img class="brdQrSheetCode" src="${qr}" alt="">
-    <span class="brdQrSheetBoard">${LABEL}</span>
     <span class="brdQrSheetHow">Point your phone camera at the code. No app, no password.</span>
     <div class="brdQrSheetFoot">Shackelford Construction and Hauling, LLC</div>
   </div>
@@ -70,8 +69,20 @@ async function main() {
   console.log('Wrote', path.join(outDir, 'qr-sheet.png'));
   console.log('Wrote', path.join(outDir, 'qr-sheet.pdf'));
 
+  /* The reason this check exists now. The first version of this sheet
+     measured about 10.2in and broke onto a second page in real life --
+     fine inside a 1056px viewport, not fine once the page margins and
+     Safari's own URL/date header and footer have taken their cut. The
+     second sheet carried three orphaned lines of text.
+     Measure it, don't eyeball it. */
+  const heightIn = await page.evaluate(() =>
+    document.querySelector('.brdQrSheet').getBoundingClientRect().height / 96);
+  const onePage = heightIn < 9;
+  console.log(`Sheet height: ${heightIn.toFixed(2)}in`);
+  console.log(`${onePage ? 'PASS' : 'FAIL'}  fits one page with room for margins and browser headers (< 9in)`);
   console.log('QR encodes:', BOARD_URL);
   await browser.close();
+  process.exitCode = onePage ? 0 : 1;
 }
 
 main().catch(e => { console.error('FAILED:', e); process.exit(1); });
