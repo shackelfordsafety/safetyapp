@@ -44,22 +44,83 @@
   body.printingQr .brdQrSheet {
     display: grid !important;
     justify-items: center;
-    gap: 14px;
     text-align: center;
-    padding: 0.6in;
+    padding: 0.45in 0.5in;
   }
-  body.printingQr .brdQrSheet img {
-    width: 6in;
-    height: 6in;
-    image-rendering: pixelated;
+
+  /* Every background on this sheet is the point of it, not decoration --
+     a trailer-door poster with the band dropped out reads as a stray
+     printout. Browsers strip backgrounds from print by default, so this
+     has to be asked for explicitly. */
+  body.printingQr .brdQrSheetHead,
+  body.printingQr .brdQrSheetRule,
+  body.printingQr .brdQrSheetFoot {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
-  body.printingQr .brdQrSheet strong {
+
+  body.printingQr .brdQrSheetHead {
+    width: 100%;
+    background: #171719;
+    padding: 0.3in 0;
+    display: flex;
+    justify-content: center;
+  }
+  body.printingQr .brdQrSheetLogo { height: 0.95in; width: auto; }
+
+  body.printingQr .brdQrSheetRule {
+    width: 100%;
+    height: 0.07in;
+    background: #C1121F;
+    margin-bottom: 0.32in;
+  }
+
+  body.printingQr .brdQrSheetTitle {
     font-family: var(--font-condensed, sans-serif);
-    font-size: 34pt;
+    font-size: 42pt;
     font-weight: 700;
+    line-height: 1;
     letter-spacing: .02em;
     text-transform: uppercase;
+    color: #171719;
   }
-  body.printingQr .brdQrSheet span { font-size: 16pt; }
-  body.printingQr .brdQrSheet small { font-size: 10pt; color: #444; }
+  body.printingQr .brdQrSheetSub {
+    font-size: 15pt;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: #C1121F;
+    font-weight: 600;
+    margin-top: 0.07in;
+  }
+
+  body.printingQr .brdQrSheetCode {
+    width: 5.1in;
+    height: 5.1in;
+    margin: 0.26in 0 0.22in;
+    image-rendering: pixelated;
+  }
+
+  /* Which board this is. On a job with two trailers, the wrong sticker on
+     the wrong door is a man signing the wrong JSA. */
+  body.printingQr .brdQrSheetBoard {
+    font-size: 19pt;
+    font-weight: 700;
+    color: #171719;
+  }
+  body.printingQr .brdQrSheetHow {
+    font-size: 12.5pt;
+    color: #46464C;
+    margin-top: 0.09in;
+  }
+
+  body.printingQr .brdQrSheetFoot {
+    width: 100%;
+    margin-top: 0.3in;
+    padding: 0.13in 0;
+    border-top: 1.5px solid #171719;
+    font-size: 10.5pt;
+    font-weight: 600;
+    letter-spacing: .04em;
+    color: #171719;
+  }
 }

@@ -18,6 +18,7 @@ import { DOCUMENT_REGISTRY, DOCUMENT_CATEGORIES } from './documents/registry';
 import { StepNav } from './documents/FormPrimitives';
 import PublishToBoardButton from './crew/PublishToBoardButton';
 import { loadModule } from './shared/loadModule';
+import ErrorBoundary from './shared/ErrorBoundary';
 import AccountButton from './account/AccountButton';
 import { DOCUMENT_STORAGE_KEYS } from './documents/storage';
 import { useDraftDocument, saveStatusLabel } from './documents/useDraftDocument';
@@ -317,7 +318,13 @@ function mainRowCapacity(jsa) {
   const BASELINE_UPPER_LINES = 4;
   const MIN_CAPACITY = 7;
   const extraUpperLines = Math.max(0, estimateUpperSectionLines(jsa) - BASELINE_UPPER_LINES);
-  return Math.max(MIN_CAPACITY, BASELINE - extraUpperLines);
+  // The medical-facility address prints as its own full-width row in the
+  // info table, so when there is one it costs a line above the task table.
+  // The measured planner picks this up on its own (the extra row moves
+  // mainFirstRowOffsetPx down); this keeps the heuristic honest until the
+  // first real measurement lands.
+  const medicalAddressLine = hasText(jsa.nearestMedicalAddress) ? 1 : 0;
+  return Math.max(MIN_CAPACITY, BASELINE - extraUpperLines - medicalAddressLine);
 }
 // FALLBACK ONLY (see note above estimateRowUnits). Continuation pages have a
 // small, near-fixed header, so capacity doesn't need to shrink dynamically.
@@ -3125,7 +3132,7 @@ function StepJob({ jsa, upd, prev, next }) {
                 <F label="Emergency / Rescue Phone #" value={jsa.emergencyPhone} onChange={v => upd({ emergencyPhone: v })} />
               </div>
               <div className="formPairRow">
-                <F label="Site Contact Phone #" value={jsa.siteContactPhone} onChange={v => upd({ siteContactPhone: v })} />
+                <F label="Superintendent Phone #" value={jsa.siteContactPhone} onChange={v => upd({ siteContactPhone: v })} />
                 <F label="Nearest Medical Facility" value={jsa.nearestMedicalFacility} onChange={v => upd({ nearestMedicalFacility: v })} />
                 <F
                   label="Its Address"
@@ -4413,7 +4420,16 @@ function MainJsaDocumentPage({ jsa, plan, className = '', pageRef }) {
           <tr><th>Location:</th><td>{jsa.location}</td><th>Time Issued:</th><td>{jsa.timeIssued}</td><th>Date:</th><td>{dateStr(jsa.date)}</td></tr>
           <tr><th>Job Site:</th><td>{jsa.jobSite}</td><th>Time Expired:</th><td>{jsa.timeExpired}</td><th>Job #:</th><td>{jsa.jobNumber}</td></tr>
           <tr><th>Superintendent/Foreman:</th><td>{jsa.superintendentForeman}</td><th>Emergency/Rescue Phone #:</th><td>{jsa.emergencyPhone}</td><th>Client:</th><td>{jsa.client}</td></tr>
-          <tr><th>Nearest Medical Facility:</th><td>{jsa.nearestMedicalFacility}</td><th>Site Contact Phone #:</th><td>{jsa.siteContactPhone}</td><th>Muster Point:</th><td>{jsa.musterPoint}</td></tr>
+          <tr><th>Nearest Medical Facility:</th><td>{jsa.nearestMedicalFacility}</td><th>Superintendent Phone #:</th><td>{jsa.siteContactPhone}</td><th>Muster Point:</th><td>{jsa.musterPoint}</td></tr>
+          {/* Its own full-width row rather than crammed in beside the
+              facility name: an address is ~35 characters and a 20%-wide
+              cell fits about 20, so inline it would wrap to three lines and
+              cost more page height than a whole row does. Only rendered
+              when there is an address, so every existing JSA prints
+              byte-for-byte as it did before. */}
+          {jsa.nearestMedicalAddress && (
+            <tr><th>Medical Facility Address:</th><td colSpan={5}>{jsa.nearestMedicalAddress}</td></tr>
+          )}
         </tbody>
       </table>
       <div className="ackBlock"><strong>Subcontractors/Employee(s) Acknowledgement:</strong> {jsa.acknowledgement}</div>
@@ -5090,4 +5106,12 @@ function Root() {
   return <App />;
 }
 
-createRoot(document.getElementById('root')).render(<Root />);
+/* Wrapped, not optional: a render crash anywhere below this point shows a
+   readable screen with a way out instead of blanking the device. Covers
+   the crew sign-in page too -- that one is used by men who have no other
+   way to sign in and no idea what a browser console is. */
+createRoot(document.getElementById('root')).render(
+  <ErrorBoundary>
+    <Root />
+  </ErrorBoundary>,
+);
