@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import SignaturePad from '../incident/SignaturePad';
 import { fetchBoard, signPublication } from './board';
 import JsaContents from './JsaContents';
@@ -51,6 +51,17 @@ export default function CrewSignIn({ boardOwnerId }) {
   const [signature, setSignature] = useState('');
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  const signFormRef = useRef(null);
+
+  /* Bring the form to him. Tapping Sign from the sticky bar can happen
+     while he is anywhere in a five-screen document, and landing him back
+     at the top of a wall of text having apparently done nothing is how the
+     tap gets repeated and then abandoned. */
+  useEffect(() => {
+    if (!signing) return;
+    const el = signFormRef.current;
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [signing]);
 
   // Same 50 guys every morning: after the first time, his name is already
   // filled in and signing is one tap. This is also what keeps typed names
@@ -155,16 +166,8 @@ export default function CrewSignIn({ boardOwnerId }) {
 
           <JsaContents jsa={picked.data} />
 
-          {/* Signing is a deliberate second step, not the screen you land
-              on -- see the header comment. */}
-          {picked.live && !signing && (
-            <button type="button" className="crewBtn primary" onClick={() => setSigning(true)}>
-              Sign this one
-            </button>
-          )}
-
           {picked.live && signing && (
-            <form className="crewSignForm" onSubmit={submit}>
+            <form className="crewSignForm" ref={signFormRef} onSubmit={submit}>
               <label className="crewField">
                 <span>Your name</span>
                 <input
@@ -198,6 +201,28 @@ export default function CrewSignIn({ boardOwnerId }) {
           <button type="button" className="crewBtn ghost" onClick={backToList}>
             {signing ? 'Not yet — go back' : 'Back to the list'}
           </button>
+
+        {/* ── "Where do I sign this thing?" ──
+            Asked by several different men, independently, on the first real
+            morning — every one of them at the same point, having opened the
+            JSA and found no way to sign it.
+
+            They were right. A real JSA runs about five phone screens, and
+            the Sign button was at the bottom of all of it: genuinely
+            off-screen, with nothing to say it existed. Reading the document
+            first is the point of this page and stays that way — but the way
+            OUT of the document has to be visible the entire time you are in
+            it, not waiting at the end like a reward.
+
+            It disappears once he is signing, because from there the form
+            and its own Finish button are what he needs. */}
+        {picked.live && !signing && (
+          <div className="crewStickyBar">
+            <button type="button" className="crewBtn primary" onClick={() => setSigning(true)}>
+              Sign the JSA
+            </button>
+          </div>
+        )}
         </div>
       </div>
     );
