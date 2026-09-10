@@ -213,3 +213,8 @@
   margin-bottom: 12px;
 }
 .arcResultsHead .arcCount { margin: 0; }
+
+/* A document filed before authors were recorded, or by an account since
+   removed. Said plainly rather than left blank -- an empty cell reads as a
+   loading bug, and "not recorded" is the honest answer. */
+.arcNoFiler { color: var(--text-very-faint); font-style: italic; }

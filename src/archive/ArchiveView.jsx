@@ -190,6 +190,7 @@ function DocumentDetail({ row, onClose }) {
           <div><span className="k">Job site</span><span className="v">{row.job_site || '—'}</span></div>
           <div><span className="k">Document date</span><span className="v">{fmtDate(row.doc_date)}</span></div>
           <div><span className="k">Filed</span><span className="v">{fmtWhen(row.submitted_at)}</span></div>
+          <div><span className="k">Filed by</span><span className="v">{row.filedByName || 'Not recorded'}</span></div>
         </div>
 
         <div className="arcSectionTitle">
@@ -279,12 +280,26 @@ export default function ArchiveView() {
 
       const { data, error: docErr } = await db
         .from('documents')
-        .select('id, doc_type, employee_name, job_site, doc_date, submitted_at, data, pdf_path')
+        .select('id, doc_type, employee_name, job_site, doc_date, submitted_at, submitted_by, data, pdf_path')
         .order('submitted_at', { ascending: false })
         .limit(500);
       if (docErr) throw docErr;
 
-      setRows(data || []);
+      /* Who filed each one. The archive showed documents with no author at
+         all, so an owner opening it could not tell whether a clerk wrote
+         something or a foreman did -- which is most of what he wants to
+         know. Fetched in one go and joined here: submitted_by points at
+         auth.users and profiles points at auth.users, and PostgREST cannot
+         infer a relationship between two tables that merely share a
+         target. */
+      const docs = data || [];
+      const filerIds = [...new Set(docs.map(d => d.submitted_by).filter(Boolean))];
+      const filers = {};
+      if (filerIds.length) {
+        const { data: people } = await db.from('profiles').select('id, full_name').in('id', filerIds);
+        (people || []).forEach((person) => { filers[person.id] = person.full_name; });
+      }
+      setRows(docs.map(d => ({ ...d, filedByName: filers[d.submitted_by] || null })));
       setStatus('ready');
     } catch (ex) {
       setError(ex?.message || 'Something went wrong loading the archive.');
@@ -345,7 +360,7 @@ export default function ArchiveView() {
       if (range.from && (!r.doc_date || r.doc_date < range.from)) return false;
       if (range.to && (!r.doc_date || r.doc_date > range.to)) return false;
       if (needle) {
-        const hay = `${r.employee_name || ''} ${r.job_site || ''}`.toLowerCase();
+        const hay = `${r.employee_name || ''} ${r.job_site || ''} ${r.filedByName || ''}`.toLowerCase();
         if (!hay.includes(needle)) return false;
       }
       return true;
@@ -467,7 +482,7 @@ export default function ArchiveView() {
           <table className="arcTable">
             <thead>
               <tr>
-                <th>Type</th><th>Employee</th><th>Job site</th><th>Document date</th><th>Filed</th><th aria-label="Actions" />
+                <th>Type</th><th>Employee</th><th>Job site</th><th>Document date</th><th>Filed</th><th>Filed by</th><th aria-label="Actions" />
               </tr>
             </thead>
             <tbody>
@@ -486,6 +501,7 @@ export default function ArchiveView() {
                   <td>{r.job_site || '—'}</td>
                   <td>{fmtDate(r.doc_date)}</td>
                   <td>{fmtWhen(r.submitted_at)}</td>
+                  <td>{r.filedByName || <span className="arcNoFiler">Not recorded</span>}</td>
                   <td className="arcRowActions" onClick={e => e.stopPropagation()}>
                     {r.pdf_path && (
                       <button type="button" className="btn secondary sm" onClick={() => openPdf(r)} disabled={opening === r.id}>
