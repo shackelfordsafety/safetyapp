@@ -5164,6 +5164,49 @@ function Root() {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
+  /* ── Add to Home Screen has to land back on the JSA, not the app ──
+     A crew member who saves this page was getting the Safety Documentation
+     Center home screen instead of the sign-in page. That is the web app
+     manifest doing exactly what it is designed to do: iOS reads its
+     start_url ("./") and bookmarks THAT, not the address in the bar.
+
+     Reported from the field 2026-09-10, and it matters more than it
+     sounds -- "save it to your home screen" is the answer to the only
+     complaint the crew has actually made ("why do I have to scan a code
+     every time"), so a saved icon that opens the wrong page takes that
+     answer away.
+
+     The crew page is not the app. It has no account, no drafts, nothing
+     to install, and it should not be claiming to be an installable app in
+     the first place. With no manifest advertised, Safari falls back to
+     bookmarking the URL actually on screen, hash and all. The title and
+     iOS app title are set too, so the icon reads "Sign JSA" rather than
+     the name of an app this man will never open.
+
+     Restored on cleanup so navigating back into the real app in the same
+     tab doesn't leave it stripped. */
+  useEffect(() => {
+    if (!boardOwnerId) return undefined;
+
+    const link = document.querySelector('link[rel="manifest"]');
+    const parent = link?.parentNode;
+    const nextSibling = link?.nextSibling;
+    if (link) link.remove();
+
+    const appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+    const previousAppleTitle = appleTitle?.getAttribute('content');
+    if (appleTitle) appleTitle.setAttribute('content', 'Sign JSA');
+
+    const previousTitle = document.title;
+    document.title = 'Sign the JSA — Shackelford';
+
+    return () => {
+      if (link && parent) parent.insertBefore(link, nextSibling);
+      if (appleTitle && previousAppleTitle != null) appleTitle.setAttribute('content', previousAppleTitle);
+      document.title = previousTitle;
+    };
+  }, [boardOwnerId]);
+
   if (boardOwnerId) {
     return (
       <Suspense fallback={null}>
