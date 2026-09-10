@@ -245,7 +245,47 @@ export async function fetchBoard(boardOwnerId) {
   if (error) throw new Error(error.message);
 
   const now = new Date();
-  return (data || []).map(r => ({ ...r, live: new Date(r.expires_at) > now }));
+  return (data || [])
+    .map((r) => {
+      const live = new Date(r.expires_at) > now;
+      return { ...r, live, status: boardStatus(r, live, now), startsAt: startTimeOf(r) };
+    })
+    /* Open first, then the ones about to start, then the closed ones last.
+       A man at 6:30 should find his line at the top of the list, not below
+       yesterday's night shift. */
+    .sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]
+      || new Date(a.published_at) - new Date(b.published_at));
+}
+
+const STATUS_ORDER = { open: 0, upcoming: 1, closed: 2 };
+
+/* When this JSA's shift starts, from the day and Time Issued on the
+   document itself. Null when there is no usable time, in which case it is
+   simply treated as already started -- guessing would be worse. */
+function startTimeOf(row) {
+  const day = row?.doc_date || row?.data?.date;
+  const start = row?.data?.timeIssued;
+  if (!day || !/^\d{2}:\d{2}$/.test(start || '')) return null;
+  const at = new Date(`${day}T${start}:00`);
+  return Number.isNaN(at.getTime()) ? null : at;
+}
+
+/* Three states, and only three, because a crew member should be able to
+   tell at a glance which line is his:
+
+     open     - signable now
+     upcoming - published, but the shift hasn't started yet
+     closed   - past Time Expired; still readable, can't be signed
+
+   "upcoming" is a LABEL, not a lock. Fonzo publishes before the tailgate
+   meeting on purpose and is happy for men to read and sign early -- they
+   see the whole document and acknowledge it either way, which is the point
+   of the thing. So this tells a man the shift hasn't started; it never
+   stops him signing. */
+export function boardStatus(row, live, now = new Date()) {
+  if (!live) return 'closed';
+  const start = startTimeOf(row);
+  return start && start > now ? 'upcoming' : 'open';
 }
 
 /* One crew member signing.

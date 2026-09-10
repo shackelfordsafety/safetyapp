@@ -231,11 +231,23 @@ export default function CrewSignIn({ boardOwnerId }) {
         )}
 
         {status === 'ready' && rows.map(r => (
-          <button key={r.id} type="button" className="crewPick" onClick={() => { setPicked(r); setSigning(false); }}>
-            <strong>{r.area_label}</strong>
+          <button
+            key={r.id}
+            type="button"
+            className={`crewPick crewPick--${r.status}`}
+            onClick={() => { setPicked(r); setSigning(false); }}
+          >
+            <span className="crewPickTop">
+              <strong>{r.area_label}</strong>
+              <span className={`crewTag crewTag--${r.status}`}>
+                {r.status === 'open' ? 'Open' : r.status === 'upcoming' ? 'Starts soon' : 'Closed'}
+              </span>
+            </span>
             <span>
               {fmtDate(r.doc_date)}{r.job_site ? ` · ${r.job_site}` : ''}
-              {!r.live && ' · closed'}
+              {r.status === 'upcoming' && r.startsAt
+                ? ` · starts ${r.startsAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
+                : ''}
             </span>
           </button>
         ))}

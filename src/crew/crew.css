@@ -70,6 +70,41 @@
 .crewPick strong { font-size: 20px; line-height: 1.2; }
 .crewPick span { font-size: 15px; color: #5A5A60; }
 
+/* ── Which line is mine? ──
+   Three states, told by colour AND by a word. Colour alone fails the men
+   most likely to be squinting at this: red/green colour blindness is
+   roughly one man in twelve, and that is before you add low battery,
+   bright sun and a cracked screen. The word is the real signal; the
+   colour just makes it findable from arm's length. */
+.crewPickTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.crewTag {
+  flex-shrink: 0;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1.5px solid;
+}
+.crewTag--open { color: #17603F; background: #E3F0E8; border-color: #7FB39A; }
+.crewTag--upcoming { color: #5E4510; background: #FBEFDC; border-color: #D9BE86; }
+.crewTag--closed { color: #5A5A60; background: #EDEDEF; border-color: #C4C4C9; }
+
+/* Open is the one a man is looking for, so it is the one that stands out.
+   Closed recedes but stays perfectly readable and stays TAPPABLE -- being
+   able to pull up a finished JSA and show it to a client or an inspector
+   is the reason it is still on the list at all. */
+.crewPick--open { border-color: #17603F; background: #FFFFFF; }
+.crewPick--upcoming { border-color: #D9BE86; }
+.crewPick--closed { opacity: .72; }
+.crewPick--closed strong { color: #46464C; }
+
 .crewConfirm {
   display: grid;
   gap: 6px;
