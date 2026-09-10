@@ -84,8 +84,8 @@ async function main() {
       console.log(`   chopped: ${chopped.length ? chopped.join(', ') : 'none'}`);
       console.log(`   under 44px tall (touch target): ${tooSmall.length ? tooSmall.join(', ') : 'none'}`);
 
-      const hasBoard = items.some(i => /board/i.test(i.label));
-      console.log(`   Board reachable: ${hasBoard}`);
+      const hasBoard = items.some(i => /sign-in/i.test(i.label));
+      console.log(`   Crew sign-in reachable: ${hasBoard}`);
       if (!hasBoard) bad += 1;
 
       await page.screenshot({ path: path.join(outDir, `${size.name}.png`) });

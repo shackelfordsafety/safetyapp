@@ -2389,24 +2389,28 @@ function App() {
             <span className="sidebarBrandName">{APP_NAME}</span>
           </div>
 
+          {/* Five destinations, named for the work rather than for whose it
+              is -- the pattern Raken and SafetyCulture both settled on, and
+              the fix for a bar that had grown to seven and needed shrinking
+              type to fit at 360px.
+
+              Two came off deliberately. DOCUMENTS was a second door to a
+              room Home already opens: Home carries all six "start a
+              document" tiles. TEMPLATES is not a destination -- you reach
+              for one while starting a JSA, and Home's JSA tile already has
+              its own Templates button. */}
           <nav className="sidebarNav">
             <button className={`sidebarNavItem${tab === 'home' ? ' active' : ''}`} onClick={goHome}>
               <IconHome className="sidebarNavIcon" /><span className="sidebarNavLabel">Home</span>
             </button>
-            <button className={`sidebarNavItem${tab === 'documents' ? ' active' : ''}`} onClick={goDocs}>
-              <IconDocuments className="sidebarNavIcon" /><span className="sidebarNavLabel">Documents</span>
-            </button>
             <button className={`sidebarNavItem${tab === 'today' ? ' active' : ''}`} onClick={() => setTab('today')}>
-              <IconDrafts className="sidebarNavIcon" /><span className="sidebarNavLabel">Today</span>
-            </button>
-            <button className={`sidebarNavItem${tab === 'templates' ? ' active' : ''}`} onClick={() => setTab('templates')}>
-              <IconTemplates className="sidebarNavIcon" /><span className="sidebarNavLabel">Templates</span>
+              <IconDrafts className="sidebarNavIcon" /><span className="sidebarNavLabel">My Work</span>
             </button>
             <button className={`sidebarNavItem${tab === 'board' ? ' active' : ''}`} onClick={() => setTab('board')}>
-              <IconBoard className="sidebarNavIcon" /><span className="sidebarNavLabel">My Board</span>
+              <IconBoard className="sidebarNavIcon" /><span className="sidebarNavLabel">Sign-In</span>
             </button>
             <button className={`sidebarNavItem${tab === 'archive' ? ' active' : ''}`} onClick={() => setTab('archive')}>
-              <IconArchive className="sidebarNavIcon" /><span className="sidebarNavLabel">Archive</span>
+              <IconArchive className="sidebarNavIcon" /><span className="sidebarNavLabel">Records</span>
             </button>
           </nav>
 
@@ -2590,24 +2594,26 @@ function MobileBottomNav({ tab, goHome, goDocs, setTab }) {
       <button className={`mobileNavItem${tab === 'home' ? ' active' : ''}`} onClick={goHome}>
         <IconHome className="mobileNavIcon" /><span>Home</span>
       </button>
-      <button className={`mobileNavItem${tab === 'documents' ? ' active' : ''}`} onClick={goDocs}>
-        <IconDocuments className="mobileNavIcon" /><span>Docs</span>
-      </button>
+      {/* Was seven items and needed shrunken type to fit at 360px. Now
+          five, named for the work rather than for whose it is -- the
+          pattern Raken and SafetyCulture both settled on, and the reason a
+          hamburger was rejected: hiding navigation is the same class of
+          problem as the Sign button being below the fold, which cost a
+          whole night crew.
+
+          Documents came off because Home already carries all six "start a
+          document" tiles -- it was a second door to the same room.
+          Templates came off because it is not a destination: you reach for
+          one while starting a JSA, and Home's JSA tile has its own
+          Templates button. */}
       <button className={`mobileNavItem${tab === 'today' ? ' active' : ''}`} onClick={() => setTab('today')}>
-        <IconDrafts className="mobileNavIcon" /><span>Today</span>
+        <IconDrafts className="mobileNavIcon" /><span>My Work</span>
       </button>
-      {/* My Board was missing here entirely -- the sidebar has had it since
-          the board shipped, so on a phone it was simply unreachable. It is
-          also the screen most likely to be wanted ON a phone: the signed
-          count, checked while standing in front of the crew. */}
       <button className={`mobileNavItem${tab === 'board' ? ' active' : ''}`} onClick={() => setTab('board')}>
-        <IconBoard className="mobileNavIcon" /><span>Board</span>
+        <IconBoard className="mobileNavIcon" /><span>Sign-In</span>
       </button>
       <button className={`mobileNavItem${tab === 'archive' ? ' active' : ''}`} onClick={() => setTab('archive')}>
-        <IconArchive className="mobileNavIcon" /><span>Archive</span>
-      </button>
-      <button className={`mobileNavItem${tab === 'templates' ? ' active' : ''}`} onClick={() => setTab('templates')}>
-        <IconTemplates className="mobileNavIcon" /><span>Templates</span>
+        <IconArchive className="mobileNavIcon" /><span>Records</span>
       </button>
       <button className={`mobileNavItem${tab === 'settings' ? ' active' : ''}`} onClick={() => setTab('settings')}>
         <IconSettings className="mobileNavIcon" /><span>Settings</span>

@@ -375,11 +375,11 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [tabindex]:focus-v
     z-index: 250;
     align-items: stretch;
     justify-content: space-around;
-    gap: 1px;
+    gap: 3px;
     background: var(--sidebar-bg);
     border-top: 1px solid var(--sidebar-border);
     box-shadow: 0 -6px 20px rgba(10, 35, 66, 0.16);
-    padding: 6px max(4px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px));
+    padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px));
   }
   .mobileNavItem {
     flex: 1 1 0;
@@ -390,11 +390,11 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [tabindex]:focus-v
     align-items: center;
     justify-content: center;
     gap: 3px;
-    padding: 4px 1px;
+    padding: 5px 3px;
     border-radius: 8px;
     color: var(--sidebar-text-muted);
   }
-  .mobileNavItem span { font-size: 10px; font-weight: 600; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .mobileNavItem span { font-size: 11px; font-weight: 600; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
   .mobileNavIcon { width: 21px; height: 21px; flex-shrink: 0; }
   .mobileNavItem.active { color: var(--sidebar-text); background: var(--sidebar-bg-active); }
   .mobileNavItem.active .mobileNavIcon { color: var(--accent); }
