@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { db } from './archiveClient';
 import UploadDocument from './UploadDocument';
 import './archive.css';
+import HelpButton from '../shared/HelpButton';
 
 /* ── Company document archive (office side) ──────────────────────────────
    The one part of this app that requires a login and a network. Everything
@@ -399,7 +400,31 @@ export default function ArchiveView() {
     <div className="page">
       <div className="arcTopBar">
         <div className="arcHeading">
-          <h2>Document Archive</h2>
+          <div className="titleWithHelp">
+            <h2>Records</h2>
+            <HelpButton title="Records">
+              <p>
+                Every finished document the company has filed — JSAs, incidents, write-ups, all of
+                it. This is the permanent copy.
+              </p>
+              <p>
+                <strong>Nothing in here can be changed or deleted, by anybody.</strong> That is on
+                purpose. A record of what happened is only worth having if it cannot be quietly
+                edited later.
+              </p>
+              <p><strong>Finding something:</strong></p>
+              <ul>
+                <li>Type a person&apos;s name, a job site, or who filed it in the search box.</li>
+                <li>Use <strong>Filters</strong> to narrow to a date range.</li>
+                <li>Tap any row to open the actual document.</li>
+              </ul>
+              <p>
+                What you can see depends on your job. Safety, HR, the PM, clerks and the owners see
+                everything. Superintendents and foremen see their own work, plus every disciplinary
+                form.
+              </p>
+            </HelpButton>
+          </div>
           <p>Every safety and employee document, filed from the app or added from older paperwork.</p>
         </div>
         <div className="arcAccount">

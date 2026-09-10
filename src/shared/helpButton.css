@@ -1,0 +1,80 @@
+/* ── The help question mark ──
+   Sits beside a screen's heading. Quiet enough that it never competes
+   with the work, obvious enough that a man looking for help finds it
+   without being told it exists -- which is the point, because the people
+   who need it are the ones who won't ask.
+
+   The circle is drawn as a background rather than a border on the button
+   itself, so the tap target can be a full 44px while the mark stays
+   small. It gets pressed by somebody in gloves who is already annoyed. */
+
+.helpBtn {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background:
+    radial-gradient(circle at center, var(--surface) 0 13px, transparent 13.5px);
+  box-shadow: none;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-grid;
+  place-items: center;
+  position: relative;
+}
+
+/* The ring. Its own element so the 44px target and the 28px mark can be
+   different sizes without one dictating the other. */
+.helpBtn::before {
+  content: '';
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line-strong);
+}
+
+.helpBtn:hover { color: var(--accent); }
+.helpBtn:hover::before { border-color: var(--accent); }
+.helpBtn:focus-visible { outline: 2px solid var(--focus); outline-offset: -8px; border-radius: 50%; }
+
+/* The heading row a help button lives in. */
+.titleWithHelp {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.titleWithHelp h2 { margin: 0; }
+
+/* ── The panel ── */
+.helpPanel { max-width: 480px; }
+
+.helpEyebrow {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--accent-text, var(--accent));
+  margin-bottom: 2px;
+}
+.helpPanelHead h3 { margin: 0 0 2px; }
+
+/* Set a touch larger than body text: this is the screen somebody opens
+   when they are already struggling, often outdoors. */
+.helpBody {
+  display: grid;
+  gap: 10px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text);
+}
+.helpBody p { margin: 0; }
+.helpBody strong { font-weight: 600; }
+.helpBody ol,
+.helpBody ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }

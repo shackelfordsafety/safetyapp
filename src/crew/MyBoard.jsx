@@ -5,6 +5,7 @@ import BoardQr from './BoardQr';
 import { signedUrlFor } from '../archive/fileToArchive';
 import JsaContents from './JsaContents';
 import './myboard.css';
+import HelpButton from '../shared/HelpButton';
 
 /* ── The superintendent's own board ──────────────────────────────────────
    What he looks at while the crew signs. The number is the point: standing
@@ -198,7 +199,30 @@ export default function MyBoard() {
     <div className="page">
       <div className="brdHead">
         <div>
-          <h2>My Board</h2>
+          <div className="titleWithHelp">
+            <h2>Sign-In</h2>
+            <HelpButton title="Sign-In">
+              <p>
+                This is what your crew sees when they scan the code on your trailer.
+              </p>
+              <p>
+                Finish a JSA and choose <strong>&ldquo;On their phones&rdquo;</strong> and it shows up
+                here. The number next to it is how many men have signed. It counts up on its own —
+                you don&apos;t have to refresh it.
+              </p>
+              <p><strong>What you can do here:</strong></p>
+              <ul>
+                <li><strong>Print it</strong> — the QR poster for your trailer. Print it once; it never changes.</li>
+                <li><strong>Sign on this iPad</strong> — for a man with no phone on him.</li>
+                <li><strong>Tap the number</strong> — see who has signed.</li>
+                <li><strong>Take it down</strong> — only while nobody has signed it yet.</li>
+              </ul>
+              <p>
+                Your code is yours alone. Another superintendent&apos;s code shows his JSAs, not
+                yours.
+              </p>
+            </HelpButton>
+          </div>
           <p>What your crew sees when they scan. Updates on its own.</p>
         </div>
         <button type="button" className="btn ghost sm" onClick={load}>Refresh</button>

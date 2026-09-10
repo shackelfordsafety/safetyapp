@@ -3,6 +3,7 @@ import { fetchFiledToday, signedUrlFor } from '../archive/fileToArchive';
 import { fetchMyBoard } from '../crew/board';
 import JsaContents from '../crew/JsaContents';
 import './today.css';
+import HelpButton from '../shared/HelpButton';
 
 /* ── Today ───────────────────────────────────────────────────────────────
    Everything from this morning in one place. Fonzo, 2026-09-09: "maybe we
@@ -121,9 +122,24 @@ export default function TodayView({ entries = [], goDocs }) {
   return (
     <div className="sectionStack">
       <div className="sectionTitle">
-        <div className="eyebrow">Today</div>
-        <h2>{today}</h2>
-        <p>What you started and what you finished. Older paperwork lives in the Archive.</p>
+        <div className="eyebrow">My Work</div>
+        <div className="titleWithHelp">
+          <h2>{today}</h2>
+          <HelpButton title="My Work">
+            <p>Your own work — what you started today and what you finished.</p>
+            <p><strong>The three lists:</strong></p>
+            <ul>
+              <li><strong>Still open</strong> — started and not done. Tap one to pick up where you left off.</li>
+              <li><strong>Out for signing</strong> — on your board, waiting on the crew.</li>
+              <li><strong>Done today</strong> — finished and filed.</li>
+            </ul>
+            <p>
+              Every row opens something. Anything from before today is in
+              <strong> Records</strong>.
+            </p>
+          </HelpButton>
+        </div>
+        <p>What you started and what you finished. Older paperwork lives in Records.</p>
       </div>
 
       <Section label="Still open" count={stillOpen.length}>
