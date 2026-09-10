@@ -13,7 +13,7 @@ import { loadModule } from '../shared/loadModule';
    it. Publishing locks the JSA -- revising means publishing a new version,
    and whoever signed the old one stays attached to it. */
 
-export default function PublishToBoardButton({ jsa, pdfBlob, pdfPending, disabled }) {
+export default function PublishToBoardButton({ jsa, pdfBlob, pdfPending, disabled, onPublished }) {
   const [phase, setPhase] = useState('idle'); // idle | needsSignIn | working | published | error
   const [message, setMessage] = useState('');
   const [boardUrl, setBoardUrl] = useState('');
@@ -57,6 +57,15 @@ export default function PublishToBoardButton({ jsa, pdfBlob, pdfPending, disable
         const { boardUrl: url } = await publishToBoard({ jsa, pdfBlob });
         setBoardUrl(url);
         setPhase('published');
+        /* Straight to the board. Publishing isn't the end of the job --
+           watching the count come in is, and the QR and the kiosk live
+           there too. This screen used to say "published" and show a URL,
+           which left a man to navigate to the thing he obviously wanted
+           next. Fonzo's call, 2026-09-10.
+
+           Short pause so the confirmation registers rather than the screen
+           appearing to jump on its own. */
+        if (onPublished) setTimeout(onPublished, 900);
       } catch (err) {
         if (err instanceof NotSignedInError || err?.name === 'NotSignedInError') {
           setPhase('needsSignIn');

@@ -1518,6 +1518,13 @@ function App() {
 
   function goHome() { setTab('home'); setActiveDoc(null); }
   function goDocs() { setTab('documents'); setActiveDoc(null); }
+
+  /* Straight to the board once a JSA is published. Publishing is not the
+     end of the job -- watching the count come in is, and the board is
+     where the QR and the kiosk live too. Landing on a finish screen that
+     says published and nothing else made a man navigate to the thing he
+     obviously wanted next. Fonzo's call, 2026-09-10. */
+  function goToBoard() { setActiveDoc(null); setTab('board'); }
   function goJsaStart() { setTab('documents'); setActiveDoc('jsa-start'); }
   function goJsa(step = 'job') { setTab('documents'); setActiveDoc('jsa'); setJsaStep(step); }
   function goIncident(step = 'details') { setTab('documents'); setActiveDoc('incident'); setIncidentStep(step); }
@@ -2454,6 +2461,7 @@ function App() {
             <JsaWorkflow
               jsa={jsa} upd={upd} jsaStep={jsaStep} setJsaStep={setJsaStep}
               goDocs={goDocs} goJsaStart={goJsaStart}
+              onPublished={goToBoard}
               allTemplates={allTemplates} templateId={templateId} setTemplateId={setTemplateId} selectedTemplate={selectedTemplate} loadTemplate={loadTemplate}
               saveName={saveName} setSaveName={setSaveName} saveTemplate={saveTemplate} updateTemplate={updateTemplate}
               updRow={updRow} removeRow={removeRow}
@@ -2931,7 +2939,7 @@ function StickyActionBar({ idx, steps, prev, next, exportPdf, pdfExportState, is
 }
 
 /* ── JSA Workflow ── */
-function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, allTemplates, templateId, setTemplateId, selectedTemplate, loadTemplate, saveName, setSaveName, saveTemplate, updateTemplate, updRow, removeRow, clearDraft, saveDraft, markReady, exportPdf, legacyBrowserPrint, pdfExportState, isPdfStale, shareGeneratedPdfClick, downloadGeneratedPdfClick, savedDraft, settings, saveStatus, showToast }) {
+function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, onPublished, allTemplates, templateId, setTemplateId, selectedTemplate, loadTemplate, saveName, setSaveName, saveTemplate, updateTemplate, updRow, removeRow, clearDraft, saveDraft, markReady, exportPdf, legacyBrowserPrint, pdfExportState, isPdfStale, shareGeneratedPdfClick, downloadGeneratedPdfClick, savedDraft, settings, saveStatus, showToast }) {
   const plan = useJsaPagePlan(jsa);
   const fit = calcFitFromPlan(plan);
   // One-time heads-up the moment content crosses over into needing a
@@ -3084,7 +3092,7 @@ function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, allTem
           {jsaStep === 'job' && <StepJob jsa={jsa} upd={upd} prev={prev} next={next} />}
           {jsaStep === 'meeting' && <StepMeeting jsa={jsa} upd={upd} prev={prev} next={next} />}
           {jsaStep === 'work' && <StepWork jsa={jsa} upd={upd} updRow={updRow} removeRow={removeRow} customQuick={settings.customQuick || { task: [], hazard: [], control: [] }} prev={prev} next={next} />}
-          {jsaStep === 'finish' && <StepFinish jsa={jsa} upd={upd} checks={checks} plan={plan} fit={fit} setJsaStep={setJsaStep} saveName={saveName} setSaveName={setSaveName} saveTemplate={saveTemplate} updateTemplate={updateTemplate} saveDraft={saveDraft} markReady={markReady} clearDraft={clearDraft} exportPdf={exportPdf} legacyBrowserPrint={legacyBrowserPrint} pdfExportState={pdfExportState} isPdfStale={isPdfStale} downloadGeneratedPdfClick={downloadGeneratedPdfClick} onOpenKiosk={() => setKioskOpen(true)} prev={prev} />}
+          {jsaStep === 'finish' && <StepFinish jsa={jsa} upd={upd} checks={checks} plan={plan} fit={fit} setJsaStep={setJsaStep} saveName={saveName} setSaveName={setSaveName} saveTemplate={saveTemplate} updateTemplate={updateTemplate} saveDraft={saveDraft} markReady={markReady} clearDraft={clearDraft} exportPdf={exportPdf} legacyBrowserPrint={legacyBrowserPrint} pdfExportState={pdfExportState} isPdfStale={isPdfStale} downloadGeneratedPdfClick={downloadGeneratedPdfClick} onOpenKiosk={() => setKioskOpen(true)} onPublished={onPublished} prev={prev} />}
 
           {!canSideBySide && previewOpen && previewPanel}
         </div>
@@ -3566,7 +3574,7 @@ function StepFinish({
   jsa, upd, checks, plan, fit, setJsaStep,
   saveName, setSaveName, saveTemplate, updateTemplate, saveDraft, markReady, clearDraft,
   exportPdf, legacyBrowserPrint, pdfExportState, isPdfStale, downloadGeneratedPdfClick,
-  onOpenKiosk, prev,
+  onOpenKiosk, onPublished, prev,
 }) {
   const [showDocOptions, setShowDocOptions] = useState(false);
   // Which route he picked this session. Not persisted: signInMode below is
@@ -3668,7 +3676,7 @@ function StepFinish({
             </button>
             {route === 'board' && (
               <div className="signRouteBody">
-                <PublishToBoardButton jsa={jsa} />
+                <PublishToBoardButton jsa={jsa} onPublished={onPublished} />
               </div>
             )}
 
