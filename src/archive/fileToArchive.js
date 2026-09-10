@@ -1,4 +1,5 @@
 import { db } from './archiveClient';
+import { blockInDemo } from '../shared/demoMode';
 
 /* ── Filing a finished document to the company archive ───────────────────
    Everything here runs only when somebody actually taps "File to archive".
@@ -92,6 +93,7 @@ export async function signInToArchive(email, password) {
    session, or a plain Error with a readable message for anything else --
    the caller shows it and offers a retry. */
 export async function fileDocument({ docType, model, pdfBlob }) {
+  blockInDemo(`Filing to the archive`);
   const user = await getArchiveUser();
   if (!user) throw new NotSignedInError();
 
@@ -139,6 +141,7 @@ export async function fileDocument({ docType, model, pdfBlob }) {
    are not the same kind of evidence, and somebody reading this in two years
    should be able to tell them apart. */
 export async function uploadExistingDocument({ docType, file, employeeName, jobSite, docDate, note }) {
+  blockInDemo(`Adding a document to the archive`);
   const user = await getArchiveUser();
   if (!user) throw new NotSignedInError();
   if (!file) throw new Error('Choose a file first.');

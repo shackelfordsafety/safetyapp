@@ -1,0 +1,53 @@
+/* ── Testing-site banner ──
+   Amber and diagonal stripes on purpose: it has to read as "caution,
+   different" from across a conference table, and it must not look like
+   any state the real app can ever be in. Red would be wrong -- red in
+   this app means "this is the button you want", and it is the company's
+   own colour. Nothing here is an error.
+
+   Printing hides it: a PDF generated during a demo should look exactly
+   like the real document, because judging the real document is the point
+   of the demo. */
+
+.demoBanner {
+  position: sticky;
+  top: 0;
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 9px 16px;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      #FBEFDC 0 14px,
+      #F5E4C8 14px 28px
+    );
+  border-bottom: 3px solid #C79A4B;
+  color: #4E3A0C;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.demoBannerTag {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #4E3A0C;
+  color: #FBEFDC;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.demoBannerText { font-weight: 600; }
+
+@media (max-width: 560px) {
+  .demoBanner { padding: 8px 12px; font-size: 13px; gap: 8px; }
+}
+
+@media print {
+  .demoBanner { display: none !important; }
+}

@@ -1,4 +1,5 @@
 import { db } from '../archive/archiveClient';
+import { blockInDemo } from '../shared/demoMode';
 
 /* ── The board: publishing a JSA, and crew signing it ────────────────────
    Reached only through dynamic import(), same as the archive, so neither
@@ -169,6 +170,7 @@ async function currentUser() {
    `boardOwner` is what lets a foreman publish onto his superintendent's
    board instead, and it follows him when he switches supers. */
 export async function publishToBoard({ jsa, boardOwner, pdfBlob }) {
+  blockInDemo(`Publishing to the board`);
   const user = await currentUser();
   if (!user) throw new NotSignedInError();
 
@@ -300,6 +302,7 @@ export function boardStatus(row, live, now = new Date()) {
    man at 3:45 for a JSA that expired at 3:30 leaves an unsigned worker on
    the job, which is worse than a signature stamped late. */
 export async function signPublication({ publicationId, signerName, signatureData, source = 'phone', expiresAt }) {
+  blockInDemo(`Signing`);
   const id = (crypto.randomUUID && crypto.randomUUID())
     || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
@@ -344,6 +347,7 @@ export async function fetchSignatureCounts(publicationIds) {
    stops working on purpose: that is a record of who agreed to what, and
    the way to correct it is a new version, not an eraser. */
 export async function takeDownPublication(publicationId) {
+  blockInDemo(`Taking a posting down`);
   const user = await currentUser();
   if (!user) throw new NotSignedInError();
 
@@ -535,6 +539,7 @@ export async function fetchUnfiledExpired() {
    the two used to live apart (cloud vs the JSA on the device) and that
    split caused every blank sign-in sheet of 2026-09-09. */
 export async function signOnKiosk({ publicationId, signatureData, expiresAt }) {
+  blockInDemo(`Signing`);
   return signPublication({
     publicationId,
     signerName: null,
