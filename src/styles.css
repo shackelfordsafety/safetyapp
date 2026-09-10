@@ -685,6 +685,13 @@ input:focus, select:focus, textarea:focus {
 .stickyActionSide { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 .stickyActionStatus { flex: 1 1 auto; text-align: center; font-size: 12px; font-weight: 600; color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .stickyActionStatus.error { color: var(--danger); }
+/* "Saved on this device" fits an iPad with nothing to spare (measured: 421
+   of 421px) and would clip to "Saved on this de…" on a phone. Below tablet
+   width it wraps instead of truncating -- two short lines still fit inside
+   the bar's 44px buttons, and half a sentence is worse than two lines. */
+@media (max-width: 700px) {
+  .stickyActionStatus { white-space: normal; line-height: 1.15; }
+}
 .stickyActionBar .btn { min-height: 44px; }
 
 /* ── Layout diagnostics overlay (?debug=layout only, see main.jsx LayoutDebugPanel) ── */
@@ -1293,7 +1300,26 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   color: var(--text);
   white-space: normal;
 }
+/* Hidden for every state EXCEPT locked. Done/current/not-started are all
+   said clearly enough by the dot (a tick, the accent fill, a number), and
+   four steps across a phone have no room to repeat it in words.
+
+   Locked is the exception because it is the one state that explains why a
+   tap did not do what you expected, and it was carried entirely by a small
+   padlock and 55% opacity -- which on a sunlit tablet is just "a bit grey".
+   The word goes back in. (Fonzo's standing rule: visible labels over
+   icon-only, the men using this are not tech people.) */
 .stepNavState { display: none; }
+.stepNavRow.locked .stepNavState {
+  display: block;
+  font-family: var(--font-condensed);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.1;
+  color: var(--text-3, var(--muted));
+}
 
 .stepNavRow.done .stepNavDot { background: var(--good-tint); color: var(--good); border: 1px solid var(--good-border); }
 
@@ -3298,3 +3324,38 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 .nameNudge strong { display: block; font-size: 15.5px; }
 .nameNudge p { margin: 3px 0 0; font-size: 14px; color: var(--text-2, #46464C); max-width: 60ch; }
 .nameNudgeActions { display: flex; gap: 8px; flex-shrink: 0; }
+
+/* ── "Still needed on this screen" ──────────────────────────────────────
+   Sits at the bottom of Job Info / Meeting Info / Tasks & Hazards. A quiet
+   amber note, not an error: nothing has gone wrong, the screen just isn't
+   finished. Deliberately NOT red -- a superintendent halfway through his
+   first field is not doing anything wrong, and red on a safety app should
+   mean something is actually wrong. */
+.stepMissing {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--warn-border, #E0B24A);
+  border-left-width: 4px;
+  border-radius: 8px;
+  background: var(--warn-tint, #FFF8E8);
+}
+.stepMissingHead {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-2, #5A5A5A);
+}
+.stepMissingList {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text, #1A1A1A);
+}

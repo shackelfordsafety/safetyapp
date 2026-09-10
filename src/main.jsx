@@ -659,7 +659,12 @@ function emptyJsa() {
     assignedMentorSse: '',
     acknowledgement: 'I have reviewed and understand the conditions of this JSA and its attached plans and will comply. I will report hazardous conditions or acts identified on this job site to my supervisor and/or Shackelford representative so they can be corrected if necessary. I will conduct a last minute risk assessment before each task and will exercise stop work authority for any unsafe act, condition, or hazard.',
     tailgateTopic: '',
-    previousDaySafety: 'None reported.',
+    /* Blank, not "None reported." -- the app used to assert on every new
+       JSA that nobody was hurt the previous day, before any human looked.
+       That is a claim on a safety record, and it belongs to the person
+       signing it. "None reported." is still the first suggestion one tap
+       away in Quick Previous Day; he just has to be the one to pick it. */
+    previousDaySafety: '',
     overallWorkTask: '',
     dailyTasks: '',
     hazardsSummary: '',
@@ -696,7 +701,7 @@ const BUILT_IN_TEMPLATES = [{
 }];
 
 function makeTodayFromTemplate(data) {
-  return { ...emptyJsa(), ...data, id: crypto.randomUUID?.() || String(Date.now()), status: 'draft', date: todayISO(), timeIssued: '', timeExpired: '', tailgateTopic: '', previousDaySafety: 'None reported.', signatureLineCount: Number(data?.signatureLineCount) || 30, signInMode: 'kiosk', crewSignatures: [], notes: '', lastSavedAt: '', taskRows: withRowIds(data?.taskRows) };
+  return { ...emptyJsa(), ...data, id: crypto.randomUUID?.() || String(Date.now()), status: 'draft', date: todayISO(), timeIssued: '', timeExpired: '', tailgateTopic: '', previousDaySafety: '', signatureLineCount: Number(data?.signatureLineCount) || 30, signInMode: 'kiosk', crewSignatures: [], notes: '', lastSavedAt: '', taskRows: withRowIds(data?.taskRows) };
 }
 function templatePayload(jsa, name) {
   return {
@@ -706,7 +711,7 @@ function templatePayload(jsa, name) {
     description: 'Custom saved JSA template',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    data: { ...jsa, id: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'), source: 'custom', status: 'template', templateName: name, date: '', timeIssued: '', timeExpired: '', tailgateTopic: '', previousDaySafety: 'None reported.', signatureLineCount: Number(jsa.signatureLineCount) || 30, signInMode: 'kiosk', crewSignatures: [], notes: '', lastSavedAt: '' },
+    data: { ...jsa, id: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'), source: 'custom', status: 'template', templateName: name, date: '', timeIssued: '', timeExpired: '', tailgateTopic: '', previousDaySafety: '', signatureLineCount: Number(jsa.signatureLineCount) || 30, signInMode: 'kiosk', crewSignatures: [], notes: '', lastSavedAt: '' },
   };
 }
 
@@ -942,7 +947,10 @@ function hasMeaningfulJsaContent(jsa) {
     jsa.location, jsa.jobSite, jsa.jobNumber, jsa.timeIssued, jsa.timeExpired,
     jsa.superintendentForeman, jsa.emergencyPhone, jsa.client, jsa.nearestMedicalFacility, jsa.nearestMedicalAddress,
     jsa.siteContactPhone, jsa.musterPoint, jsa.assignedMentorSse,
-    jsa.tailgateTopic, jsa.overallWorkTask, jsa.dailyTasks, jsa.hazardsSummary, jsa.controlsSummary,
+    // previousDaySafety joined this list when it stopped defaulting to
+    // "None reported." -- it is now genuinely typed by a person, so it is
+    // real content the replace-draft guard has to protect.
+    jsa.tailgateTopic, jsa.previousDaySafety, jsa.overallWorkTask, jsa.dailyTasks, jsa.hazardsSummary, jsa.controlsSummary,
   ].some(hasText) || normalizeRows(jsa.taskRows).length > 0;
 }
 // Field requirements mirror getReviewChecks exactly (job/meeting/work/
@@ -957,7 +965,11 @@ function stepStatus(jsa, id) {
     case 'job':
       return hasText(jsa.location) && hasText(jsa.jobSite) && hasText(jsa.superintendentForeman)
         && hasText(jsa.date) && hasText(jsa.emergencyPhone) && hasText(jsa.musterPoint) ? 'complete' : 'needs-info';
-    case 'meeting': return hasText(jsa.tailgateTopic) && hasText(jsa.overallWorkTask) ? 'complete' : 'needs-info';
+    // previousDaySafety used to arrive pre-filled with "None reported." and
+    // so was never checked. It is now blank on a new JSA (the app should not
+    // state on a safety record that nobody got hurt yesterday -- a person
+    // should), which makes it a real question somebody has to answer.
+    case 'meeting': return hasText(jsa.tailgateTopic) && hasText(jsa.previousDaySafety) && hasText(jsa.overallWorkTask) ? 'complete' : 'needs-info';
     case 'work': {
       const rows = getContentRows(jsa);
       return rows.some(row => hasText(row.step)) && rows.some(row => hasText(row.hazards)) && rows.some(row => hasText(row.controls)) ? 'complete' : 'needs-info';
@@ -987,22 +999,61 @@ function draftStepProgress(jsa) {
   const done = relevant.filter(s => stepStatus(jsa, s.id) === 'complete').length;
   return { done, total: relevant.length };
 }
+/* `content: true` marks a check that is something a person has to WRITE on
+   this JSA. The other two are print settings -- the signature line count
+   defaults to a valid 30 and a short JSA fits on one page before anybody
+   types a word -- so a completely blank JSA scored "2 of 8 done, 25%"
+   before this flag existed (outside tester, 2026-09-10). The score below
+   counts only the content checks; the print-setting rows still appear in
+   the checklist, because a bad page plan is worth seeing. */
 function getReviewChecks(jsa, measurements) {
   const plan = resolvePagePlan(jsa, measurements);
   const fit = calcFitFromPlan(plan);
   return [
-    { label: 'Job site, location, and supervisor', ok: hasText(jsa.jobSite) && hasText(jsa.location) && hasText(jsa.superintendentForeman), step: 'job' },
-    { label: 'Date and emergency information', ok: hasText(jsa.date) && hasText(jsa.emergencyPhone) && hasText(jsa.musterPoint), step: 'job' },
-    { label: 'Tailgate topic and overall work activity', ok: hasText(jsa.tailgateTopic) && hasText(jsa.overallWorkTask), step: 'meeting' },
-    { label: 'At least one task', ok: getContentRows(jsa).some(row => hasText(row.step)), step: 'work' },
-    { label: 'Hazards identified', ok: getContentRows(jsa).some(row => hasText(row.hazards)), step: 'work' },
-    { label: 'Controls identified', ok: getContentRows(jsa).some(row => hasText(row.controls)), step: 'work' },
+    { label: 'Job site, location, and supervisor', ok: hasText(jsa.jobSite) && hasText(jsa.location) && hasText(jsa.superintendentForeman), step: 'job', content: true },
+    { label: 'Date and emergency information', ok: hasText(jsa.date) && hasText(jsa.emergencyPhone) && hasText(jsa.musterPoint), step: 'job', content: true },
+    { label: 'Tailgate topic and overall work activity', ok: hasText(jsa.tailgateTopic) && hasText(jsa.overallWorkTask), step: 'meeting', content: true },
+    { label: 'Previous day injury / near miss answered', ok: hasText(jsa.previousDaySafety), step: 'meeting', content: true },
+    { label: 'At least one task', ok: getContentRows(jsa).some(row => hasText(row.step)), step: 'work', content: true },
+    { label: 'Hazards identified', ok: getContentRows(jsa).some(row => hasText(row.hazards)), step: 'work', content: true },
+    { label: 'Controls identified', ok: getContentRows(jsa).some(row => hasText(row.controls)), step: 'work', content: true },
     { label: `Signature setup (${signInLineTotal(jsa)} lines)`, ok: Number(jsa.signatureLineCount) >= 1 && Number(jsa.signatureLineCount) <= 100, step: 'finish' },
     // No single earlier step reliably fixes an overflowing page plan (it can
     // require trimming any of meeting/work/signatures) -- left non-clickable
     // rather than guessing wrong.
     { label: `Page plan (${plan.totalPages} total page${plan.totalPages === 1 ? '' : 's'})`, ok: fit.status !== 'bad' },
   ];
+}
+
+/* What is still missing on ONE step, in the words of the field it belongs
+   to. Shown at the bottom of that step so a superintendent finds out he
+   skipped the muster point while he is standing on the Job Info screen --
+   not three screens later at Finish, which is where every missing item
+   used to appear for the first time (outside tester, 2026-09-10).
+
+   Deliberately the same requirements stepStatus() enforces, so the note,
+   the "Locked" state on Finish, and the Finish checklist can never
+   disagree about what "done" means. */
+function missingForStep(jsa, id) {
+  const out = [];
+  if (id === 'job') {
+    if (!hasText(jsa.jobSite)) out.push('Job site');
+    if (!hasText(jsa.location)) out.push('Location');
+    if (!hasText(jsa.superintendentForeman)) out.push('Superintendent / foreman');
+    if (!hasText(jsa.date)) out.push('Date');
+    if (!hasText(jsa.emergencyPhone)) out.push('Emergency phone');
+    if (!hasText(jsa.musterPoint)) out.push('Muster point');
+  } else if (id === 'meeting') {
+    if (!hasText(jsa.tailgateTopic)) out.push('Tailgate safety topic');
+    if (!hasText(jsa.previousDaySafety)) out.push('Previous day injury / near miss');
+    if (!hasText(jsa.overallWorkTask)) out.push('Overall work task');
+  } else if (id === 'work') {
+    const rows = getContentRows(jsa);
+    if (!rows.some(row => hasText(row.step))) out.push('At least one task');
+    if (!rows.some(row => hasText(row.hazards))) out.push('Hazards for it');
+    if (!rows.some(row => hasText(row.controls))) out.push('Controls for it');
+  }
+  return out;
 }
 
 function IconLock(props) { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="5" y="10.5" width="14" height="9" rx="1.5" /><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" /></svg>; }
@@ -2680,11 +2731,18 @@ function HomeView({ customTemplates, setTab, docEntries }) {
       <section className="homeSection">
         <span className="homeSectionEyebrow">Not finished &middot; {inProgress.length}</span>
         {inProgress.length === 0 ? (
+          /* Says what this section is FOR, not what you supposedly did.
+             It used to read "Everything you started is signed and
+             downloaded" -- which is a flat lie to somebody opening the app
+             for the first time, who has started nothing (outside tester,
+             2026-09-10). There is no reliable way to tell a brand-new user
+             from one who cleared his work, so the copy is written to be
+             true for both. */
           <div className="homeEmptyRow">
             <span className="homeEmptyCheck" aria-hidden="true">&#10003;</span>
             <div className="homeEmptyText">
-              <strong>Nothing unfinished</strong>
-              <span>Everything you started is signed and downloaded.</span>
+              <strong>Nothing to finish</strong>
+              <span>Anything you start shows up here until it&rsquo;s signed and filed. Pick one below to begin.</span>
             </div>
           </div>
         ) : matching.length === 0 ? (
@@ -2923,7 +2981,11 @@ function StickyActionBar({ idx, steps, prev, next, exportPdf, pdfExportState, is
   const isFirst = idx === 0;
   const isLast = idx === steps.length - 1;
   const nextStep = steps[idx + 1];
-  const statusText = saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Saved' : saveStatus === 'error' ? 'Save failed' : '';
+  /* "Saved" alone never said WHERE, which on a field app is the only part
+     that matters -- this is the tablet in your hand, not the office
+     (outside tester, 2026-09-10). Nothing leaves this device until the JSA
+     is published to the board or filed to Records. */
+  const statusText = saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Saved on this device' : saveStatus === 'error' ? 'Not saved — try again' : '';
   const isGenerating = pdfExportState?.phase === 'generating';
   return (
     <div className="stickyActionBar">
@@ -3007,6 +3069,29 @@ function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, onPubl
   const showSideBySide = canSideBySide && previewOpen;
 
   function prev() { if (idx > 0) setJsaStep(STEPS[idx - 1].id); }
+  /* Job/Meeting/Work all actually filled in. Both the step nav's "Locked"
+     state and Next itself read this one value, so they cannot disagree --
+     they used to. The nav showed Finish as Locked while Next walked
+     straight into it, because Next's own guard was written when Review,
+     Signatures and Finish were three separate steps and Work was never
+     adjacent to Finish. Four steps (2026-09-09) made them neighbours and
+     quietly removed the guard (outside tester, 2026-09-10: "says Locked
+     but opens"). */
+  const contentReady = ['job', 'meeting', 'work'].every(s => stepStatus(jsa, s) === 'complete');
+  function firstIncompleteStep() {
+    return STEPS.find(s => ['job', 'meeting', 'work'].includes(s.id) && stepStatus(jsa, s.id) !== 'complete');
+  }
+  /* Sending him back to an unfinished screen only helps if he can see WHY.
+     The "Still needed" note lives at the bottom of the form, past a screen
+     and a half of fields on Job Info, and a redirect lands you at the top --
+     so bring the note to him. Two frames: one for React to swap the step,
+     one for the browser to lay it out. */
+  function bounceTo(stepId) {
+    setJsaStep(stepId);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      document.querySelector('.stepMissing')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }));
+  }
   // Leaving the Review step (moving on to Signatures) is the one advance
   // that isn't a free walk to the next tab -- it's the "ready for the crew
   // to sign?" moment, so it gets the same fit/checklist confirm exportPdf's
@@ -3029,7 +3114,16 @@ function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, onPubl
       setJsaStep('finish');
       return;
     }
-    setJsaStep(STEPS[idx + 1].id);
+    const target = STEPS[idx + 1].id;
+    // Same guard the step nav uses. Sends him to the screen that is
+    // actually missing something, where the note at the bottom of that
+    // screen names it, instead of opening a step the nav calls Locked.
+    if (target === 'finish' && !contentReady) {
+      const blocker = firstIncompleteStep();
+      bounceTo(blocker ? blocker.id : 'job');
+      return;
+    }
+    setJsaStep(target);
   }
   // Kiosk's own "Done Signing" already auto-adds the 20 blank late/visitor
   // lines (CrewSignInKiosk.jsx) -- closing it also moves straight on to
@@ -3038,12 +3132,7 @@ function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, onPubl
     setKioskOpen(false);
     setJsaStep('finish');
   }
-  // Signatures/Export are only reachable once Job/Meeting/Work are actually
-  // filled in -- otherwise a crew could sign a JSA with no content on it via
-  // a direct StepNav jump (sequential Next already can't skip steps, but the
-  // sidebar could before this).
-  const contentReady = ['job', 'meeting', 'work'].every(s => stepStatus(jsa, s) === 'complete');
-  // Signatures/Export show as visually locked (not "Done") in the step nav
+  // Finish shows as visually locked (not "Done") in the step nav
   // whenever they're not actually reachable yet -- a step whose own checks
   // happen to already pass via a default value (signature line count
   // defaults to 30) used to read "Done" even though clicking it just got
@@ -3051,8 +3140,8 @@ function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, onPubl
   const lockedIds = contentReady ? [] : ['finish'];
   function guardedJump(id) {
     if (id === 'finish' && !contentReady) {
-      const blocker = STEPS.find(s => ['job', 'meeting', 'work'].includes(s.id) && stepStatus(jsa, s.id) !== 'complete');
-      setJsaStep(blocker ? blocker.id : 'job');
+      const blocker = firstIncompleteStep();
+      bounceTo(blocker ? blocker.id : 'job');
       return;
     }
     setJsaStep(id);
@@ -3086,7 +3175,7 @@ function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, onPubl
           <div className="builderHeaderBadges">
             <span className={`badge ${jsa.status}`}>{jsa.status === 'ready' ? 'Ready to Export' : 'Draft'}</span>
             <span className={`fitBadge ${fit.status}`}>{fit.label}</span>
-            <span className="builderHeaderSaved">{jsa.lastSavedAt ? `Saved ${nowNice(new Date(jsa.lastSavedAt))}` : 'Not saved yet'}</span>
+            <span className="builderHeaderSaved">{jsa.lastSavedAt ? `Saved on this device · ${nowNice(new Date(jsa.lastSavedAt))}` : 'Not saved yet'}</span>
           </div>
           {!isTouchPrimary && !isReviewStep && (
             <button className="btn sm outline" onClick={() => setShowPreview(v => !v)}>
@@ -3221,6 +3310,7 @@ function StepJob({ jsa, upd, prev, next }) {
           </div>
         </div>
       </div>
+      <StepMissing jsa={jsa} stepId="job" />
       <StepFooter prev={prev} next={next} hasPrev={false} hasNext />
     </div>
   );
@@ -3312,6 +3402,7 @@ function StepMeeting({ jsa, upd, prev, next }) {
           />
         </div>
       </div>
+      <StepMissing jsa={jsa} stepId="meeting" />
       <StepFooter prev={prev} next={next} hasPrev hasNext />
     </div>
   );
@@ -3560,6 +3651,7 @@ function StepWork({ jsa, upd, updRow, removeRow, customQuick, prev, next }) {
           </div>
         </div>
       )}
+      <StepMissing jsa={jsa} stepId="work" />
       <StepFooter prev={prev} next={next} hasPrev hasNext />
     </div>
   );
@@ -3598,8 +3690,15 @@ function StepFinish({
   const isGenerating = pdfExportState?.phase === 'generating';
   const isReady = pdfExportState?.phase === 'ready';
   const exportLabel = pdfExportStatusLabel(pdfExportState);
-  const completeCount = checks.filter(c => c.ok).length;
-  const allGood = completeCount === checks.length;
+  /* The score counts only what a person has to write on the JSA. Print
+     settings are valid on a blank document, so counting them made an
+     untouched JSA read "2 of 8 done, 25%". "Ready to sign" still requires
+     every check, print settings included -- a JSA whose pages overflow is
+     not ready no matter how complete the writing is. */
+  const contentChecks = checks.filter(c => c.content);
+  const completeCount = contentChecks.filter(c => c.ok).length;
+  const contentComplete = completeCount === contentChecks.length;
+  const allGood = checks.every(c => c.ok);
   const crewSignedCount = jsa.crewSignatures?.length || 0;
 
   function commitLineCount() {
@@ -3646,12 +3745,17 @@ function StepFinish({
             </div>
           ) : (
             <div className={`reviewSummaryCard ${fit.status}`}>
+              {/* Two different problems, said differently. Writing still
+                  missing gets a count and a score. Writing done but the
+                  pages don't fit is not a completion problem at all, so it
+                  gets no score -- a "7 of 7 done, 100%" sitting under the
+                  words "Still missing" is the app arguing with itself. */}
               <div className="reviewSummaryHead">
                 <div>
-                  <span className="suggestionEyebrow">Still missing</span>
-                  <h4>{completeCount} of {checks.length} done</h4>
+                  <span className="suggestionEyebrow">{contentComplete ? 'Before it prints' : 'Still missing'}</span>
+                  <h4>{contentComplete ? 'The JSA is written — the pages need a look' : `${completeCount} of ${contentChecks.length} done`}</h4>
                 </div>
-                <span className="reviewScore">{Math.round((completeCount / checks.length) * 100)}%</span>
+                {!contentComplete && <span className="reviewScore">{Math.round((completeCount / contentChecks.length) * 100)}%</span>}
               </div>
               <p className="reviewFitMessage">{fit.message}</p>
               <div className="reviewChecklist">
@@ -3772,6 +3876,24 @@ function StepFinish({
         />
       )}
       <StepFooter prev={prev} hasPrev hasNext={false} />
+    </div>
+  );
+}
+
+/* What this screen still needs, said on this screen. Sits above the
+   Back/Next row on Job Info, Meeting Info and Tasks/Hazards, and renders
+   on touch too (where StepFooter deliberately doesn't) -- an iPad is where
+   this matters most. Silent once the step is done, so a finished screen
+   stays clean. */
+function StepMissing({ jsa, stepId }) {
+  const items = missingForStep(jsa, stepId);
+  if (!items.length) return null;
+  return (
+    <div className="stepMissing" role="status">
+      <span className="stepMissingHead">Still needed on this screen</span>
+      <ul className="stepMissingList">
+        {items.map(item => <li key={item}>{item}</li>)}
+      </ul>
     </div>
   );
 }
