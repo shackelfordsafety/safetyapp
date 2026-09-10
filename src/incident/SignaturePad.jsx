@@ -22,9 +22,23 @@ const PAD_WIDTH_MIN = 260;
 const PAD_WIDTH_MAX = 640;
 const PHONE_BREAKPOINT_PX = 480;
 
-export default function SignaturePad({ value, onChange, label, disabled }) {
+/* autoOpen / commitOnStroke exist for ONE screen: the crew sign-in page.
+
+   Signing there used to cost four taps -- type your name, tap "Add
+   signature", draw, tap "Save", tap "Finish" -- for a man standing in a
+   gravel lot at 6:30am on a cracked phone. Every one of those taps is a
+   place to give up, and on the first real night this went out, nobody
+   signed at all.
+
+   Both default to false, so the six office documents keep the deliberate
+   tap-to-open behaviour described above: on those, a signature is captured
+   once by someone sitting down, and a stray drag wiping it is the failure
+   that matters. On the crew page nothing is at risk -- there is no saved
+   signature to destroy, the man is on the screen for ten seconds, and the
+   only failure that matters is him walking away unsigned. */
+export default function SignaturePad({ value, onChange, label, disabled, autoOpen = false, commitOnStroke = false }) {
   const locked = useLocked();
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(() => Boolean(autoOpen && !value));
   const [padSize, setPadSize] = useState({ width: 320, height: PAD_HEIGHT_DESKTOP });
   const canvasRef = useRef(null);
   const wrapRef = useRef(null);
@@ -120,6 +134,12 @@ export default function SignaturePad({ value, onChange, label, disabled }) {
   function endStroke() {
     drawingRef.current = false;
     lastPointRef.current = null;
+    /* Hand the mark up the moment the finger lifts, so there is no Save
+       button standing between a man and being signed in. He can keep
+       drawing -- each lift just replaces it with the fuller version. */
+    if (commitOnStroke && hasStrokeRef.current && canvasRef.current) {
+      onChange(canvasRef.current.toDataURL('image/png'));
+    }
   }
 
   /* Pointer Events own mouse/pen input only. Real finger input is handled
@@ -211,6 +231,9 @@ export default function SignaturePad({ value, onChange, label, disabled }) {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     hasStrokeRef.current = false;
+    // Clearing has to un-commit too, or the submit button would still be
+    // holding the signature the user just wiped off the screen.
+    if (commitOnStroke) onChange(null);
   }
 
   function startEdit() {
@@ -289,10 +312,18 @@ export default function SignaturePad({ value, onChange, label, disabled }) {
           onPointerCancel={pointerUp}
         />
       </div>
+      {/* With commitOnStroke the mark is already handed up as it's drawn,
+          so Save would be a button that does nothing and Cancel would be a
+          second way to say Clear. Only the one that still means something
+          is shown. */}
       <div className="signaturePadActions">
         <button type="button" className="btn ghost sm" onClick={clearCanvas}>Clear</button>
-        <button type="button" className="btn ghost sm" onClick={cancelEdit}>Cancel</button>
-        <button type="button" className="btn primary sm" onClick={saveSignature}>Save</button>
+        {!commitOnStroke && (
+          <>
+            <button type="button" className="btn ghost sm" onClick={cancelEdit}>Cancel</button>
+            <button type="button" className="btn primary sm" onClick={saveSignature}>Save</button>
+          </>
+        )}
       </div>
     </div>
   );

@@ -176,7 +176,16 @@ export default function CrewSignIn({ boardOwnerId }) {
                 />
               </label>
 
-              <SignaturePad label="Your signature" value={signature} onChange={setSignature} />
+              {/* Open and ready, no Save step. See the note on autoOpen in
+                  SignaturePad: this screen is a man in a lot at 6:30am,
+                  and every extra tap is a place to give up. */}
+              <SignaturePad
+                label="Your signature"
+                value={signature}
+                onChange={setSignature}
+                autoOpen
+                commitOnStroke
+              />
 
               {error && <p className="crewError">{error}</p>}
 
