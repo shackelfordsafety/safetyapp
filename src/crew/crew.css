@@ -209,3 +209,27 @@
   justify-items: center;
 }
 .crewBrandBar img { width: 100%; max-width: 190px; height: auto; display: block; }
+
+/* ── The way out of the document ──
+   A real JSA is about five phone screens. The Sign button used to sit at
+   the bottom of all of it, and on the first real morning several men
+   independently reached the same point and asked where to sign -- they
+   were right, it was genuinely off-screen with nothing to say it existed.
+
+   Pinned to the bottom of the glass instead, so the way out is visible
+   the whole time he is reading. Reading still comes first; it is one tap
+   away from wherever he happens to be, rather than a reward at the end.
+
+   Safe-area inset so it clears the home bar on a modern iPhone, where
+   this page is almost entirely used. */
+.crewStickyBar {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  margin: 0 -14px -14px;
+  padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+  background: rgba(255, 255, 255, .94);
+  backdrop-filter: blur(6px);
+  border-top: 1px solid #D2D2D6;
+}
+.crewStickyBar .crewBtn { margin: 0; }

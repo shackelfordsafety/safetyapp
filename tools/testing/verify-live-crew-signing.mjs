@@ -51,7 +51,7 @@ if (await pick.count() === 0) {
 
 await pick.click();
 await page.waitForTimeout(700);
-await page.getByRole('button', { name: 'Sign this one' }).click();
+await page.getByRole('button', { name: 'Sign the JSA' }).click();
 await page.waitForTimeout(900);
 
 const padOpen = await page.locator('canvas.signatureCanvas').count() > 0;

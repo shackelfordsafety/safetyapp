@@ -79,7 +79,7 @@ async function main() {
 
     console.log('Signing, counting taps:');
     await tap(pick, 'pick the area');
-    await tap(page.getByRole('button', { name: 'Sign this one' }), '"Sign this one"');
+    await tap(page.getByRole('button', { name: 'Sign the JSA' }), '"Sign the JSA"');
 
     // The whole point: is the canvas already there, with no "Add signature"
     // button standing in front of it?
