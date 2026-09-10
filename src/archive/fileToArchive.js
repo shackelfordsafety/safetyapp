@@ -1,5 +1,6 @@
 import { db } from './archiveClient';
 import { blockInDemo } from '../shared/demoMode';
+import { ARCHIVE_FILING_ENABLED } from './filingEnabled';
 
 /* ── Filing a finished document to the company archive ───────────────────
    Everything here runs only when somebody actually taps "File to archive".
@@ -94,6 +95,18 @@ export async function signInToArchive(email, password) {
    the caller shows it and offers a retry. */
 export async function fileDocument({ docType, model, pdfBlob }) {
   blockInDemo(`Filing to the archive`);
+
+  /* Belt and braces behind the hidden buttons. The archive cannot edit or
+     delete, so a half-finished document filed by a path I forgot to hide
+     is wrong forever -- see filingEnabled.js.
+
+     JSAs are exempt and must stay exempt: they file themselves when a
+     published one expires, which is the auto-archive the night crew
+     depends on, and they are complete by definition at that point --
+     the shift ended and the crew signed. */
+  if (docType !== 'jsa' && !ARCHIVE_FILING_ENABLED) {
+    throw new Error('Filing to the archive is switched off for now. Download or print it — nothing is lost.');
+  }
   const user = await getArchiveUser();
   if (!user) throw new NotSignedInError();
 

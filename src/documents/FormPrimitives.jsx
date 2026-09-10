@@ -3,6 +3,7 @@ import SignaturePad from '../incident/SignaturePad';
 import { useLocked } from './lockedContext';
 import SpeakButton from '../voice/SpeakButton';
 import FileToArchiveButton from '../archive/FileToArchiveButton';
+import { ARCHIVE_FILING_ENABLED } from '../archive/filingEnabled';
 
 /* ── Shared field-section/builder primitives for the four new documents ──
    Modeled directly on the local presentational primitives IncidentWorkflow.jsx
@@ -431,7 +432,7 @@ export function ReviewExportPanel({
               <button type="button" className="btn primary lg" onClick={onDownload}>{downloadLabel}</button>
             </div>
             <p className="helperText pdfReadyHelper">Download the document, then open it to print.</p>
-            {archiveFiling && (
+            {ARCHIVE_FILING_ENABLED && archiveFiling && (
               <FileToArchiveButton
                 docType={archiveFiling.docType}
                 model={archiveFiling.model}
