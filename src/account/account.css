@@ -62,3 +62,21 @@
 @media print {
   .acctChip { display: none !important; }
 }
+
+/* ── Change password ──
+   Sits inside the Profile card as its own small form. Deliberately closed
+   until asked for: it is a rare, deliberate action, and an always-open
+   set of password boxes on a screen people open for other reasons invites
+   a half-typed change nobody finished. */
+.pwForm {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.pwFormActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}

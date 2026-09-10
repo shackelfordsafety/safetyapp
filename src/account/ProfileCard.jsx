@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { loadModule } from '../shared/loadModule';
 import { blockInDemo } from '../shared/demoMode';
+import ChangePassword from './ChangePassword';
 
 /* ── Your name, as the company has it ────────────────────────────────────
    Everyone in here got their name typed in by hand by me, or has no name
@@ -139,6 +140,10 @@ export default function ProfileCard({ session }) {
             </button>
           </form>
         )}
+
+        {/* Its own form, outside the name one -- nesting forms is invalid
+            and makes Enter submit the wrong thing. */}
+        {state === 'ready' && session?.email && <ChangePassword email={session.email} />}
       </div>
     </div>
   );
