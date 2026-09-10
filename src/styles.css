@@ -3359,3 +3359,73 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   font-weight: 600;
   color: var(--text, #1A1A1A);
 }
+
+/* ── "What kind of site is this?" (Job Info) ─────────────────────────────
+   Cards, not a dropdown. A native select hides every option until it is
+   opened, and the whole point of this control is that a superintendent
+   sees "Railroad" sitting there and realises it applies to him. */
+.siteTypeField { display: flex; flex-direction: column; gap: 8px; }
+.siteTypeLabel {
+  font-family: var(--font-condensed);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2, var(--muted));
+}
+.siteTypeChoices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+.siteTypeChoice {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  text-align: left;
+  padding: 10px 12px;
+  min-height: 56px;
+  border: 1px solid var(--border-input, var(--line));
+  border-radius: 8px;
+  background: var(--surface, #fff);
+  color: var(--text);
+  cursor: pointer;
+}
+.siteTypeChoice strong {
+  font-size: 14.5px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.siteTypeChoice span {
+  font-size: 12px;
+  line-height: 1.25;
+  color: var(--text-3, var(--muted));
+}
+.siteTypeChoice:hover { border-color: var(--text-3, var(--muted)); }
+.siteTypeChoice:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.siteTypeChoice.active {
+  background: var(--accent-tint);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.siteTypeChoice.active strong { color: var(--accent-text, var(--accent)); }
+
+.siteTypeNote {
+  margin: 2px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--good-tint, #EAF4EE);
+  border: 1px solid var(--good-border, #9CC4AC);
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--text);
+}
+.siteTypeNote strong { font-weight: 700; }
+.siteTypeBasis {
+  display: block;
+  margin-top: 6px;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--text-2, var(--muted));
+}

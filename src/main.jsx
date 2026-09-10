@@ -8,6 +8,7 @@ import './incident/incident.css';
 import './voice/voice.css';
 import SpeakButton from './voice/SpeakButton';
 import CrewSignInKiosk from './jsa/CrewSignInKiosk';
+import { SITE_TYPES, packFor, withSitePack } from './jsa/sitePacks';
 import { emptyIncident, hasMeaningfulIncidentContent, incidentStepProgress, incidentNextStepHint, isIncidentReady, isIncidentPrintFinal, migrateIncidentShape } from './incident/incidentModel';
 import { loadIncidentDraft, saveIncidentDraft, clearIncidentDraft, upsertIncidentRecord } from './incident/incidentStorage';
 import { deletePhotosForIncident } from './incident/incidentPhotoStorage';
@@ -642,6 +643,14 @@ function emptyJsa() {
     // templates without it come through the `{ ...emptyJsa(), ...raw }`
     // merge as empty, which falls back to the previous board label.
     area: '',
+    /* What KIND of site this is -- rail, quarry, plant, solar, dirt pit.
+       Drives which extra hazards and controls appear at the top of the
+       quick-add pickers (see src/jsa/sitePacks.js). Empty means an open
+       site and changes nothing, so every existing draft and template
+       merges through emptyJsa() as before. Deliberately not printed yet:
+       adding a row to the info table moves pagination, and that is the
+       one part of this app worth being slow about. */
+    siteType: '',
     date: todayISO(),
     timeIssued: '',
     timeExpired: '',
@@ -3233,6 +3242,49 @@ function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, onPubl
   );
 }
 
+/* ── What kind of site is this? ──────────────────────────────────────────
+   Big tap targets with the answer written on them, not a dropdown -- these
+   are the men who could not find a QR code taped to a trailer, and a native
+   <select> on an iPad hides every option until you open it. Six choices,
+   one row wrapped, "Open site" first and selected by default so doing
+   nothing keeps the JSA exactly as it always was.
+
+   Picking one does not put a single word on the document. It changes what
+   is offered in the hazard and control pickers on the next screen, which is
+   why the confirmation line says so plainly. */
+function SiteTypePicker({ jsa, upd }) {
+  const current = jsa.siteType || '';
+  const pack = packFor(current);
+  return (
+    <div className="siteTypeField">
+      <span className="siteTypeLabel">What kind of site is this?</span>
+      <div className="siteTypeChoices" role="radiogroup" aria-label="What kind of site is this?">
+        {SITE_TYPES.map(t => (
+          <button
+            key={t.id || 'open'}
+            type="button"
+            role="radio"
+            aria-checked={current === t.id}
+            className={`siteTypeChoice${current === t.id ? ' active' : ''}`}
+            onClick={() => upd({ siteType: t.id })}
+          >
+            <strong>{t.label}</strong>
+            <span>{t.hint}</span>
+          </button>
+        ))}
+      </div>
+      {pack && (
+        <p className="siteTypeNote">
+          <strong>{pack.hazards.length} hazards and {pack.controls.length} controls</strong> for
+          {' '}{pack.label.toLowerCase()} work are now at the top of the pickers on Tasks / Hazards.
+          Nothing is added to the JSA until you tap it.
+          <span className="siteTypeBasis">{pack.basis}</span>
+        </p>
+      )}
+    </div>
+  );
+}
+
 /* ── Step: Job Info ── */
 function StepJob({ jsa, upd, prev, next }) {
   const isTouchPrimary = useIsTouchPrimary();
@@ -3273,6 +3325,7 @@ function StepJob({ jsa, upd, prev, next }) {
                 onChange={v => upd({ area: v })}
                 placeholder="Entire site, or a specific area"
               />
+              <SiteTypePicker jsa={jsa} upd={upd} />
             </div>
           </div>
           <div className="formSection">
@@ -3417,12 +3470,16 @@ function StepWork({ jsa, upd, updRow, removeRow, customQuick, prev, next }) {
   const taskGroups = useMemo(() => customQuick?.task?.length
     ? [{ title: 'My Custom Tasks', items: customQuick.task }, ...DAILY_TASK_GROUPS]
     : DAILY_TASK_GROUPS, [customQuick]);
-  const hazardGroups = useMemo(() => customQuick?.hazard?.length
+  /* Site pack first, then the man's own custom chips, then the general
+     lists. The pack goes on top deliberately: if he has told the app he is
+     working next to a live main, the track hazards are the ones he should
+     hit first, not after scrolling past eight groups of general dirt work. */
+  const hazardGroups = useMemo(() => withSitePack(customQuick?.hazard?.length
     ? [{ title: 'My Custom Hazards', items: customQuick.hazard }, ...HAZARD_GROUPS]
-    : HAZARD_GROUPS, [customQuick]);
-  const controlGroups = useMemo(() => customQuick?.control?.length
+    : HAZARD_GROUPS, jsa.siteType, 'hazards'), [customQuick, jsa.siteType]);
+  const controlGroups = useMemo(() => withSitePack(customQuick?.control?.length
     ? [{ title: 'My Custom Controls', items: customQuick.control }, ...CONTROL_GROUPS]
-    : CONTROL_GROUPS, [customQuick]);
+    : CONTROL_GROUPS, jsa.siteType, 'controls'), [customQuick, jsa.siteType]);
 
   // Suggestion bundles: lightweight interaction metadata recording which task
   // introduced which hazard/control entries, so a bundle can be reversed later
