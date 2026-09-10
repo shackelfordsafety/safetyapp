@@ -20,6 +20,7 @@ import ChangePassword from './ChangePassword';
    Settings with no cloud code in it. */
 
 const ROLE_WORDS = {
+  owner: 'Owner',
   safety: 'Safety',
   hr: 'HR',
   pm: 'Project Manager',
@@ -30,6 +31,7 @@ const ROLE_WORDS = {
 };
 
 const ROLE_MEANS = {
+  owner: 'You can see every document, and sign off on any of them.',
   safety: 'You can see every document in the archive.',
   hr: 'You can see every document in the archive.',
   pm: 'You can see every document in the archive.',
