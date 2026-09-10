@@ -19,6 +19,7 @@ import { StepNav } from './documents/FormPrimitives';
 import PublishToBoardButton from './crew/PublishToBoardButton';
 import { loadModule } from './shared/loadModule';
 import ErrorBoundary from './shared/ErrorBoundary';
+import DemoBanner from './shared/DemoBanner';
 import { useUserSync } from './sync/useUserSync';
 import { recordTemplateDeletion, markSettingsChanged } from './sync/syncMeta';
 import { readStoredSession } from './shared/session';
@@ -5180,6 +5181,10 @@ function Root() {
    way to sign in and no idea what a browser console is. */
 createRoot(document.getElementById('root')).render(
   <ErrorBoundary>
+    {/* Outside Root so it shows on the crew sign-in page too. A demo of
+        the crew flow is exactly what an owner will want to see, and
+        exactly what must never reach a real board. */}
+    <DemoBanner />
     <Root />
   </ErrorBoundary>,
 );

@@ -1,6 +1,7 @@
 import { db } from '../archive/archiveClient';
 import { readTombstones, writeTombstones, localSettingsStamp } from './syncMeta';
 import { mergeTemplates, mergeTombstones } from './mergeRules';
+import { IS_DEMO } from '../shared/demoMode';
 
 /* ── Your templates and settings, on every device you sign in on ─────────
    Imported ONLY from lazily loaded code, so the Supabase library stays out
@@ -32,6 +33,12 @@ async function userId() {
    treat a throw as "stay local", never as an error worth interrupting
    anyone over. */
 export async function syncUserData({ templates, settings, deviceLabel }) {
+  /* Skipped entirely on the testing site, not just the write half. A demo
+     that pulled the real account's templates down would also push whatever
+     the owners invented back up into it, and Fonzo would find their
+     experiments in his own list tomorrow morning. */
+  if (IS_DEMO) return null;
+
   const uid = await userId();
   if (!uid) return null;
 

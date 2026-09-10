@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { loadModule } from '../shared/loadModule';
+import { blockInDemo } from '../shared/demoMode';
 
 /* ── Your name, as the company has it ────────────────────────────────────
    Everyone in here got their name typed in by hand by me, or has no name
@@ -73,6 +74,7 @@ export default function ProfileCard({ session }) {
     setError('');
     setSaved(false);
     try {
+      blockInDemo('Changing your name');
       const { db } = await loadModule(() => import('../archive/archiveClient'));
       const { data, error: err } = await db.rpc('set_my_display_name', { new_name: name });
       if (err) throw new Error(err.message);
