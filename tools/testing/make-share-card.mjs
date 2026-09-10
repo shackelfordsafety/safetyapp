@@ -51,5 +51,31 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 });
 await page.setContent(html, { waitUntil: 'networkidle' });
 await page.screenshot({ path: outPath });
-await browser.close();
 console.log('Wrote', outPath);
+
+/* ── The home-screen icon ──
+   Separate from the share card, same brand. Without an apple-touch-icon
+   iOS renders a SCREENSHOT of the page as the icon, which for the crew
+   sign-in page is an unreadable grey smudge -- and "save it to your home
+   screen" is the answer we're giving the crew, so the thing they end up
+   looking at matters.
+
+   180x180 is the size iOS asks for. One icon serves both the app and the
+   crew page; what differs is the label underneath ("Safety Docs" vs
+   "Sign JSA"), which is set in index.html. */
+const iconPath = path.join(repoRoot, 'public', 'icons', 'apple-touch-icon.png');
+const iconSvg = readFileSync(path.join(repoRoot, 'public', 'icons', 'safety-icon.svg'), 'utf8')
+  // iOS masks the corners itself, so a rounded source would be rounded
+  // twice and end up looking pinched.
+  .replace(/ rx="104"/, '');
+const iconHtml = `<!doctype html><html><head><meta charset="utf-8"><style>
+  html, body { margin: 0; padding: 0; }
+  body { width: 180px; height: 180px; }
+  svg { display: block; width: 180px; height: 180px; }
+</style></head><body>${iconSvg}</body></html>`;
+
+const iconPage = await browser.newPage({ viewport: { width: 180, height: 180 }, deviceScaleFactor: 1 });
+await iconPage.setContent(iconHtml, { waitUntil: 'networkidle' });
+await iconPage.screenshot({ path: iconPath });
+await browser.close();
+console.log('Wrote', iconPath);
