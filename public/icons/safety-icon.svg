@@ -1,8 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="104" fill="#f97316"/>
-  <path d="M106 374h300" stroke="#0d253f" stroke-width="24" stroke-linecap="round"/>
-  <path d="M154 374v-88c0-78 46-134 102-134s102 56 102 134v88" fill="none" stroke="#0d253f" stroke-width="24" stroke-linecap="round"/>
-  <path d="M256 82v94" stroke="#0d253f" stroke-width="24" stroke-linecap="round"/>
-  <path d="M202 176h108" stroke="#0d253f" stroke-width="24" stroke-linecap="round"/>
-  <path d="M142 374h228" stroke="white" stroke-opacity="0.82" stroke-width="10" stroke-linecap="round"/>
+  <!-- Hard hat, in the company colours. Was orange (#f97316) on navy
+       (#0d253f) — left over from before the red/white/black pass, and
+       visible in the browser tab and, since Add to Home Screen, on
+       people's phones. The mark itself was fine; only the palette was
+       wrong. Red is the brim, because the brim is the one line that still
+       reads at 60px. -->
+  <rect width="512" height="512" rx="104" fill="#171719"/>
+  <path d="M154 374v-88c0-78 46-134 102-134s102 56 102 134v88" fill="none" stroke="#FFFFFF" stroke-width="26" stroke-linecap="round"/>
+  <path d="M256 82v94" stroke="#FFFFFF" stroke-width="26" stroke-linecap="round"/>
+  <path d="M202 176h108" stroke="#FFFFFF" stroke-width="26" stroke-linecap="round"/>
+  <path d="M106 374h300" stroke="#C1121F" stroke-width="34" stroke-linecap="round"/>
 </svg>

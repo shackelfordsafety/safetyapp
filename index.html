@@ -7,9 +7,46 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Safety Docs" />
-    <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./icons/safety-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <title>Safety Documentation Center</title>
+
+    <!-- The web app manifest is attached HERE, inline and conditionally,
+         rather than as a static <link> — because of Add to Home Screen.
+
+         iOS reads a manifest's start_url ("./") and saves THAT, not the
+         address in the bar. So a crew member saving the sign-in page got
+         the Safety Documentation Center home screen instead of the JSA he
+         was looking at. That matters: "save it to your home screen" is the
+         answer to the crew's one real complaint (having to scan a code
+         every morning), so a wrong icon takes that answer away.
+
+         Removing the <link> from JavaScript after mount was tried first
+         and is NOT enough. Chrome re-reads the DOM when you tap Add to
+         Home Screen, so Android looked fixed; Safari takes the manifest at
+         page load and never lets go, so iPhones kept saving the app root.
+         Reported from the field 2026-09-10, Android working and iPhone not
+         — which is exactly the fingerprint of that difference.
+
+         Doing it inline, before the parser could ever see a manifest link,
+         is the only version that holds on both. The hash is available this
+         early, and the crew page genuinely shouldn't claim to be an
+         installable app anyway: no account, no drafts, nothing to install. -->
+    <script>
+      (function () {
+        var isCrewPage = /^#\/sign\//.test(window.location.hash || '');
+        if (!isCrewPage) {
+          var link = document.createElement('link');
+          link.rel = 'manifest';
+          link.href = './manifest.webmanifest';
+          document.head.appendChild(link);
+          return;
+        }
+        document.title = 'Sign the JSA — Shackelford';
+        var appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+        if (appleTitle) appleTitle.setAttribute('content', 'Sign JSA');
+      })();
+    </script>
 
     <!-- Without these, iMessage/Slack/etc. link previews fall back to
          guessing an image from the page instead of using one we choose —
