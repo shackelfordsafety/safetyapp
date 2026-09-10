@@ -65,6 +65,15 @@ export async function capturePagesToPdf(pageRefsRef, onProgress) {
   for (let i = 0; i < pages.length; i += 1) {
     const { type, el } = pages[i];
     onProgress?.(i + 1, pages.length);
+
+    /* Yield between pages so the UI stays alive -- see the matching note
+       in generateJsaPdf (main.jsx), where this was measured. Same fix
+       here, because this is the capture path any future document type
+       falls back to and the freeze would come with it. */
+    if (i > 0) {
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    }
+
     if (!el) throw new Error(`Page ${i + 1} of ${pages.length} (${type}) did not render — export aborted.`);
 
     const rect = el.getBoundingClientRect();
