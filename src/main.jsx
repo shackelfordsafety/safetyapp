@@ -8,6 +8,7 @@ import './incident/incident.css';
 import './voice/voice.css';
 import SpeakButton from './voice/SpeakButton';
 import CrewSignInKiosk from './jsa/CrewSignInKiosk';
+import { handOffDraft, readLastFinished } from './shared/handOff';
 import { SITE_TYPES, packFor, withSitePack } from './jsa/sitePacks';
 import { emptyIncident, hasMeaningfulIncidentContent, incidentStepProgress, incidentNextStepHint, isIncidentReady, isIncidentPrintFinal, migrateIncidentShape } from './incident/incidentModel';
 import { loadIncidentDraft, saveIncidentDraft, clearIncidentDraft, upsertIncidentRecord } from './incident/incidentStorage';
@@ -1980,16 +1981,63 @@ function App() {
   // work... if the JSA is not changing"). Reuses makeTodayFromTemplate's
   // exact reset shape -- the saved draft is treated as an implicit,
   // unnamed template.
+  /* What "Repeat Last JSA" reads. It used to read the saved DRAFT, which
+     stopped working the moment publishing began clearing the draft -- so
+     it now prefers the snapshot taken at hand-off and falls back to the
+     draft, which is what a device that has not published anything yet
+     still has. Fonzo's shape, 2026-09-11: "once i publish to the board,
+     the draft goes away and i have to hit start a new JSA and THAT is
+     where u get 'same info as before?'". */
+  const lastJsaForRepeat = readLastFinished('jsa')?.model || savedDraft;
+
+  /* Publishing to the board is a hand-off: the JSA stops being this
+     device's unfinished work and becomes something a crew is signing.
+     Keeping a draft afterwards is what had a clerk staring at a document
+     he had already sent up, thinking he still owed somebody something.
+
+     Storage AND state, in that order -- leaving the React state alone
+     would let the 900ms autosave write the draft straight back. */
+  function handOffJsaAfterPublish() {
+    handOffDraft('jsa', jsa);
+    setJsa(emptyJsa());
+    setSavedDraft(null);
+    setTemplateId('blank-jsa');
+    setPdfExportState(null);
+    goToBoard();
+    showToast('Published. It is on your board now — start a new JSA when you need one.');
+  }
+
+  /* Submitting one of the five for review is the same hand-off publishing
+     is for a JSA: it leaves the device. Storage AND state, because the
+     900ms autosave would otherwise write the draft back from memory a
+     moment later and the whole thing would look like it had not worked.
+
+     Takes the model the button actually sent, not this component's copy of
+     it -- they are the same value, but reading it from the caller means a
+     re-render in between cannot make them differ. */
+  function handOffAfterSubmit(docType) {
+    return (submittedModel) => {
+      handOffDraft(docType, submittedModel);
+      if (docType === 'incident') resetIncidentToBlank();
+      else if (docType === 'disciplinary') disciplinary.resetToBlank();
+      else if (docType === 'uncontrolledEvent') uncontrolledEvent.resetToBlank();
+      else if (docType === 'medicalEvent') medicalEvent.resetToBlank();
+      else if (docType === 'separation') separation.resetToBlank();
+      goHome();
+      showToast('Sent for review. It has left this device — check My Work to see where it got to.');
+    };
+  }
+
   function repeatLastJsa() {
-    if (!savedDraft) return;
-    const next = makeTodayFromTemplate(savedDraft);
+    if (!lastJsaForRepeat) return;
+    const next = makeTodayFromTemplate(lastJsaForRepeat);
     setJsa(next);
     setTemplateId('blank-jsa');
     goJsa('job');
     showToast('Started a new JSA using the last one’s job info and tasks.');
   }
   function requestRepeatLastJsa() {
-    if (!savedDraft) return;
+    if (!lastJsaForRepeat) return;
     if (hasMeaningfulJsaContent(jsa)) { setConfirmReplace({ action: 'repeat' }); return; }
     repeatLastJsa();
   }
@@ -2545,13 +2593,13 @@ function App() {
             />
           )}
           {tab === 'documents' && activeDoc === 'jsa-start' && (
-            <JsaStartView allTemplates={allTemplates} selectedTemplate={selectedTemplate} templateId={templateId} setTemplateId={setTemplateId} loadTemplate={requestLoadTemplate} loadSavedDraft={loadSavedDraft} startBlank={requestStartBlank} repeatLastJsa={requestRepeatLastJsa} savedDraft={savedDraft} />
+            <JsaStartView allTemplates={allTemplates} selectedTemplate={selectedTemplate} templateId={templateId} setTemplateId={setTemplateId} loadTemplate={requestLoadTemplate} loadSavedDraft={loadSavedDraft} startBlank={requestStartBlank} repeatLastJsa={requestRepeatLastJsa} savedDraft={savedDraft} lastFinished={lastJsaForRepeat} />
           )}
           {tab === 'documents' && activeDoc === 'jsa' && (
             <JsaWorkflow
               jsa={jsa} upd={upd} jsaStep={jsaStep} setJsaStep={setJsaStep}
               goDocs={goDocs} goJsaStart={goJsaStart}
-              onPublished={goToBoard}
+              onPublished={handOffJsaAfterPublish}
               allTemplates={allTemplates} templateId={templateId} setTemplateId={setTemplateId} selectedTemplate={selectedTemplate} loadTemplate={loadTemplate}
               saveName={saveName} setSaveName={setSaveName} saveTemplate={saveTemplate} updateTemplate={updateTemplate}
               updRow={updRow} removeRow={removeRow}
@@ -2563,6 +2611,7 @@ function App() {
           )}
           {tab === 'documents' && activeDoc === 'incident' && (
             <IncidentWorkflow
+              onHandedOff={handOffAfterSubmit('incident')}
               incident={incident} setIncident={setIncident} step={incidentStep} setStep={setIncidentStep}
               goDocs={goDocs} saveStatus={incidentSaveStatusLabel} saveStatusState={incidentSaveStatus} onSaveNow={saveIncidentNow}
               pdfExportState={incidentPdfExportState} isPdfStale={isIncidentPdfStale}
@@ -2572,6 +2621,7 @@ function App() {
           )}
           {tab === 'documents' && activeDoc === 'disciplinary' && (
             <DisciplinaryWorkflow
+              onHandedOff={handOffAfterSubmit('disciplinary')}
               model={disciplinary.model} upd={disciplinary.upd} step={disciplinary.step} setStep={disciplinary.setStep}
               goDocs={goDocs} saveStatus={saveStatusLabel(disciplinary.saveStatus, disciplinary.model.lastSavedAt)}
               saveStatusState={disciplinary.saveStatus} onSaveNow={disciplinary.saveNow}
@@ -2582,6 +2632,7 @@ function App() {
           )}
           {tab === 'documents' && activeDoc === 'uncontrolledEvent' && (
             <UncontrolledEventWorkflow
+              onHandedOff={handOffAfterSubmit('uncontrolledEvent')}
               model={uncontrolledEvent.model} upd={uncontrolledEvent.upd} step={uncontrolledEvent.step} setStep={uncontrolledEvent.setStep}
               goDocs={goDocs} saveStatus={saveStatusLabel(uncontrolledEvent.saveStatus, uncontrolledEvent.model.lastSavedAt)}
               saveStatusState={uncontrolledEvent.saveStatus} onSaveNow={uncontrolledEvent.saveNow}
@@ -2592,6 +2643,7 @@ function App() {
           )}
           {tab === 'documents' && activeDoc === 'medicalEvent' && (
             <MedicalEventWorkflow
+              onHandedOff={handOffAfterSubmit('medicalEvent')}
               model={medicalEvent.model} upd={medicalEvent.upd} step={medicalEvent.step} setStep={medicalEvent.setStep}
               goDocs={goDocs} saveStatus={saveStatusLabel(medicalEvent.saveStatus, medicalEvent.model.lastSavedAt)}
               saveStatusState={medicalEvent.saveStatus} onSaveNow={medicalEvent.saveNow}
@@ -2602,6 +2654,7 @@ function App() {
           )}
           {tab === 'documents' && activeDoc === 'separation' && (
             <SeparationWorkflow
+              onHandedOff={handOffAfterSubmit('separation')}
               model={separation.model} upd={separation.upd} step={separation.step} setStep={separation.setStep}
               goDocs={goDocs} saveStatus={saveStatusLabel(separation.saveStatus, separation.model.lastSavedAt)}
               saveStatusState={separation.saveStatus} onSaveNow={separation.saveNow}
@@ -2936,7 +2989,7 @@ function DocCenterView({ startHandlers, onImportFile }) {
 }
 
 /* ── JSA start / launcher ── */
-function JsaStartView({ allTemplates, selectedTemplate, templateId, setTemplateId, loadTemplate, loadSavedDraft, startBlank, repeatLastJsa, savedDraft }) {
+function JsaStartView({ allTemplates, selectedTemplate, templateId, setTemplateId, loadTemplate, loadSavedDraft, startBlank, repeatLastJsa, savedDraft, lastFinished }) {
   return (
     <div className="sectionStack">
       <div className="sectionTitle">
@@ -2960,9 +3013,15 @@ function JsaStartView({ allTemplates, selectedTemplate, templateId, setTemplateI
                 JSA, not a saved template, so it needs nothing set up ahead
                 of time -- reuses the exact same day-reset makeTodayFromTemplate
                 applies when loading a real template. */}
-            <button className="launchChoice" onClick={repeatLastJsa} disabled={!savedDraft} style={{ opacity: savedDraft ? 1 : .65 }}>
-              <strong>Repeat Last JSA</strong>
-              <p>{savedDraft ? 'Same job info, tasks, hazards, and controls as the last JSA — date, tailgate topic, and signatures reset for today.' : 'No previous JSA found on this device.'}</p>
+            {/* Reads the snapshot taken when the last JSA was published,
+                not the draft -- publishing clears the draft now, and this
+                is the "same info as before?" moment Fonzo asked for:
+                "once i publish to the board, the draft goes away and i
+                have to hit start a new JSA and THAT is where u get 'same
+                info as before?' yes or no". */}
+            <button className="launchChoice" onClick={repeatLastJsa} disabled={!lastFinished} style={{ opacity: lastFinished ? 1 : .65 }}>
+              <strong>Same info as last time?</strong>
+              <p>{lastFinished ? 'Same job info, tasks, hazards, and controls as the last JSA — date, tailgate topic, and signatures reset for today.' : 'No previous JSA found on this device.'}</p>
             </button>
             <button className="launchChoice" onClick={loadSavedDraft} style={{ opacity: savedDraft ? 1 : .65 }}>
               <strong>Continue Draft</strong>

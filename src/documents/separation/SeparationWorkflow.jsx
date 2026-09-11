@@ -178,7 +178,7 @@ function StepSignatures({ model, upd, prev, next }) {
 /* ── Top-level workflow shell ── */
 export default function SeparationWorkflow({
   model, upd, step, setStep, goDocs, saveStatus, saveStatusState, onSaveNow,
-  pdfExportState, isPdfStale, onGeneratePdf, onDownload, onMarkReady, onMarkIncomplete, onStartNew,
+  pdfExportState, isPdfStale, onGeneratePdf, onDownload, onMarkReady, onMarkIncomplete, onStartNew, onHandedOff,
 }) {
   const idx = SEPARATION_STEPS.findIndex(s => s.id === step);
   function prev() { if (idx > 0) setStep(SEPARATION_STEPS[idx - 1].id); }
@@ -256,6 +256,7 @@ export default function SeparationWorkflow({
                 onGeneratePdf={onGeneratePdf}
                 onDownload={onDownload}
                 archiveFiling={{ docType: 'separation', model }}
+                onHandedOff={onHandedOff}
                 onStartNew={onStartNew}
                 startNewLabel="Start a new separation record"
                 onExportDraft={() => downloadDraftFile('separation', model, buildDraftFilename(model.employeeName, 'Separation', model.effectiveSeparationDate))}

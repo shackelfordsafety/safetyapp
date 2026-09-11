@@ -142,7 +142,7 @@ function StepSignatures({ model, upd, prev, next }) {
 /* ── Top-level workflow shell ── */
 export default function UncontrolledEventWorkflow({
   model, upd, step, setStep, goDocs, saveStatus, saveStatusState, onSaveNow,
-  pdfExportState, isPdfStale, onGeneratePdf, onDownload, onMarkReady, onMarkIncomplete, onStartNew,
+  pdfExportState, isPdfStale, onGeneratePdf, onDownload, onMarkReady, onMarkIncomplete, onStartNew, onHandedOff,
 }) {
   const idx = UNCONTROLLED_EVENT_STEPS.findIndex(s => s.id === step);
   function prev() { if (idx > 0) setStep(UNCONTROLLED_EVENT_STEPS[idx - 1].id); }
@@ -219,6 +219,7 @@ export default function UncontrolledEventWorkflow({
                 onGeneratePdf={onGeneratePdf}
                 onDownload={onDownload}
                 archiveFiling={{ docType: 'uncontrolledEvent', model }}
+                onHandedOff={onHandedOff}
                 onStartNew={onStartNew}
                 startNewLabel="Start a new uncontrolled event report"
                 onExportDraft={() => downloadDraftFile('uncontrolledEvent', model, buildDraftFilename(model.workplaceLocation, 'Uncontrolled Event', model.eventDate))}

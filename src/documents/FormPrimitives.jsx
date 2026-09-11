@@ -352,7 +352,7 @@ export function ReviewExportPanel({
      record that gets stored, so there is nothing to file before then.
      Documents that don't pass it simply don't show the action, which is how
      this gets adopted one form at a time. */
-  archiveFiling,
+  archiveFiling, onHandedOff,
 }) {
 
   const isGenerating = pdfExportState?.phase === 'generating';
@@ -418,6 +418,7 @@ export function ReviewExportPanel({
               pdfBlob={isReady && !isPdfStale ? pdfExportState.blob : null}
               ensurePdf={onGeneratePdf}
               disabled={!checklistComplete}
+              onHandedOff={onHandedOff}
             />
             {!checklistComplete && (
               <p className="helperText">Finish the list above before sending it up.</p>

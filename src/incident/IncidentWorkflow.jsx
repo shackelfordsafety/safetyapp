@@ -456,7 +456,7 @@ function StepNotes({ incident, upd, prev, next }) {
 }
 
 /* ── Step: Review & Export ── */
-function StepReview({ incident, prev, pdfExportState, isPdfStale, onGeneratePdf, onDownload, onMarkReady, onMarkIncomplete, onStartNew, setStep }) {
+function StepReview({ incident, prev, pdfExportState, isPdfStale, onGeneratePdf, onDownload, onMarkReady, onMarkIncomplete, onStartNew, setStep, onHandedOff }) {
   const c = t.review;
   const checks = getIncidentReadinessChecks(incident);
   const checklistComplete = isIncidentReady(incident);
@@ -529,6 +529,7 @@ function StepReview({ incident, prev, pdfExportState, isPdfStale, onGeneratePdf,
           pdfBlob={isReady && !isPdfStale ? pdfExportState.blob : null}
           ensurePdf={onGeneratePdf}
           disabled={!checklistComplete}
+          onHandedOff={onHandedOff}
         />
         {!checklistComplete && (
           <p className="helperText">Finish the list above before sending it up.</p>
@@ -581,7 +582,7 @@ function StepReview({ incident, prev, pdfExportState, isPdfStale, onGeneratePdf,
 /* ── Top-level workflow shell ── */
 export default function IncidentWorkflow({
   incident, setIncident, step, setStep, goDocs, saveStatus, saveStatusState, onSaveNow,
-  pdfExportState, isPdfStale, onGeneratePdf, onDownload, onMarkReady, onMarkIncomplete, onStartNew, showToast,
+  pdfExportState, isPdfStale, onGeneratePdf, onDownload, onMarkReady, onMarkIncomplete, onStartNew, showToast, onHandedOff,
 }) {
   const idx = INCIDENT_STEPS.findIndex(s => s.id === step);
   const isReviewStep = step === 'review';
@@ -659,6 +660,7 @@ export default function IncidentWorkflow({
                 onGeneratePdf={onGeneratePdf}
                 onDownload={onDownload}
                 onMarkReady={onMarkReady}
+                onHandedOff={onHandedOff}
                 onMarkIncomplete={onMarkIncomplete}
                 onStartNew={onStartNew}
                 setStep={setStep}

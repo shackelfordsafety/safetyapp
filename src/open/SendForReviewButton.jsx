@@ -38,7 +38,7 @@ const GOES_TO = {
   jsa: 'a PM or an owner',
 };
 
-export default function SendForReviewButton({ docType, model, pdfBlob, ensurePdf, disabled }) {
+export default function SendForReviewButton({ docType, model, pdfBlob, ensurePdf, disabled, onHandedOff }) {
   const [phase, setPhase] = useState('idle'); // idle | needsSignIn | working | making | sent | error
   const [message, setMessage] = useState('');
   const [note, setNote] = useState('');
@@ -74,6 +74,16 @@ export default function SendForReviewButton({ docType, model, pdfBlob, ensurePdf
            make two documents. */
         const { id } = await mod.shareOpenDocument({ id: null, docType, model });
         await mod.submitForSignOff({ id, pdfBlob: blob, note });
+        /* Hand it off. It stops being this device's unfinished work the
+           moment somebody else owns what happens next -- Fonzo, 2026-09-11,
+           after a clerk kept seeing a form he had already sent up and kept
+           thinking he still owed somebody something: "soon as someone hits
+           submit for review or whatever, it needs to disappear".
+
+           The caller clears the workflow's own state too; storage alone is
+           not enough, because the 900ms autosave would write the draft
+           straight back from memory. */
+        onHandedOff?.(model);
         setPhase('sent');
       } catch (err) {
         if (err instanceof mod.NotSignedInError || err?.name === 'NotSignedInError') {
@@ -107,8 +117,9 @@ export default function SendForReviewButton({ docType, model, pdfBlob, ensurePdf
       <div className="archiveFiled">
         <strong>Sent for review</strong>
         <span>
-          It&apos;s now waiting on {goesTo}. You&apos;ll see it under My Work until
-          they file it. If something needs fixing they&apos;ll send it back with a reason.
+          It&apos;s with {goesTo} now and it has left this device, so there is
+          nothing more for you to do with it. You can see where it got to under
+          My Work.
         </span>
       </div>
     );
@@ -155,8 +166,8 @@ export default function SendForReviewButton({ docType, model, pdfBlob, ensurePdf
       </button>
       {phase === 'error' && <p className="archiveError">{message}</p>}
       <p className="helperText">
-        Goes to {goesTo} to look over and file. Your copy on this device stays
-        exactly as it is, and nothing reaches the archive until they say so.
+        Goes to {goesTo} to look over and file. It leaves this device when you
+        send it &mdash; you can see where it got to under My Work.
       </p>
     </div>
   );

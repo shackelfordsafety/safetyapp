@@ -164,7 +164,7 @@ function StepSignatures({ model, upd, prev, next }) {
 /* ── Top-level workflow shell ── */
 export default function MedicalEventWorkflow({
   model, upd, step, setStep, goDocs, saveStatus, saveStatusState, onSaveNow,
-  pdfExportState, isPdfStale, onGeneratePdf, onDownload, onMarkReady, onMarkIncomplete, onStartNew,
+  pdfExportState, isPdfStale, onGeneratePdf, onDownload, onMarkReady, onMarkIncomplete, onStartNew, onHandedOff,
 }) {
   const idx = MEDICAL_EVENT_STEPS.findIndex(s => s.id === step);
   function prev() { if (idx > 0) setStep(MEDICAL_EVENT_STEPS[idx - 1].id); }
@@ -241,6 +241,7 @@ export default function MedicalEventWorkflow({
                 onGeneratePdf={onGeneratePdf}
                 onDownload={onDownload}
                 archiveFiling={{ docType: 'medicalEvent', model }}
+                onHandedOff={onHandedOff}
                 onStartNew={onStartNew}
                 startNewLabel="Start a new medical event report"
                 onExportDraft={() => downloadDraftFile('medicalEvent', model, buildDraftFilename(model.employeeName, 'Medical Event', model.eventDate))}
