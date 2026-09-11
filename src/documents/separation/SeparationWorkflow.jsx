@@ -162,9 +162,24 @@ function StepReview({ checks, prev, next, onJumpCheck }) {
 /* ── Step: Signature — supervisor only. Employee and HR always sign the
    printed copy by hand (Fonzo, 2026-08-29: "the only thing i wanted
    digitized is the superintendent, foreman, safety parts"). ── */
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/* What the witness is actually attesting to. A signature under the word
+   "Witness" proves nothing on its own -- it has to say what was witnessed,
+   or it is worth nothing the day somebody disputes the separation. */
+function witnessStatementFor(model) {
+  const who = model.employeeName ? model.employeeName : 'the employee';
+  const outcome = model.employeeRefusedToSign
+    ? `${who} was informed and did not sign — refused or not available.`
+    : `${who} was informed and signed to acknowledge receipt.`;
+  return `I was present when this separation was discussed. ${outcome}`;
+}
+
 function StepSignatures({ model, upd, prev, next }) {
   return (
-    <StepPanel title="Signature" intro="Supervisor signs here. Employee and HR sign the printed copy by hand — this record always prints blank lines for both.">
+    <StepPanel title="Signatures" intro="Everyone signs here now — supervisor, employee, a witness who was in the room, and HR. Nothing has to be printed to be signed.">
       <div className="formPairRow">
         <SignaturePad label="Supervisor Signature" value={model.supervisorSignatureData} onChange={data => upd({ supervisorSignatureData: data, supervisorSignatureDate: data ? new Date().toISOString().slice(0, 10) : model.supervisorSignatureDate })} />
         <Field label="Supervisor Signature Date" type="date" value={model.supervisorSignatureDate} onChange={v => upd({ supervisorSignatureDate: v })} />
@@ -191,13 +206,53 @@ function StepSignatures({ model, upd, prev, next }) {
         employee&apos;s line instead of a blank one, so the printed record says why it is empty.
       </p>
 
-      <div className="paperSignNote">
-        <strong>Before you submit this</strong>
-        <span>
-          Only the supervisor signature is captured in the app. <strong>You and the employee
-          sign the paper copy by hand</strong> — download it from the Submit step and print it.
-          That is deliberate; an employee signature has to be witnessed on paper.
-        </span>
+      {/* Employee signature. Acknowledges receipt, not agreement -- the
+          printed form says so in as many words, and so does this. */}
+      {!model.employeeRefusedToSign && (
+        <div className="formPairRow">
+          <SignaturePad
+            label="Employee Signature"
+            value={model.employeeSignatureData}
+            onChange={data => upd({ employeeSignatureData: data, employeeSignatureDate: data ? today() : model.employeeSignatureDate })}
+          />
+          <Field label="Employee Signature Date" type="date" value={model.employeeSignatureDate} onChange={v => upd({ employeeSignatureDate: v })} />
+        </div>
+      )}
+      <p className="helperText">
+        Signing acknowledges <strong>receipt</strong> of this notice. It does not mean the
+        employee agrees with it, and the printed form says so.
+      </p>
+
+      {/* The witness. Fonzo, 2026-09-11: "if the employee doesn't sign, the
+          witness was there." Another Shackelford person who was in the
+          room -- a clerk, a second supervisor -- not a third party.
+
+          The statement is written down at the moment it is signed, not
+          worked out at print time, because what somebody attested to must
+          not change later when a toggle above gets edited. */}
+      <div className="formPairRow">
+        <SignaturePad
+          label="Witness Signature"
+          value={model.witnessSignatureData}
+          onChange={data => upd({
+            witnessSignatureData: data,
+            witnessSignatureDate: data ? today() : model.witnessSignatureDate,
+            witnessStatement: data ? witnessStatementFor(model) : '',
+          })}
+        />
+        <Field label="Witness Name and Title" value={model.witnessName} onChange={v => upd({ witnessName: v })} />
+      </div>
+      <p className="helperText">
+        {witnessStatementFor(model)}
+      </p>
+
+      <div className="formPairRow">
+        <SignaturePad
+          label="HR / Management Signature"
+          value={model.hrSignatureData}
+          onChange={data => upd({ hrSignatureData: data, hrSignatureDate: data ? today() : model.hrSignatureDate })}
+        />
+        <Field label="HR Signature Date" type="date" value={model.hrSignatureDate} onChange={v => upd({ hrSignatureDate: v })} />
       </div>
 
       <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Submit" />

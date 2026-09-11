@@ -3515,3 +3515,34 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   .mainJsaPage .taskTableFill .printTaskTable { height: 100%; }
   .printTaskTable tbody, .printTaskTable tbody tr { height: 100%; }
 }
+
+/* ── "Something is waiting on you" ───────────────────────────────────────
+   A count on the My Work button, visible from every screen. The review
+   queue worked all day 2026-09-11 and nobody knew anything was in it --
+   HR only learned a separation form was waiting because Fonzo rang her.
+
+   Red, and red means act: it only ever counts things that are genuinely
+   this person's move (see useWaitingCount). A badge that includes things
+   you cannot do anything about is a badge people stop seeing. */
+.navBadge {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink, #fff);
+  font-family: var(--font-condensed);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 0 0 2px var(--bg);
+}
+.sidebarNavItem { position: relative; }
+.mobileNavItem { position: relative; }
+.navBadge--mobile { top: 4px; right: 50%; transform: translateX(18px); }

@@ -118,6 +118,25 @@ export function emptySeparation() {
     hrSignatureData: null,
     hrSignatureDate: '',
 
+    /* The witness. Fonzo, 2026-09-11, reversing the paper-only rule for
+       this document: "we can have employee. We can have an HR one. Then we
+       can have a witness... let's say a superintendent is firing somebody,
+       the clerk can be the witness to the firing."
+
+       This exists so a refused or absent employee signature does not leave
+       the record bare -- which is the normal case, not the edge one. It is
+       another Shackelford person who was in the room, explicitly not a
+       third party.
+
+       witnessStatement is deliberately stored rather than derived at print
+       time: what the witness attested to is a fact about that moment, and
+       it must not silently change later because somebody edited the
+       employee-signed toggle afterwards. */
+    witnessName: '',
+    witnessSignatureData: null,
+    witnessSignatureDate: '',
+    witnessStatement: '',
+
     notes: '',
   };
 }

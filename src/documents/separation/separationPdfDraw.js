@@ -108,6 +108,25 @@ export async function drawSeparationPdf(model, onProgress) {
     },
   ]);
 
+  /* The witness, and what they actually witnessed. Printed only when
+     somebody signed as one -- an empty witness line on a separation that
+     did not need one just raises a question.
+
+     The statement matters more than the signature. A name under the word
+     "Witness" proves nothing; this says they were present, and whether the
+     employee signed, refused, or was not there. Stored on the model at the
+     moment of signing so it cannot drift if the form is edited after. */
+  if (model.witnessSignatureData || model.witnessName) {
+    doc.note(model.witnessStatement || 'I was present when this separation was discussed.');
+    doc.multiSignatureRow([
+      {
+        label: `Witness${model.witnessName ? ` — ${model.witnessName}` : ''}`,
+        image: await doc.embedSignature(model.witnessSignatureData),
+        dateValue: fmtDate(model.witnessSignatureDate),
+      },
+    ]);
+  }
+
   return doc.finish();
 }
 

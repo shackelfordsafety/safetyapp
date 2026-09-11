@@ -9,6 +9,7 @@ import './voice/voice.css';
 import SpeakButton from './voice/SpeakButton';
 import CrewSignInKiosk from './jsa/CrewSignInKiosk';
 import { handOffDraft, readLastFinished } from './shared/handOff';
+import useWaitingCount from './open/useWaitingCount';
 import { SITE_TYPES, packFor, withSitePack } from './jsa/sitePacks';
 import { emptyIncident, hasMeaningfulIncidentContent, incidentStepProgress, incidentNextStepHint, isIncidentReady, isIncidentPrintFinal, migrateIncidentShape } from './incident/incidentModel';
 import { loadIncidentDraft, saveIncidentDraft, clearIncidentDraft, upsertIncidentRecord } from './incident/incidentStorage';
@@ -1532,6 +1533,10 @@ function App() {
   const [savedDraft, setSavedDraft] = useState(() => safeJson(localStorage.getItem(KEYS.draft), null));
   const [jsa, setJsa] = useState(() => emptyJsa());
   const [tab, setTab] = useState('home');
+  /* How many things are actually somebody's move, on the My Work button,
+     visible from every screen. The review queue worked all day and nobody
+     knew anything was in it -- see useWaitingCount. */
+  const { count: waitingCount } = useWaitingCount();
   const [activeDoc, setActiveDoc] = useState(null); // null | 'jsa-start' | 'jsa' | 'incident'
   const [jsaStep, setJsaStep] = useState('job');
 
@@ -2683,6 +2688,7 @@ function App() {
             </button>
             <button className={`sidebarNavItem${tab === 'today' ? ' active' : ''}`} onClick={() => setTab('today')}>
               <IconDrafts className="sidebarNavIcon" /><span className="sidebarNavLabel">My Work</span>
+              {waitingCount > 0 && <span className="navBadge" aria-label={`${waitingCount} waiting on you`}>{waitingCount}</span>}
             </button>
             <button className={`sidebarNavItem${tab === 'board' ? ' active' : ''}`} onClick={() => setTab('board')}>
               <IconBoard className="sidebarNavIcon" /><span className="sidebarNavLabel">Sign-In</span>
@@ -2828,7 +2834,7 @@ function App() {
       </div>
 
       {!isDocFlow && (
-        <MobileBottomNav tab={tab} goHome={goHome} goDocs={goDocs} setTab={setTab} />
+        <MobileBottomNav tab={tab} goHome={goHome} goDocs={goDocs} setTab={setTab} waitingCount={waitingCount} />
       )}
 
       {confirmReplace && (
@@ -2871,7 +2877,7 @@ function App() {
    state and every route stay identical — this only changes which chrome
    renders them on a phone. Not rendered while a document flow is open;
    App only mounts it when !isDocFlow. */
-function MobileBottomNav({ tab, goHome, goDocs, setTab }) {
+function MobileBottomNav({ tab, goHome, goDocs, setTab, waitingCount = 0 }) {
   return (
     <nav className="mobileBottomNav" aria-label="Primary">
       <button className={`mobileNavItem${tab === 'home' ? ' active' : ''}`} onClick={goHome}>
@@ -2891,6 +2897,7 @@ function MobileBottomNav({ tab, goHome, goDocs, setTab }) {
           Templates button. */}
       <button className={`mobileNavItem${tab === 'today' ? ' active' : ''}`} onClick={() => setTab('today')}>
         <IconDrafts className="mobileNavIcon" /><span>My Work</span>
+        {waitingCount > 0 && <span className="navBadge navBadge--mobile" aria-label={`${waitingCount} waiting on you`}>{waitingCount}</span>}
       </button>
       <button className={`mobileNavItem${tab === 'board' ? ' active' : ''}`} onClick={() => setTab('board')}>
         <IconBoard className="mobileNavIcon" /><span>Sign-In</span>
