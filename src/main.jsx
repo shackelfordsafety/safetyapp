@@ -424,10 +424,26 @@ function printedCrewSignatures(jsa) {
   return Array.isArray(jsa?.crewSignatures) ? jsa.crewSignatures : [];
 }
 
+/* How many signature boxes actually get printed.
+
+   This used to be crew.length + signatureLineCount, which on a real JSA
+   meant 41 men who had signed on their phones PLUS 60 empty ruled lines --
+   101 boxes, four sign-in pages, nearly all of them blank. Fonzo,
+   2026-09-11: "boxes should only populate how many people signed the JSA
+   and not generate an extra 40 boxes or whatever."
+
+   The two routes are different documents and always were:
+
+     Signed on the board. The crew is known, by name or by number. Print
+     exactly who signed and nothing else -- blank lines under a digital
+     sign-in sheet are an invitation to add somebody who never signed.
+
+     Signed on paper. Nobody has signed yet and the whole point of the
+     sheet is ruled lines to sign ON, so print the number asked for. */
 function signInLineTotal(jsa) {
   const crew = printedCrewSignatures(jsa);
-  const extraBlank = Math.max(1, Math.min(100, Number(jsa.signatureLineCount) || 1));
-  return crew.length > 0 ? crew.length + extraBlank : extraBlank;
+  if (crew.length > 0) return crew.length;
+  return Math.max(1, Math.min(100, Number(jsa.signatureLineCount) || 1));
 }
 // Fixed, not fitted to whatever's left over: SIGNIN_ROW_HEIGHT_PX (defined
 // near the print geometry constants above) is a real, generous, known box a
