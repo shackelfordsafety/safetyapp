@@ -255,12 +255,23 @@ export default function CrewSignIn({ boardOwnerId }) {
           </div>
         )}
 
+        {/* A closed JSA is not signable any more (Fonzo, 2026-09-11: "no
+            point in signing when the work is done"), so it does not open.
+            It used to say Closed and then open the signing flow anyway,
+            which is the same lie the Finish step was telling -- a label
+            that says you cannot and a button that says you can.
+
+            It still shows, deliberately. A man scanning the QR needs to
+            see that the JSA he expected is there but finished, not an
+            empty list that looks like the code is broken. */}
         {status === 'ready' && rows.map(r => (
           <button
             key={r.id}
             type="button"
             className={`crewPick crewPick--${r.status}`}
-            onClick={() => { setPicked(r); setSigning(false); }}
+            disabled={r.status === 'closed'}
+            aria-disabled={r.status === 'closed'}
+            onClick={() => { if (r.status === 'closed') return; setPicked(r); setSigning(false); }}
           >
             <span className="crewPickTop">
               <strong>{r.area_label}</strong>
@@ -274,6 +285,13 @@ export default function CrewSignIn({ boardOwnerId }) {
                 ? ` · starts ${r.startsAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
                 : ''}
             </span>
+            {r.status === 'closed' && (
+              <span className="crewPickClosed">
+                {r.expires_at
+                  ? `Signing closed at ${new Date(r.expires_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}. Ask your superintendent for today's JSA.`
+                  : "Signing is closed. Ask your superintendent for today's JSA."}
+              </span>
+            )}
           </button>
         ))}
       </div>

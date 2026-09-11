@@ -298,9 +298,18 @@ export function boardStatus(row, live, now = new Date()) {
    was refused. Adding .select() here breaks signing for every real user
    while working fine for anyone signed in, which is the worst kind of bug.
 
-   Late signatures are recorded and flagged, never refused: turning away a
-   man at 3:45 for a JSA that expired at 3:30 leaves an unsigned worker on
-   the job, which is worse than a signature stamped late. */
+   SIGNING STOPS AT EXPIRY. This used to record late signatures and flag
+   them rather than refuse, on the reasoning that turning a man away at
+   3:45 for a JSA that expired at 3:30 leaves an unsigned worker on an
+   active job. Fonzo overruled that 2026-09-11 -- "no point in signing when
+   the work is done" -- and he is right that the better answer to work
+   running past its JSA is a new JSA, not a signature on a stale hazard
+   assessment. An expired JSA is a document whose hazards were assessed for
+   a window that has closed.
+
+   The database is what enforces it (see the migration); this refusal is
+   only the readable version of the same rule. The is_late column stays for
+   the signatures already recorded under the old behaviour. */
 export async function signPublication({ publicationId, signerName, signatureData, source = 'phone', expiresAt }) {
   blockInDemo(`Signing`);
   const id = (crypto.randomUUID && crypto.randomUUID())
@@ -314,7 +323,16 @@ export async function signPublication({ publicationId, signerName, signatureData
     source,
     is_late: expiresAt ? new Date() > new Date(expiresAt) : false,
   });
-  if (error) throw new Error(`Could not record your signature: ${error.message}`);
+  if (error) {
+    /* The database refuses a signature on an expired JSA. Postgres reports
+       that as a row-level-security violation, which to a man standing in a
+       parking lot reads like the app broke. Say what actually happened. */
+    const refused = /row-level security|violates row-level/i.test(error.message || '');
+    if (refused) {
+      throw new Error("This JSA has expired, so it can't be signed any more. Ask your superintendent for today's JSA.");
+    }
+    throw new Error(`Could not record your signature: ${error.message}`);
+  }
   return { id };
 }
 

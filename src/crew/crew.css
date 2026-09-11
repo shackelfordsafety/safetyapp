@@ -233,3 +233,17 @@
   border-top: 1px solid #D2D2D6;
 }
 .crewStickyBar .crewBtn { margin: 0; }
+
+/* A closed JSA still shows on the crew list -- a man who scans the QR
+   needs to see that the JSA he expected is there and finished, not an
+   empty screen that reads as broken. It just doesn't open any more, and
+   it says why and what to do instead. */
+.crewPick:disabled { cursor: default; opacity: 0.72; }
+.crewPickClosed {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 600;
+  color: var(--crew-closed-note, #7A2E2E);
+}
