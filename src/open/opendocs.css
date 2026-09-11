@@ -1,0 +1,4 @@
+
+/* Embedded as a section of My Work rather than its own destination.
+   Drops the page padding and leans on My Work's own section rhythm. */
+.odEmbedded { display: flex; flex-direction: column; gap: 8px; }

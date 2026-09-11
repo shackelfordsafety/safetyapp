@@ -109,7 +109,11 @@ function Row({ row, me, onOpen, onHandOver, onSignOff, onSendBack, onAbandon, bu
   );
 }
 
-export default function OpenDocsView({ onPickUp }) {
+/* `embedded` drops the page wrapper and its own heading so this can be a
+   SECTION of My Work rather than a sixth place to go. Fonzo asked for
+   fewer destinations, not more, and "documents waiting on me" is not a
+   different errand from "my work" -- it is the first thing on it. */
+export default function OpenDocsView({ onPickUp, embedded = false }) {
   const [state, setState] = useState('loading'); // loading | ready | signedout | error
   const [rows, setRows] = useState([]);
   const [me, setMe] = useState(null);
@@ -173,7 +177,11 @@ export default function OpenDocsView({ onPickUp }) {
     }
   }
 
+  /* Embedded inside My Work, a signed-out state is noise -- that screen
+     already says to sign in, and repeating it twice on one page reads like
+     something is broken. */
   if (state === 'signedout') {
+    if (embedded) return null;
     return (
       <div className="page">
         <div className="odEmpty">
@@ -184,15 +192,23 @@ export default function OpenDocsView({ onPickUp }) {
     );
   }
 
+  /* Nothing waiting and nothing shared is the normal state for most
+     people most days. As a section of a bigger screen it should simply not
+     be there, rather than taking up room to say so. */
+  if (embedded && state === 'ready' && rows.length === 0) return null;
+
+
   return (
-    <div className="page">
-      <div className="odHead">
-        <div>
-          <h2>Open</h2>
-          <p>Started and not finished. Anything waiting on you is at the top.</p>
+    <div className={embedded ? 'odEmbedded' : 'page'}>
+      {!embedded && (
+        <div className="odHead">
+          <div>
+            <h2>Open</h2>
+            <p>Started and not finished. Anything waiting on you is at the top.</p>
+          </div>
+          <button type="button" className="btn ghost sm" onClick={load} disabled={busy}>Refresh</button>
         </div>
-        <button type="button" className="btn ghost sm" onClick={load} disabled={busy}>Refresh</button>
-      </div>
+      )}
 
       {error && <div className="archiveError">{error}</div>}
       {state === 'loading' && <p className="helperText">Loading…</p>}

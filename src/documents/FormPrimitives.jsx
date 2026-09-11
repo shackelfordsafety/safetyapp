@@ -3,6 +3,7 @@ import SignaturePad from '../incident/SignaturePad';
 import { useLocked } from './lockedContext';
 import SpeakButton from '../voice/SpeakButton';
 import FileToArchiveButton from '../archive/FileToArchiveButton';
+import SendForReviewButton from '../open/SendForReviewButton';
 import { ARCHIVE_FILING_ENABLED } from '../archive/filingEnabled';
 
 /* ── Shared field-section/builder primitives for the four new documents ──
@@ -434,6 +435,16 @@ export function ReviewExportPanel({
             <p className="helperText pdfReadyHelper">Download the document, then open it to print.</p>
             {ARCHIVE_FILING_ENABLED && archiveFiling && (
               <FileToArchiveButton
+                docType={archiveFiling.docType}
+                model={archiveFiling.model}
+                pdfBlob={pdfExportState.blob}
+              />
+            )}
+            {/* The route that replaces filing for everybody who is not a
+                PM, HR or an owner -- which is everybody who actually
+                writes these. Send it up; they file it. */}
+            {archiveFiling && (
+              <SendForReviewButton
                 docType={archiveFiling.docType}
                 model={archiveFiling.model}
                 pdfBlob={pdfExportState.blob}

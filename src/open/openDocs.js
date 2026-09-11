@@ -1,6 +1,5 @@
 import { db } from '../archive/archiveClient';
 import { blockInDemo } from '../shared/demoMode';
-import { ARCHIVE_FILING_ENABLED } from '../archive/filingEnabled';
 
 /* ── Documents that aren't finished yet ──────────────────────────────────
    The in-between that did not exist: a document was either on one man's
@@ -329,12 +328,18 @@ export async function signOffAndFile(id) {
     throw new Error('That one has not been submitted for sign-off yet.');
   }
 
-  /* Same gate the workflows sit behind. Sign-off is exactly the door this
-     flag was waiting on -- but turning it on is Fonzo's call, not a side
-     effect of this function existing. See filingEnabled.js. */
-  if (row.doc_type !== 'jsa' && !ARCHIVE_FILING_ENABLED) {
-    throw new Error('Filing to the archive is switched off for now. Download or print it — nothing is lost.');
-  }
+  /* Deliberately NOT gated on ARCHIVE_FILING_ENABLED. That flag hides the
+     "File to the archive" button inside the workflows, and it exists
+     because Fonzo asked (2026-09-10) to take direct filing away from the
+     five non-JSA documents "until open documents exists". This is open
+     documents existing. Filing through a review is the thing the flag was
+     holding the door for; filing straight from the form is still hidden.
+
+     What actually stops the wrong person filing is not this flag anyway --
+     it is can_file_doc_type() in the database, which allows incident,
+     medical and uncontrolled to PM/HR/owner and disciplinary/separation to
+     HR/owner, and refuses everybody else including safety. A tampered
+     client cannot get past it. */
 
   const { error: insertError } = await db.from('documents').insert({
     doc_type: row.doc_type,

@@ -13,6 +13,7 @@ import { LockedContext, useLocked } from '../documents/lockedContext';
 import { ConfirmDialog, StepNav } from '../documents/FormPrimitives';
 import SpeakButton from '../voice/SpeakButton';
 import FileToArchiveButton from '../archive/FileToArchiveButton';
+import SendForReviewButton from '../open/SendForReviewButton';
 import { ARCHIVE_FILING_ENABLED } from '../archive/filingEnabled';
 import { downloadDraftFile, buildDraftFilename } from '../shared/draftTransfer';
 
@@ -548,6 +549,10 @@ function StepReview({ incident, prev, pdfExportState, isPdfStale, onGeneratePdf,
             {ARCHIVE_FILING_ENABLED && (
               <FileToArchiveButton docType="incident" model={incident} pdfBlob={pdfExportState.blob} />
             )}
+            {/* The route that replaces filing for everybody who is not a
+                PM, HR or an owner -- which is everybody who actually
+                writes these. Send it up; they file it. */}
+            <SendForReviewButton docType="incident" model={incident} pdfBlob={pdfExportState.blob} />
           </div>
         )}
       </div>

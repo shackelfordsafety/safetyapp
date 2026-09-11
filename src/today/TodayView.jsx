@@ -1,9 +1,13 @@
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { fetchFiledToday, signedUrlFor } from '../archive/fileToArchive';
 import { fetchMyBoard } from '../crew/board';
 import JsaContents from '../crew/JsaContents';
 import './today.css';
 import HelpButton from '../shared/HelpButton';
+
+/* Lazy, like everything that talks to the cloud, so a superintendent
+   building a JSA in a dead zone never downloads it. */
+const OpenDocsView = lazy(() => import('../open/OpenDocsView'));
 
 /* ── Today ───────────────────────────────────────────────────────────────
    Everything from this morning in one place. Fonzo, 2026-09-09: "maybe we
@@ -141,6 +145,15 @@ export default function TodayView({ entries = [], goDocs }) {
         </div>
         <p>What you started and what you finished. Older paperwork lives in Records.</p>
       </div>
+
+      {/* Documents the company has going, and anything waiting on YOU to
+          sign off, above your own local work. A PM opening this at 7am
+          should see the two reports he has to approve before he sees his
+          own drafts. Renders nothing at all when there is nothing there,
+          which is most people most days. */}
+      <Suspense fallback={null}>
+        <OpenDocsView embedded onPickUp={goDocs} />
+      </Suspense>
 
       <Section label="Still open" count={stillOpen.length}>
         {stillOpen.length ? (
