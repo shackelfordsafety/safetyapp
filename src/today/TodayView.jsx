@@ -8,6 +8,7 @@ import HelpButton from '../shared/HelpButton';
 /* Lazy, like everything that talks to the cloud, so a superintendent
    building a JSA in a dead zone never downloads it. */
 const OpenDocsView = lazy(() => import('../open/OpenDocsView'));
+const ChangeNotices = lazy(() => import('../open/ChangeNotices'));
 
 /* ── Today ───────────────────────────────────────────────────────────────
    Everything from this morning in one place. Fonzo, 2026-09-09: "maybe we
@@ -145,6 +146,13 @@ export default function TodayView({ entries = [], goDocs }) {
         </div>
         <p>What you started and what you finished. Older paperwork lives in Records.</p>
       </div>
+
+      {/* Above everything, including the review queue: if an approver
+          reworded your report, that is the one thing on this screen you
+          did not already know. */}
+      <Suspense fallback={null}>
+        <ChangeNotices />
+      </Suspense>
 
       {/* Documents the company has going, and anything waiting on YOU to
           sign off, above your own local work. A PM opening this at 7am

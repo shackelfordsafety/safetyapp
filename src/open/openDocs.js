@@ -341,7 +341,7 @@ export async function signOffAndFile(id) {
      HR/owner, and refuses everybody else including safety. A tampered
      client cannot get past it. */
 
-  const { error: insertError } = await db.from('documents').insert({
+  const { data: filed, error: insertError } = await db.from('documents').insert({
     doc_type: row.doc_type,
     submitted_by: user.id,
     employee_name: blank(row.employee_name),
@@ -350,10 +350,105 @@ export async function signOffAndFile(id) {
     data: row.data,
     client_doc_id: row.client_doc_id || null,
     pdf_path: row.pdf_path || null,
-  });
+  }).select('id').single();
   if (insertError) throw new Error(`Could not file it: ${insertError.message}`);
 
+  /* Point any outstanding change notices at the filed document before the
+     open row disappears. The author may not look at his phone until after
+     this has happened, and a notice that says "somebody changed your
+     report" with nothing to point at is worse than none. Best effort: the
+     document IS filed, and failing to re-link a notice must not make that
+     look like it failed. */
+  if (filed?.id) {
+    try {
+      /* Through an RPC, not a direct update: the UPDATE policy on
+         document_edits allows only the AUTHOR, and the person filing is
+         the approver. A direct update matches no rows and returns clean --
+         a silent no-op. See the link_edit_notices_to_filed migration. */
+      await db.rpc('link_edits_to_filed', { open_id: id, filed_id: filed.id });
+    } catch { /* the notice still carries what changed and who changed it */ }
+  }
+
   await closeAfterFiling(id);
+}
+
+/* ── The approver's own edits ────────────────────────────────────────────
+   The approver is the end of the line -- Fonzo, 2026-09-11: "if they make
+   changes the sender just hits got it and that's it. got it doesn't hold
+   up the document." So this records, it does not gate. Nothing here waits
+   on the author.
+
+   What it buys: a dated record of exactly which words moved, who moved
+   them, and when the man who wrote it was told. That is the answer to "I
+   never saw that". */
+
+export async function saveApproverEdit({ id, model }) {
+  blockInDemo('Editing a document');
+  const user = await requireUser();
+  const row = await getOpenDocument(id);
+
+  const { diffDocuments } = await import('./documentDiff');
+  const changes = diffDocuments(row.data, model);
+
+  /* Nothing actually moved -- save the document and record no notice. A
+     notice that says "changed nothing" trains people to ignore notices. */
+  const summarize = SUMMARY[row.doc_type];
+  const summary = summarize ? summarize(model || {}) : {};
+  const { error } = await db.from('open_documents').update({
+    data: model,
+    employee_name: blank(summary.employee_name),
+    job_site: blank(summary.job_site),
+    doc_date: blank(summary.doc_date),
+  }).eq('id', id);
+  if (error) throw new Error(`Could not save the change: ${error.message}`);
+
+  if (!changes.length) return { changes: [] };
+
+  /* Only tell the author if somebody ELSE changed it. A man does not need
+     notifying about his own typing. */
+  if (row.created_by && row.created_by !== user.id) {
+    const { error: noteError } = await db.from('document_edits').insert({
+      open_document_id: id,
+      doc_type: row.doc_type,
+      edited_by: user.id,
+      notify_user: row.created_by,
+      changes,
+    });
+    /* The edit itself is saved. Failing to record the notice must not
+       un-save it or look like the edit failed -- surfaced, not thrown. */
+    if (noteError) return { changes, noticeFailed: noteError.message };
+  }
+  return { changes };
+}
+
+/* What this person has been told about and not yet acknowledged. Drives
+   the banner at the top of My Work. */
+export async function myUnacknowledgedChanges() {
+  const user = await requireUser();
+  const { data, error } = await db
+    .from('document_edits')
+    .select('id, open_document_id, filed_document_id, doc_type, edited_by, edited_at, changes')
+    .eq('notify_user', user.id)
+    .is('acknowledged_at', null)
+    .order('edited_at', { ascending: false });
+  if (error) throw new Error(error.message);
+
+  const rows = data || [];
+  const names = await namesFor(rows.map(r => r.edited_by));
+  return rows.map(r => ({ ...r, editedByName: names[r.edited_by]?.full_name || 'an approver' }));
+}
+
+/* "Got it." The timestamp is stamped by the database, not sent from here,
+   so it cannot be back-dated -- see the only_acknowledgement_moves
+   trigger. */
+export async function acknowledgeChange(editId) {
+  blockInDemo('Acknowledging a change');
+  await requireUser();
+  const { error } = await db
+    .from('document_edits')
+    .update({ acknowledged_at: new Date().toISOString() })
+    .eq('id', editId);
+  if (error) throw new Error(`Could not mark it seen: ${error.message}`);
 }
 
 /* Once it is filed to the archive it is no longer open. Called after a
