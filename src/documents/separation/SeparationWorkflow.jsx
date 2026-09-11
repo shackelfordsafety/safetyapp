@@ -170,7 +170,37 @@ function StepSignatures({ model, upd, prev, next }) {
         <Field label="Supervisor Signature Date" type="date" value={model.supervisorSignatureDate} onChange={v => upd({ supervisorSignatureDate: v })} />
       </div>
       <Field label="HR / Management Name" value={model.hrName} onChange={v => upd({ hrName: v })} />
-      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Finish & Export" />
+
+      {/* The printed form has always been able to say "Refused /
+          Unavailable to Sign" in place of the employee's line -- see
+          separationPdfDraw -- and there has never been a way to switch it
+          on. Fonzo, 2026-09-11, after HR hit this on a real separation:
+          "if employee is not able to sign, should have a employee not
+          available button". It was built and unreachable. */}
+      <SegmentedToggle
+        label="Is the employee signing the printed copy?"
+        value={model.employeeRefusedToSign ? 'no' : 'yes'}
+        onChange={v => upd({ employeeRefusedToSign: v === 'no' })}
+        options={[
+          { value: 'yes', label: 'Yes — leave a blank line', tone: 'yes' },
+          { value: 'no', label: 'No — not available or refused', tone: 'no' },
+        ]}
+      />
+      <p className="helperText">
+        Choosing &ldquo;no&rdquo; prints <strong>Refused / Unavailable to Sign</strong> on the
+        employee&apos;s line instead of a blank one, so the printed record says why it is empty.
+      </p>
+
+      <div className="paperSignNote">
+        <strong>Before you submit this</strong>
+        <span>
+          Only the supervisor signature is captured in the app. <strong>You and the employee
+          sign the paper copy by hand</strong> — download it from the Submit step and print it.
+          That is deliberate; an employee signature has to be witnessed on paper.
+        </span>
+      </div>
+
+      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Submit" />
     </StepPanel>
   );
 }
@@ -243,7 +273,7 @@ export default function SeparationWorkflow({
             {step === 'signatures' && <StepSignatures model={model} upd={upd} prev={prev} next={next} />}
             {step === 'export' && (
               <ReviewExportPanel
-                title="Finish & Export"
+                title="Submit"
                 checks={checks}
                 checklistComplete={checklistComplete}
                 status={model.status}

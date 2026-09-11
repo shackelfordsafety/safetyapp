@@ -180,7 +180,7 @@ export const UNCONTROLLED_EVENT_STEPS = [
   { id: 'narrative', label: 'Narrative & Notifications', helper: 'What happened, and who was notified' },
   { id: 'review', label: 'Review', helper: 'Check everything before anyone signs' },
   { id: 'signatures', label: 'Signatures', helper: 'Reported By and Supervisor Review sign' },
-  { id: 'export', label: 'Finish & Export', helper: 'Save, generate, and download the PDF' },
+  { id: 'export', label: 'Submit', helper: 'Send it for review, or make a paper copy' },
 ];
 
 export function getUncontrolledEventReadinessChecks(model) {
@@ -230,7 +230,7 @@ export function uncontrolledEventStepProgress(model) {
 
 export function uncontrolledEventNextStepHint(model) {
   const next = UNCONTROLLED_EVENT_STEPS.find(s => uncontrolledEventStepStatus(model, s.id) !== 'complete');
-  return next ? next.label : 'Finish & Export';
+  return next ? next.label : 'Submit';
 }
 
 export function isUncontrolledEventPrintFinal(model) {

@@ -68,7 +68,7 @@ async function main() {
     await page.goto(`http://localhost:${PORT}/`, { waitUntil: 'networkidle' });
     await page.waitForTimeout(800);
     await page.getByRole('button', { name: 'Continue Incident Report' }).click();
-    await page.getByRole('tab', { name: /^Review & Export/ }).click();
+    await page.getByRole("tab", { name: /^Submit/ }).click();
     await page.waitForTimeout(700);
 
     /* The whole point of this pass: Submit is there BEFORE any printout

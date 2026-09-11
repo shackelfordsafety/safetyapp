@@ -421,7 +421,7 @@ export const INCIDENT_STEPS = [
   { id: 'cause', label: 'Cause Analysis', helper: 'Unsafe acts, conditions, and management factors' },
   { id: 'notes', label: 'Notes & Team', helper: 'Summaries and investigation team' },
   { id: 'photos', label: 'Photos', helper: 'Attach incident photos (optional)' },
-  { id: 'review', label: 'Review & Export', helper: 'Save, generate, and share the PDF' },
+  { id: 'review', label: 'Submit', helper: 'Send it for review, or make a paper copy' },
 ];
 
 // Derived directly from getIncidentReadinessChecks (each check already
@@ -447,5 +447,5 @@ export function incidentStepProgress(incident) {
 
 export function incidentNextStepHint(incident) {
   const next = INCIDENT_STEPS.find(s => incidentStepStatus(incident, s.id) !== 'complete');
-  return next ? next.label : 'Review & Export';
+  return next ? next.label : 'Submit';
 }

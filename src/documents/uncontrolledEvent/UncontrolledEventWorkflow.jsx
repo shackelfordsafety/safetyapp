@@ -134,7 +134,7 @@ function StepSignatures({ model, upd, prev, next }) {
         </div>
       </div>
 
-      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Finish & Export" />
+      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Submit" />
     </StepPanel>
   );
 }
@@ -206,7 +206,7 @@ export default function UncontrolledEventWorkflow({
             {step === 'signatures' && <StepSignatures model={model} upd={upd} prev={prev} next={next} />}
             {step === 'export' && (
               <ReviewExportPanel
-                title="Finish & Export"
+                title="Submit"
                 checks={checks}
                 checklistComplete={checklistComplete}
                 status={model.status}

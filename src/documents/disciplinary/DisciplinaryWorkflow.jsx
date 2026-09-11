@@ -115,7 +115,7 @@ function StepSignatures({ model, upd, prev, next }) {
         <SignaturePad label="Manager Signature" value={model.managerSignatureData} onChange={data => upd({ managerSignatureData: data, managerSignatureDate: data ? new Date().toISOString().slice(0, 10) : model.managerSignatureDate })} />
         <Field label="Manager Signature Date" type="date" value={model.managerSignatureDate} onChange={v => upd({ managerSignatureDate: v })} />
       </div>
-      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Finish & Export" />
+      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Submit" />
     </StepPanel>
   );
 }
@@ -189,7 +189,7 @@ export default function DisciplinaryWorkflow({
             {step === 'signatures' && <StepSignatures model={model} upd={upd} prev={prev} next={next} />}
             {step === 'export' && (
               <ReviewExportPanel
-                title="Finish & Export"
+                title="Submit"
                 checks={checks}
                 checklistComplete={checklistComplete}
                 status={model.status}

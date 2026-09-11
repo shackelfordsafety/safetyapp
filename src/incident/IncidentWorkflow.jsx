@@ -13,7 +13,7 @@ import { LockedContext, useLocked } from '../documents/lockedContext';
 import { ConfirmDialog, StepNav } from '../documents/FormPrimitives';
 import SpeakButton from '../voice/SpeakButton';
 import FileToArchiveButton from '../archive/FileToArchiveButton';
-import SendForReviewButton from '../open/SendForReviewButton';
+import SubmitArea from '../open/SubmitArea';
 import { ARCHIVE_FILING_ENABLED } from '../archive/filingEnabled';
 import { downloadDraftFile, buildDraftFilename } from '../shared/draftTransfer';
 
@@ -523,7 +523,7 @@ function StepReview({ incident, prev, pdfExportState, isPdfStale, onGeneratePdf,
             the printout itself if there isn't one. Paper is a secondary
             thing below it, for the man who wants a copy in his hand --
             which is a real need, just not the reason he came here. */}
-        <SendForReviewButton
+        <SubmitArea
           docType="incident"
           model={incident}
           pdfBlob={isReady && !isPdfStale ? pdfExportState.blob : null}
@@ -531,9 +531,6 @@ function StepReview({ incident, prev, pdfExportState, isPdfStale, onGeneratePdf,
           disabled={!checklistComplete}
           onHandedOff={onHandedOff}
         />
-        {!checklistComplete && (
-          <p className="helperText">Finish the list above before sending it up.</p>
-        )}
 
         <div className="reviewPaperRow">
           {!isReady && (

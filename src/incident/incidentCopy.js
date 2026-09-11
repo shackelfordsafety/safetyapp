@@ -132,7 +132,7 @@ export const incidentCopy = {
     unavailable: 'Photo unavailable',
   },
   review: {
-    title: 'Review & Export',
+    title: 'Submit',
     readinessTitle: 'Before you export',
     markReady: 'Mark Complete',
     markReadyHint: 'All required fields are complete. Marking it complete locks the report from editing — you can Mark Incomplete any time to keep working.',

@@ -154,7 +154,7 @@ export const MEDICAL_EVENT_STEPS = [
   { id: 'evaluation', label: 'Evaluation & Classification', helper: 'Medical evaluation, work status, and attachments' },
   { id: 'review', label: 'Review', helper: 'Check everything before anyone signs' },
   { id: 'signatures', label: 'Signature', helper: 'Safety/Supervisor signs (employee may sign too, if able)' },
-  { id: 'export', label: 'Finish & Export', helper: 'Save, generate, and download the PDF' },
+  { id: 'export', label: 'Submit', helper: 'Send it for review, or make a paper copy' },
 ];
 
 export function getMedicalEventReadinessChecks(model) {
@@ -206,7 +206,7 @@ export function medicalEventStepProgress(model) {
 
 export function medicalEventNextStepHint(model) {
   const next = MEDICAL_EVENT_STEPS.find(s => medicalEventStepStatus(model, s.id) !== 'complete');
-  return next ? next.label : 'Finish & Export';
+  return next ? next.label : 'Submit';
 }
 
 export function isMedicalEventPrintFinal(model) {

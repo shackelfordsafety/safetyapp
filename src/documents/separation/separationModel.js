@@ -200,7 +200,7 @@ export const SEPARATION_STEPS = [
   { id: 'closeout', label: 'Closeout', helper: 'Rehire status and company closeout' },
   { id: 'review', label: 'Review', helper: 'Check everything before anyone signs' },
   { id: 'signatures', label: 'Signature', helper: 'Supervisor signs — employee and HR sign the printed copy' },
-  { id: 'export', label: 'Finish & Export', helper: 'Save, generate, and download the PDF' },
+  { id: 'export', label: 'Submit', helper: 'Send it for review, or make a paper copy' },
 ];
 
 // Employee and HR signatures are never required in-app -- both always
@@ -262,7 +262,7 @@ export function separationStepProgress(model) {
 
 export function separationNextStepHint(model) {
   const next = SEPARATION_STEPS.find(s => separationStepStatus(model, s.id) !== 'complete');
-  return next ? next.label : 'Finish & Export';
+  return next ? next.label : 'Submit';
 }
 
 export function isSeparationPrintFinal(model) {

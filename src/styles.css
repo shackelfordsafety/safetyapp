@@ -3429,3 +3429,30 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   line-height: 1.35;
   color: var(--text-2, var(--muted));
 }
+
+/* ── "You sign the paper copy" ───────────────────────────────────────────
+   Only the supervisor signature is captured in the app; the employee's and
+   HR's are signed by hand on the printout, which is Fonzo's own decision
+   from 2026-08-29 backed by e-signature research. It was stated once, in
+   the intro line of the Signature step, and HR walked straight past it and
+   filed an unsigned separation form (2026-09-11). Said properly, where the
+   signing actually happens. */
+.paperSignNote {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--warn-border, #D9BE86);
+  border-left-width: 4px;
+  border-radius: 8px;
+  background: var(--warn-tint, #FBF2DD);
+}
+.paperSignNote strong {
+  font-family: var(--font-condensed);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2, var(--muted));
+}
+.paperSignNote span { font-size: 14px; line-height: 1.4; }

@@ -52,3 +52,231 @@
   .noticeArrow { display: none; }
   .noticeBefore::after { content: ' →'; }
 }
+
+/* ── "Waiting on you", as a section rather than a line of text ───────────
+   Fonzo, 2026-09-11: "my work looks like shit. When something's waiting at
+   the top, it's really not known... that little text line sucks. You don't
+   know if you have to click on it or not."
+
+   Three things carry it now: a real edge so it reads as one object, a
+   count big enough to see from arm's length on a tablet, and a row that
+   looks pressable -- because the complaint was not that it was ugly, it
+   was that you could not tell it was a thing you touch. */
+.odBlock {
+  border: 1px solid var(--border-obj, var(--line));
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.odBlock--mine {
+  border-color: var(--accent-border-tint, var(--accent));
+  box-shadow: 0 0 0 1px var(--accent-border-tint, transparent);
+}
+
+.odBlockHead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--surface-2, #F6F6F7);
+  border-bottom: 1px solid var(--border-obj, var(--line));
+}
+.odBlock--mine .odBlockHead {
+  background: var(--accent-tint);
+  border-bottom-color: var(--accent-border-tint, var(--line));
+}
+
+/* Readable across a trailer, not a superscript. */
+.odBlockCount {
+  flex: 0 0 auto;
+  min-width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--accent-ink, #fff);
+  font-family: var(--font-condensed);
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.odBlockCount--quiet {
+  background: var(--surface-3, #E8E8EB);
+  color: var(--text-2, var(--muted));
+}
+
+.odBlockTitle { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.odBlockTitle strong {
+  font-family: var(--font-condensed);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  line-height: 1.15;
+}
+.odBlock--mine .odBlockTitle strong { color: var(--accent-text, var(--accent)); }
+.odBlockTitle span {
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--text-2, var(--muted));
+}
+
+/* Rows inside a block: separated by a rule, not floating. */
+.odBlock .odRow {
+  border: 0;
+  border-top: 1px solid var(--rule-2, var(--line));
+  border-radius: 0;
+  margin: 0;
+  box-shadow: none;
+}
+.odBlock .odRow:first-of-type { border-top: 0; }
+
+/* The row itself has to say "press me". It is a button already; it did not
+   look like one. */
+.odRowMain {
+  position: relative;
+  width: 100%;
+  cursor: pointer;
+  padding-right: 34px;
+}
+.odRowMain::after {
+  content: '';
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid var(--text-3, var(--muted));
+  border-bottom: 2px solid var(--text-3, var(--muted));
+  transform: translateY(-50%) rotate(-45deg);
+}
+.odRowMain:hover { background: var(--surface-2, #F6F6F7); }
+.odRowMain:hover::after { border-color: var(--accent); }
+.odRowMain:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+@media (max-width: 560px) {
+  .odBlockHead { padding: 12px 13px; gap: 11px; }
+  .odBlockCount { min-width: 38px; height: 38px; font-size: 19px; }
+  .odBlockTitle strong { font-size: 15.5px; }
+}
+
+/* ── The row ─────────────────────────────────────────────────────────────
+   This is what Fonzo was actually looking at when he said My Work "looks
+   like shit". The component shipped with class names and no stylesheet at
+   all, so every line ran into the next one:
+   "Employee SeparationWaiting for sign-offKameron GroverStarted by Nic".
+   Not a taste problem -- unstyled markup.
+
+   Built for arm's length on a tablet: the person's name is the biggest
+   thing, because that is what somebody scans for. */
+.odRow {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface, #fff);
+}
+
+.odRowMain {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 13px 16px;
+  font: inherit;
+  color: inherit;
+}
+
+.odRowTop { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+.odType {
+  font-family: var(--font-condensed);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3, var(--muted));
+}
+
+.odTag {
+  font-family: var(--font-condensed);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  line-height: 1.5;
+}
+.odTag--waiting { background: var(--accent-tint); color: var(--accent-text, var(--accent)); border: 1px solid var(--accent-border-tint, transparent); }
+.odTag--yours { background: var(--good-tint); color: var(--good); border: 1px solid var(--good-border, transparent); }
+
+/* The name is the thing you are looking for. */
+.odTitle { font-size: 17px; font-weight: 700; line-height: 1.2; word-break: break-word; }
+
+.odMeta { font-size: 13px; line-height: 1.35; color: var(--text-2, var(--muted)); }
+
+.odWaitingOn,
+.odReturned {
+  font-size: 13px;
+  line-height: 1.35;
+  padding: 6px 9px;
+  border-radius: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.odWaitingOn { background: var(--warn-tint, #FBF2DD); color: var(--text); border: 1px solid var(--warn-border, transparent); }
+/* Sent back is the one state where something IS wrong and needs doing. */
+.odReturned { background: var(--danger-tint, #FBEBEE); color: var(--text); border: 1px solid var(--danger, transparent); font-weight: 600; }
+
+.odRowActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px 13px;
+}
+.odRowActions .btn { min-height: 40px; }
+
+.odDrop {
+  margin-left: auto;
+  background: none;
+  border: 0;
+  padding: 8px 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-3, var(--muted));
+  cursor: pointer;
+  text-decoration: underline;
+}
+.odDrop:hover { color: var(--danger); }
+.odDrop:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* Standalone page chrome, for when this is not embedded in My Work. */
+.odHead { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.odHead h2 { margin: 0 0 2px; }
+.odHead p { margin: 0; color: var(--text-2, var(--muted)); font-size: 14px; }
+.odHead .btn { margin-left: auto; flex: 0 0 auto; }
+
+.odEmpty {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 22px;
+  text-align: center;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  color: var(--text-2, var(--muted));
+}
+.odEmpty strong { color: var(--text); font-size: 15.5px; }
+.odEmpty span { font-size: 13.5px; line-height: 1.4; }
+
+@media (max-width: 560px) {
+  .odRowMain { padding: 12px 13px; padding-right: 30px; }
+  .odRowActions { padding: 0 13px 12px; }
+  .odTitle { font-size: 16px; }
+  .odDrop { margin-left: 0; }
+}

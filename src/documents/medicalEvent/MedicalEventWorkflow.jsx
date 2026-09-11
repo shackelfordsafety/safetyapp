@@ -156,7 +156,7 @@ function StepSignatures({ model, upd, prev, next }) {
       </div>
       <Field label="Safety / Supervisor Name (printed)" value={model.supervisorSignatureName} placeholder={model.supervisor} onChange={v => upd({ supervisorSignatureName: v })} />
 
-      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Finish & Export" />
+      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Submit" />
     </StepPanel>
   );
 }
@@ -228,7 +228,7 @@ export default function MedicalEventWorkflow({
             {step === 'signatures' && <StepSignatures model={model} upd={upd} prev={prev} next={next} />}
             {step === 'export' && (
               <ReviewExportPanel
-                title="Finish & Export"
+                title="Submit"
                 checks={checks}
                 checklistComplete={checklistComplete}
                 status={model.status}

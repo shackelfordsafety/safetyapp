@@ -3,8 +3,7 @@ import SignaturePad from '../incident/SignaturePad';
 import { useLocked } from './lockedContext';
 import SpeakButton from '../voice/SpeakButton';
 import FileToArchiveButton from '../archive/FileToArchiveButton';
-import SendForReviewButton from '../open/SendForReviewButton';
-import ApproveAndFileButton from '../open/ApproveAndFileButton';
+import SubmitArea from '../open/SubmitArea';
 import { ARCHIVE_FILING_ENABLED } from '../archive/filingEnabled';
 
 /* ── Shared field-section/builder primitives for the four new documents ──
@@ -402,28 +401,19 @@ export function ReviewExportPanel({
             A document type that passes no archiveFiling has no review
             route, so for those the generate button stays primary -- it is
             the only thing on the card. */}
-        {/* For the approver who picked this up out of the review queue:
-            correct it and file it in one action, rather than sending it
-            back to its author over one wrong word. Renders nothing at all
-            for anybody else. */}
+        {/* ONE of Submit for review or Approve & file, never both -- the
+            decision is made inside SubmitArea. Two independent buttons was
+            what let HR file a separation form as though she had written
+            it. */}
         {archiveFiling && (
-          <ApproveAndFileButton docType={archiveFiling.docType} model={archiveFiling.model} />
-        )}
-
-        {archiveFiling && (
-          <>
-            <SendForReviewButton
-              docType={archiveFiling.docType}
-              model={archiveFiling.model}
-              pdfBlob={isReady && !isPdfStale ? pdfExportState.blob : null}
-              ensurePdf={onGeneratePdf}
-              disabled={!checklistComplete}
-              onHandedOff={onHandedOff}
-            />
-            {!checklistComplete && (
-              <p className="helperText">Finish the list above before sending it up.</p>
-            )}
-          </>
+          <SubmitArea
+            docType={archiveFiling.docType}
+            model={archiveFiling.model}
+            pdfBlob={isReady && !isPdfStale ? pdfExportState.blob : null}
+            ensurePdf={onGeneratePdf}
+            disabled={!checklistComplete}
+            onHandedOff={onHandedOff}
+          />
         )}
 
         {!isReady && (

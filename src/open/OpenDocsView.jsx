@@ -255,11 +255,25 @@ export default function OpenDocsView({ onPickUp, embedded = false }) {
         </div>
       )}
 
+      {/* "Waiting on you" is a real section with a real edge, not the thin
+          line of text it was. Fonzo, 2026-09-11: "my work looks like shit.
+          When something's waiting at the top, it's really not known... you
+          don't know if you have to click on it or not."
+
+          So: its own card, a count that reads as a count, and a line that
+          says outright what to do with it. */}
       {forMe.length > 0 && (
-        <>
-          <div className="odSectionTitle odSectionTitle--mine">
-            Waiting on you · {forMe.length}
-          </div>
+        <section className="odBlock odBlock--mine">
+          <header className="odBlockHead">
+            <span className="odBlockCount">{forMe.length}</span>
+            <div className="odBlockTitle">
+              <strong>Waiting on you</strong>
+              <span>
+                {forMe.length === 1 ? 'One document needs' : `${forMe.length} documents need`} something
+                from you. Tap one to open and read it.
+              </span>
+            </div>
+          </header>
           {forMe.map(r => (
             <Row
               key={r.id} row={r} me={me} busy={busy}
@@ -276,14 +290,18 @@ export default function OpenDocsView({ onPickUp, embedded = false }) {
               })}
             />
           ))}
-        </>
+        </section>
       )}
 
       {everythingElse.length > 0 && (
-        <>
-          <div className="odSectionTitle">
-            {forMe.length > 0 ? 'Everything else' : 'Open documents'} · {everythingElse.length}
-          </div>
+        <section className="odBlock">
+          <header className="odBlockHead">
+            <span className="odBlockCount odBlockCount--quiet">{everythingElse.length}</span>
+            <div className="odBlockTitle">
+              <strong>{forMe.length > 0 ? 'Everything else going on' : 'Open documents'}</strong>
+              <span>Started by somebody and not finished. Nothing here is waiting on you.</span>
+            </div>
+          </header>
           {everythingElse.map(r => (
             <Row
               key={r.id} row={r} me={me} busy={busy}
@@ -297,7 +315,7 @@ export default function OpenDocsView({ onPickUp, embedded = false }) {
               })}
             />
           ))}
-        </>
+        </section>
       )}
 
       {handing && (

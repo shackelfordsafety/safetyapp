@@ -109,7 +109,7 @@ export const DISCIPLINARY_STEPS = [
   { id: 'response', label: 'Corrective Action', helper: 'Required correction and consequence' },
   { id: 'review', label: 'Review', helper: 'Check everything before anyone signs' },
   { id: 'signatures', label: 'Signature', helper: 'Manager signs — employee signs the printed copy' },
-  { id: 'export', label: 'Finish & Export', helper: 'Save, generate, and download the PDF' },
+  { id: 'export', label: 'Submit', helper: 'Send it for review, or make a paper copy' },
 ];
 
 // A verbal warning is a coaching conversation, not a signed notice -- the
@@ -162,7 +162,7 @@ export function disciplinaryStepProgress(model) {
 
 export function disciplinaryNextStepHint(model) {
   const next = DISCIPLINARY_STEPS.find(s => disciplinaryStepStatus(model, s.id) !== 'complete');
-  return next ? next.label : 'Finish & Export';
+  return next ? next.label : 'Submit';
 }
 
 /* "Final" print state mirrors Incident's own status gate — 'ready' and
