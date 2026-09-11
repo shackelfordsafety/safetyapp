@@ -116,13 +116,19 @@ export async function whoAmI() {
     .eq('id', user.id)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  return {
+  const me = {
     id: user.id,
     email: user.email || null,
     full_name: data?.full_name || null,
     role: data?.role || null,
     is_admin: !!data?.is_admin,
   };
+  /* An admin can look at the app through somebody else's role -- see
+     viewAs.js. It changes what is SHOWN and nothing about what the
+     database will hand over, which is why it is safe to do here and
+     nowhere near the data layer. Non-admins get themselves back. */
+  const { applyViewAs } = await import('./viewAs');
+  return applyViewAs(me);
 }
 
 /* The whole document, for picking one up. */

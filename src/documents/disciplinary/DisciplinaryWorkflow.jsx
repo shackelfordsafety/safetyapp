@@ -105,16 +105,82 @@ function StepReview({ checks, prev, next, onJumpCheck }) {
 /* ── Step: Signature — manager only. Employee always signs the printed
    copy by hand (Fonzo, 2026-08-29: "the only thing i wanted digitized is
    the superintendent, foreman, safety parts"). ── */
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/* What the witness is actually attesting to. Same reasoning as separation:
+   a name under the word "Witness" proves nothing on its own -- it has to
+   say what was witnessed, or it is worth nothing the day somebody disputes
+   the write-up. */
+function witnessStatementFor(model) {
+  const who = model.employeeName ? model.employeeName : 'the employee';
+  const outcome = model.employeeRefusedToSign
+    ? `${who} was given this notice and did not sign — refused or not available.`
+    : `${who} was given this notice and signed to acknowledge receipt.`;
+  return `I was present when this was discussed. ${outcome}`;
+}
+
 function StepSignatures({ model, upd, prev, next }) {
+  const verbal = isVerbalWarning(model);
   return (
-    <StepPanel title="Signature" intro="Manager signs here. The employee signs the printed copy by hand — this notice always prints a blank employee signature line.">
-      {isVerbalWarning(model) && (
-        <p className="helperText">A verbal warning is a coaching conversation, not a signed notice — the employee doesn't sign this at all. Document what was said in Notice Details; only the manager signs below.</p>
+    <StepPanel title="Signatures" intro="Everyone signs here now — manager, employee, and a witness who was in the room. Nothing has to be printed to be signed.">
+      {verbal && (
+        <p className="helperText">A verbal warning is a coaching conversation, not a signed notice — the employee doesn&apos;t sign this at all. Document what was said in Notice Details; only the manager signs below.</p>
       )}
       <div className="formPairRow">
-        <SignaturePad label="Manager Signature" value={model.managerSignatureData} onChange={data => upd({ managerSignatureData: data, managerSignatureDate: data ? new Date().toISOString().slice(0, 10) : model.managerSignatureDate })} />
+        <SignaturePad label="Manager Signature" value={model.managerSignatureData} onChange={data => upd({ managerSignatureData: data, managerSignatureDate: data ? today() : model.managerSignatureDate })} />
         <Field label="Manager Signature Date" type="date" value={model.managerSignatureDate} onChange={v => upd({ managerSignatureDate: v })} />
       </div>
+
+      {/* A verbal warning is not signed by anybody but the manager, so none
+          of the rest of this belongs on screen for one. */}
+      {!verbal && (
+        <>
+          <SegmentedToggle
+            label="Is the employee signing this?"
+            value={model.employeeRefusedToSign ? 'no' : 'yes'}
+            onChange={v => upd({ employeeRefusedToSign: v === 'no' })}
+            options={[
+              { value: 'yes', label: 'Yes', tone: 'yes' },
+              { value: 'no', label: 'No — refused or not available', tone: 'no' },
+            ]}
+          />
+
+          {!model.employeeRefusedToSign && (
+            <div className="formPairRow">
+              <SignaturePad
+                label="Employee Signature"
+                value={model.employeeSignatureData}
+                onChange={data => upd({ employeeSignatureData: data, employeeSignatureDate: data ? today() : model.employeeSignatureDate })}
+              />
+              <Field label="Employee Signature Date" type="date" value={model.employeeSignatureDate} onChange={v => upd({ employeeSignatureDate: v })} />
+            </div>
+          )}
+          <p className="helperText">
+            Signing acknowledges <strong>receipt</strong> of this notice. It does not mean the
+            employee agrees with it, and the printed notice says so.
+          </p>
+
+          {/* The witness. An employee refusing to sign a write-up is the
+              normal case, and a blank line proves nothing about whether he
+              was ever told. */}
+          <div className="formPairRow">
+            <SignaturePad
+              label="Witness Signature"
+              value={model.witnessSignatureData}
+              onChange={data => upd({
+                witnessSignatureData: data,
+                witnessSignatureDate: data ? today() : model.witnessSignatureDate,
+                witnessStatement: data ? witnessStatementFor(model) : '',
+              })}
+            />
+            <Field label="Witness Name and Title" value={model.witnessName} onChange={v => upd({ witnessName: v })} />
+          </div>
+          <p className="helperText">{witnessStatementFor(model)}</p>
+        </>
+      )}
+
       <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Submit" />
     </StepPanel>
   );

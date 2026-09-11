@@ -87,6 +87,24 @@ export async function drawDisciplinaryPdf(model, onProgress) {
     dateValue: fmtDate(model.managerSignatureDate),
   });
 
+  /* The witness, and what they witnessed. Only printed when somebody signed
+     as one -- an empty witness line on a notice that did not need one just
+     raises a question.
+
+     The statement carries the weight, not the signature. An employee
+     refusing to sign a write-up is the normal case, and a blank line proves
+     nothing about whether he was ever told; this says somebody was there
+     and what happened. Stored on the record at the moment of signing so it
+     cannot drift if the form is edited afterwards. */
+  if (model.witnessSignatureData || model.witnessName) {
+    doc.note(model.witnessStatement || 'I was present when this was discussed.');
+    doc.signatureRow({
+      label: `Witness${model.witnessName ? ` — ${model.witnessName}` : ''}`,
+      image: await doc.embedSignature(model.witnessSignatureData),
+      dateValue: fmtDate(model.witnessSignatureDate),
+    });
+  }
+
   return doc.finish();
 }
 

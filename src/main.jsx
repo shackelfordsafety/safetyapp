@@ -10,6 +10,9 @@ import SpeakButton from './voice/SpeakButton';
 import CrewSignInKiosk from './jsa/CrewSignInKiosk';
 import { handOffDraft, readLastFinished } from './shared/handOff';
 import useWaitingCount from './open/useWaitingCount';
+
+/* Lazy, like everything that reaches the cloud. */
+const ViewAsPicker = lazy(() => loadModule(() => import('./open/ViewAsPicker')));
 import { SITE_TYPES, packFor, withSitePack } from './jsa/sitePacks';
 import { emptyIncident, hasMeaningfulIncidentContent, incidentStepProgress, incidentNextStepHint, isIncidentReady, isIncidentPrintFinal, migrateIncidentShape } from './incident/incidentModel';
 import { loadIncidentDraft, saveIncidentDraft, clearIncidentDraft, upsertIncidentRecord } from './incident/incidentStorage';
@@ -4316,8 +4319,14 @@ function SettingsView({ settings, setSettings }) {
       <div className="sectionTitle">
         <div className="eyebrow">Settings</div>
         <h2>App Settings</h2>
-        <p>This build stores drafts, templates, favorites, recent items, and custom quick adds locally on this device.</p>
+        <p>Drafts, templates, favourites and custom quick adds are stored on this device.</p>
       </div>
+
+      {/* Only ever rendered for an admin account -- see ViewAsPicker. For
+          everybody else it is absent, not disabled. */}
+      <Suspense fallback={null}>
+        <ViewAsPicker />
+      </Suspense>
 
       {session && (
         <Suspense fallback={null}>

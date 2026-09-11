@@ -280,3 +280,54 @@
   .odTitle { font-size: 16px; }
   .odDrop { margin-left: 0; }
 }
+
+/* ── "View as" ───────────────────────────────────────────────────────────
+   Settings only, admin only. Fonzo is the whole support desk: when a
+   superintendent rings at 6am asking where a button is, the fast answer is
+   to look at the screen that man is looking at. */
+.viewAsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+.viewAsChoice {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  text-align: left;
+  padding: 10px 12px;
+  min-height: 56px;
+  border: 1px solid var(--border-input, var(--line));
+  border-radius: 8px;
+  background: var(--surface, #fff);
+  color: var(--text);
+  cursor: pointer;
+}
+.viewAsChoice strong { font-size: 14.5px; font-weight: 700; line-height: 1.2; }
+.viewAsChoice span { font-size: 12px; line-height: 1.25; color: var(--text-3, var(--muted)); }
+.viewAsChoice:hover { border-color: var(--text-3, var(--muted)); }
+.viewAsChoice:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.viewAsChoice.active {
+  background: var(--accent-tint);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.viewAsChoice.active strong { color: var(--accent-text, var(--accent)); }
+
+/* Loud on purpose. Forgetting you are looking through somebody else's eyes
+   is how you tell a man a button is missing when it is not. */
+.viewAsActive {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 12px;
+  padding: 11px 13px;
+  border: 1px solid var(--warn-border, #D9BE86);
+  border-left-width: 4px;
+  border-radius: 8px;
+  background: var(--warn-tint, #FBF2DD);
+}
+.viewAsActive strong { font-size: 14.5px; }
+.viewAsActive span { font-size: 13px; color: var(--text-2, var(--muted)); }

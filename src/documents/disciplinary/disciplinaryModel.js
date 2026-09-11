@@ -79,6 +79,20 @@ export function emptyDisciplinary() {
     managerSignatureData: null,
     managerSignatureDate: '',
 
+    /* The witness, matching separation. Fonzo, 2026-09-11, going digital on
+       both: "if the employee doesn't sign, the witness was there." Another
+       Shackelford person who was in the room -- a clerk, a second
+       supervisor -- explicitly not a third party.
+
+       An employee refusing to sign a write-up is the normal case, not the
+       edge one, and a blank line proves nothing about whether he was ever
+       told. witnessStatement is stored rather than derived at print time so
+       what somebody attested to cannot drift if the form is edited later. */
+    witnessName: '',
+    witnessSignatureData: null,
+    witnessSignatureDate: '',
+    witnessStatement: '',
+
     // Internal-only, never printed
     notes: '',
   };
