@@ -234,20 +234,27 @@ export function boardUrlFor(boardOwnerId) {
    inspector stopping one of his guys and asking to see the JSA, and
    "nothing published yet" at 4pm is the worst possible answer. Anything
    that was live at any point today stays readable for the rest of it. */
+/* Goes through board_for() rather than reading the table. A crew member
+   has no account, so this call is anonymous -- and an anonymous read of
+   jsa_publications used to be allowed for EVERY row, which meant the key
+   that ships in this page could list every JSA the company had ever
+   published. The board is a lookup now: name the board you want and get
+   that one. Nothing changes for a man scanning, because the QR already
+   carries whose board it is.
+
+   The function caps its own window at 36 hours so the link cannot be used
+   to walk a superintendent's history; the local-midnight filter below is
+   still applied here, where the device's own clock and timezone are. */
 export async function fetchBoard(boardOwnerId) {
   const since = new Date();
   since.setHours(0, 0, 0, 0);
 
-  const { data, error } = await db
-    .from('jsa_publications')
-    .select('id, area_label, job_site, location, job_number, doc_date, published_at, expires_at, version, data, pdf_path')
-    .eq('board_owner', boardOwnerId)
-    .gt('expires_at', since.toISOString())
-    .order('published_at', { ascending: true });
+  const { data, error } = await db.rpc('board_for', { owner: boardOwnerId });
   if (error) throw new Error(error.message);
 
   const now = new Date();
   return (data || [])
+    .filter(r => new Date(r.expires_at) > since)
     .map((r) => {
       const live = new Date(r.expires_at) > now;
       return { ...r, live, status: boardStatus(r, live, now), startsAt: startTimeOf(r) };
