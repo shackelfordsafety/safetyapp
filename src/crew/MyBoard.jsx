@@ -68,9 +68,9 @@ function SignerList({ publicationId, onClose }) {
                 <span className="brdSignerNum">{i + 1}</span>
                 <span className="brdSignerName">
                   {/* The kiosk records no name on purpose -- it is numbered
-                      only. An unnamed row is a man who signed on the iPad,
+                      only. An unnamed row is a man who signed on the supervisor's device,
                       not a missing record. */}
-                  {s.signer_name || <em>Signed on the iPad</em>}
+                  {s.signer_name || <em>Signed in person</em>}
                 </span>
                 <span className="brdSignerTime">
                   {fmtTime(s.signed_at)}{s.is_late ? ' · late' : ''}
@@ -213,7 +213,7 @@ export default function MyBoard() {
               <p><strong>What you can do here:</strong></p>
               <ul>
                 <li><strong>Print it</strong> — the QR poster for your trailer. Print it once; it never changes.</li>
-                <li><strong>Sign on this iPad</strong> — for a man with no phone on him.</li>
+                <li><strong>Sign on this device</strong> — for a man with no phone on him.</li>
                 <li><strong>Tap the number</strong> — see who has signed.</li>
                 <li><strong>Take it down</strong> — only while nobody has signed it yet.</li>
               </ul>

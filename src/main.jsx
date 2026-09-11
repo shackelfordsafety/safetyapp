@@ -4146,7 +4146,7 @@ function SettingsView({ settings, setSettings }) {
         <div className="cardBody">
           <div className="workflowNotes">
             <p><strong>Inside the app:</strong> Editable drafts, reusable templates, favorites, recent quick adds, custom quick adds, and settings. One active JSA draft is supported in this pilot build.</p>
-            <p><strong>Outside the app:</strong> Final PDFs should be saved to your desktop, iPad Files, OneDrive, iCloud, or project folder after export.</p>
+            <p><strong>Outside the app:</strong> Final PDFs should be saved to your device, OneDrive, iCloud, or a project folder after export.</p>
             <p><strong>Important:</strong> All data is stored locally in your browser. Clearing browser data will remove saved drafts, templates, and custom items.</p>
           </div>
         </div>

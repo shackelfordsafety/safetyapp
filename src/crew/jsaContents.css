@@ -93,3 +93,34 @@
   text-decoration: underline;
   white-space: nowrap;
 }
+
+/* ── Dark mode, inside the app only ──────────────────────────────────────
+   Scoped to html[data-theme='dark'], which ONLY the app ever sets. The
+   standalone crew page renders instead of the app and sets no theme, so
+   it stays light on purpose -- a JSA read outdoors at 6am wants the
+   brightest, highest-contrast thing available, not a dark card.
+
+   This block exists because the values above inherit a literal near-black
+   (#171719) that was written when this component only ever appeared on
+   white. On the superintendent's board in dark mode that put dark grey
+   text on a dark card: the labels and the red links stayed readable and
+   every actual answer -- job site, supervisor, muster point -- went
+   invisible. Fonzo found it, 2026-09-11.
+
+   Values match the app's dark palette (--text, --text-3, --surface-2,
+   --line) rather than inventing a second set, but stay literal for the
+   same reason the rest of the file is literal. */
+html[data-theme='dark'] .jsaDoc {
+  color: #F4F4F5;
+  border-top-color: #2E2E34;
+}
+html[data-theme='dark'] .jsaLine span { color: #ABABB3; }
+html[data-theme='dark'] .jsaDocTitle,
+html[data-theme='dark'] .jsaBoxTitle { color: #FF7A84; }
+html[data-theme='dark'] .jsaBox {
+  background: #212125;
+  border-color: #2E2E34;
+}
+html[data-theme='dark'] .jsaBoxList li::marker { color: #93939B; }
+html[data-theme='dark'] .jsaMapLink,
+html[data-theme='dark'] .jsaTelLink { color: #FF7A84; }
