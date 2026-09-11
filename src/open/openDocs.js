@@ -1,5 +1,6 @@
 import { db } from '../archive/archiveClient';
 import { blockInDemo } from '../shared/demoMode';
+import { ARCHIVE_FILING_ENABLED } from '../archive/filingEnabled';
 
 /* ── Documents that aren't finished yet ──────────────────────────────────
    The in-between that did not exist: a document was either on one man's
@@ -82,19 +83,47 @@ export async function listOpenDocuments() {
   await requireUser();
   const { data, error } = await db
     .from('open_documents')
-    .select('id, doc_type, created_by, created_at, updated_by, updated_at, assigned_to, waiting_on, employee_name, job_site, doc_date, client_doc_id, locked_by, locked_at')
+    .select('id, doc_type, created_by, created_at, updated_by, updated_at, assigned_to, waiting_on, employee_name, job_site, doc_date, client_doc_id, locked_by, locked_at, state, submitted_at, submitted_by, returned_at, returned_by, returned_note, pdf_path')
     .order('updated_at', { ascending: false });
   if (error) throw new Error(error.message);
 
   const rows = data || [];
-  const names = await namesFor(rows.flatMap(r => [r.created_by, r.assigned_to, r.updated_by, r.locked_by]));
+  const names = await namesFor(rows.flatMap(r => [r.created_by, r.assigned_to, r.updated_by, r.locked_by, r.submitted_by, r.returned_by]));
   return rows.map(r => ({
     ...r,
     createdByName: names[r.created_by]?.full_name || null,
     assignedToName: names[r.assigned_to]?.full_name || null,
     updatedByName: names[r.updated_by]?.full_name || null,
     lockedByName: names[r.locked_by]?.full_name || null,
+    submittedByName: names[r.submitted_by]?.full_name || null,
+    returnedByName: names[r.returned_by]?.full_name || null,
   }));
+}
+
+/* Who is looking at this screen, and what they are allowed to do on it.
+   The worklist needs the ROLE, not just the id -- "waiting on you" is the
+   whole reason a PM opens it, and that is decided by role, not by whether
+   his name is on the row.
+
+   The database is what actually enforces every one of these rules (see
+   can_file_doc_type); this only decides what to put on screen. If the two
+   ever disagree the database wins and the button fails loudly, which is
+   the right way round. */
+export async function whoAmI() {
+  const user = await requireUser();
+  const { data, error } = await db
+    .from('profiles')
+    .select('id, full_name, role, is_admin')
+    .eq('id', user.id)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return {
+    id: user.id,
+    email: user.email || null,
+    full_name: data?.full_name || null,
+    role: data?.role || null,
+    is_admin: !!data?.is_admin,
+  };
 }
 
 /* The whole document, for picking one up. */
@@ -204,6 +233,122 @@ export async function abandon(id) {
   await requireUser();
   const { error } = await db.from('open_documents').delete().eq('id', id);
   if (error) throw new Error(`Could not remove it: ${error.message}`);
+}
+
+/* ── The approval chain ──────────────────────────────────────────────────
+   Three moves: send it up, send it back, sign it off. The document sits in
+   `state` -- 'open' while somebody is still working on it, 'submitted'
+   while it is waiting on an approver.
+
+   WHY THE PDF IS MADE HERE, at submit, and not at sign-off. The approver
+   is usually not the author and will never open the workflow -- he sees a
+   row on a list and decides. So the printed document has to already exist
+   by the time it reaches him, made by the man who wrote it, from the
+   content he actually saw. Generating it at sign-off would mean the PM
+   files a PDF nobody has ever laid eyes on.
+
+   It also has to be uploaded by the author for a plainer reason: the
+   storage rule requires the folder to be your own user id. The author can
+   only write to his folder, the approver can only write to his. The path
+   travels with the row. */
+
+export async function submitForSignOff({ id, pdfBlob, note }) {
+  blockInDemo('Submitting a document for sign-off');
+  const user = await requireUser();
+  if (!id) throw new Error('Share the document before submitting it.');
+
+  const patch = {
+    state: 'submitted',
+    submitted_by: user.id,
+    submitted_at: new Date().toISOString(),
+    // A resubmission clears the last rejection, so the row stops showing a
+    // send-back note that has already been dealt with.
+    returned_at: null,
+    returned_by: null,
+    returned_note: null,
+  };
+  if (note !== undefined) patch.waiting_on = blank(note);
+
+  if (pdfBlob) {
+    const name = (crypto.randomUUID && crypto.randomUUID())
+      || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const path = `${user.id}/${name}.pdf`;
+    const { error: uploadError } = await db.storage
+      .from('documents')
+      .upload(path, pdfBlob, { contentType: 'application/pdf', upsert: false });
+    if (uploadError) throw new Error(`Could not upload the PDF: ${uploadError.message}`);
+    patch.pdf_path = path;
+  }
+
+  const { error } = await db.from('open_documents').update(patch).eq('id', id);
+  if (error) throw new Error(`Could not submit it: ${error.message}`);
+}
+
+/* Not approved. Goes back to whoever wrote it, with a reason -- required,
+   because "sent back" with no explanation is how a document gets
+   resubmitted unchanged. */
+export async function sendBack({ id, note }) {
+  blockInDemo('Sending a document back');
+  const user = await requireUser();
+  const reason = blank(note);
+  if (!reason) throw new Error('Say what needs fixing before you send it back.');
+
+  const row = await getOpenDocument(id);
+  const { error } = await db.from('open_documents').update({
+    state: 'open',
+    assigned_to: row.created_by,
+    waiting_on: reason,
+    returned_by: user.id,
+    returned_at: new Date().toISOString(),
+    returned_note: reason,
+    submitted_at: null,
+    submitted_by: null,
+  }).eq('id', id);
+  if (error) throw new Error(`Could not send it back: ${error.message}`);
+}
+
+/* Approved. The document leaves working state and becomes a permanent
+   archive record.
+
+   Order matters and is deliberate: write the archive row FIRST, and only
+   remove the open row once that has succeeded. The reverse order loses the
+   document entirely if the second call fails. A leftover open row after a
+   successful file is untidy; a document that exists in neither place is
+   gone.
+
+   The PDF is NOT re-uploaded. It was uploaded at submit by its author and
+   the path is carried across as-is -- the same bytes the approver looked
+   at are the bytes that get filed, which is the whole point of approving
+   something. */
+export async function signOffAndFile(id) {
+  blockInDemo('Signing off a document');
+  const user = await requireUser();
+  const row = await getOpenDocument(id);
+
+  if (row.state !== 'submitted') {
+    throw new Error('That one has not been submitted for sign-off yet.');
+  }
+
+  /* Same gate the workflows sit behind. Sign-off is exactly the door this
+     flag was waiting on -- but turning it on is Fonzo's call, not a side
+     effect of this function existing. See filingEnabled.js. */
+  if (row.doc_type !== 'jsa' && !ARCHIVE_FILING_ENABLED) {
+    throw new Error('Filing to the archive is switched off for now. Download or print it — nothing is lost.');
+  }
+
+  const { error: insertError } = await db.from('documents').insert({
+    doc_type: row.doc_type,
+    submitted_by: user.id,
+    employee_name: blank(row.employee_name),
+    job_site: blank(row.job_site),
+    doc_date: blank(row.doc_date),
+    data: row.data,
+    client_doc_id: row.client_doc_id || null,
+    pdf_path: row.pdf_path || null,
+  });
+  if (insertError) throw new Error(`Could not file it: ${insertError.message}`);
+
+  await closeAfterFiling(id);
 }
 
 /* Once it is filed to the archive it is no longer open. Called after a
