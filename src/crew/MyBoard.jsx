@@ -6,6 +6,7 @@ import { signedUrlFor } from '../archive/fileToArchive';
 import JsaContents from './JsaContents';
 import './myboard.css';
 import HelpButton from '../shared/HelpButton';
+import { queueSignature, flushSignatures, pendingCount } from './signatureQueue';
 
 /* ── The superintendent's own board ──────────────────────────────────────
    What he looks at while the crew signs. The number is the point: standing
@@ -98,6 +99,10 @@ export default function MyBoard() {
   // than one board posted stays tellable apart.
   const [kiosk, setKiosk] = useState(null);
   const [kioskSigned, setKioskSigned] = useState(0);
+  /* Signatures held on this device that the database has not accepted yet.
+     Shown, never hidden -- see signatureQueue.js. */
+  const [kioskPending, setKioskPending] = useState(0);
+  const [kioskError, setKioskError] = useState("");
   const [takingDown, setTakingDown] = useState(null);
   const [removing, setRemoving] = useState('');
 
@@ -122,10 +127,39 @@ export default function MyBoard() {
      deliberately -- and it lands in the same place a phone signature
      does. Not awaited, so nobody waits on the network holding the iPad;
      the board reloads when he closes it. */
-  function signOnPad(dataUrl) {
+  async function signOnPad(dataUrl) {
+    /* Held on the device BEFORE anything is attempted. The old version
+       counted it up and fired the upload with the error swallowed, so a
+       failed save looked exactly like a successful one to the man who had
+       just signed -- he watched the number go up and walked off. */
+    const held = queueSignature({
+      publicationId: kiosk.id,
+      signatureData: dataUrl,
+      expiresAt: kiosk.expires_at,
+    });
+    if (!held) {
+      setKioskError('This iPad is out of room and could not hold that signature. Sign the paper sheet instead.');
+      return;
+    }
     setKioskSigned(n => n + 1);
-    signOnKiosk({ publicationId: kiosk.id, signatureData: dataUrl, expiresAt: kiosk.expires_at })
-      .catch(() => { /* the count on the board is the source of truth, not this screen */ });
+    setKioskPending(pendingCount());
+    await sendQueuedSignatures();
+  }
+
+  /* Empties the queue and reports honestly. Anything that will not go --
+     no signal, or a JSA that expired while the iPad sat open -- is counted
+     on screen rather than hidden, because a superintendent can only decide
+     to fall back to paper if somebody tells him. */
+  async function sendQueuedSignatures() {
+    const { stuck } = await flushSignatures(entry => signOnKiosk({
+      publicationId: entry.publicationId,
+      signatureData: entry.signatureData,
+      expiresAt: entry.expiresAt,
+    }));
+    setKioskPending(pendingCount());
+    setKioskError(stuck > 0 && pendingCount() > 0
+      ? `${pendingCount()} signature${pendingCount() === 1 ? '' : 's'} still waiting to send. Keep this open until they clear, or sign the paper sheet.`
+      : '');
   }
 
   /* Tapping a row opens the JSA as it was actually published -- the real
@@ -162,6 +196,15 @@ export default function MyBoard() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  /* Anything the last session could not send gets another go the moment
+     this screen opens. A signature queued in a dead zone on Tuesday should
+     not still be sitting on the iPad on Friday because nobody reopened the
+     kiosk -- the superintendent opens his board every morning. */
+  useEffect(() => {
+    if (pendingCount() > 0) sendQueuedSignatures();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // The count is the whole point of this screen, so it keeps itself fresh
   // rather than making him pull to refresh while men are signing.
@@ -313,13 +356,29 @@ export default function MyBoard() {
       )}
 
       {kiosk && (
-        <CrewSignInKiosk
-          jsa={kiosk.data}
-          upd={() => {}}
-          onSign={signOnPad}
-          signedCount={kiosk.signed + kioskSigned}
-          onExit={() => { setKiosk(null); load(); }}
-        />
+        <>
+          <CrewSignInKiosk
+            jsa={kiosk.data}
+            upd={() => {}}
+            onSign={signOnPad}
+            signedCount={kiosk.signed + kioskSigned}
+            onExit={() => { setKiosk(null); load(); }}
+          />
+          {/* Above the kiosk, because the kiosk is full screen and this is
+              the one thing that must not be missed: signatures this device
+              is holding that the database has not taken yet. */}
+          {(kioskPending > 0 || kioskError) && (
+            <div className="sigPendingBar" role="alert">
+              <strong>
+                {kioskPending > 0
+                  ? `${kioskPending} signature${kioskPending === 1 ? '' : 's'} not sent yet`
+                  : 'Signature problem'}
+              </strong>
+              <span>{kioskError || 'Still trying. Keep this open until it clears.'}</span>
+              <button type="button" className="btn secondary sm" onClick={sendQueuedSignatures}>Try again</button>
+            </div>
+          )}
+        </>
       )}
       {takingDown && (
         <div className="dialogOverlay" onMouseDown={e => { if (e.target === e.currentTarget) setTakingDown(null); }}>

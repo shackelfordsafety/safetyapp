@@ -8,6 +8,7 @@ import './incident/incident.css';
 import './voice/voice.css';
 import SpeakButton from './voice/SpeakButton';
 import CrewSignInKiosk from './jsa/CrewSignInKiosk';
+import { getContentRows, getContentColumns } from './jsa/jsaContent';
 import { handOffDraft, readLastFinished } from './shared/handOff';
 import useWaitingCount from './open/useWaitingCount';
 
@@ -220,16 +221,6 @@ function makeRowId() {
 function withRowIds(rows) {
   return (Array.isArray(rows) ? rows : []).map(r => (r.id ? r : { ...r, id: makeRowId() }));
 }
-function getContentRows(jsa) {
-  const detailed = normalizeRows(jsa.taskRows).filter(row => !isGenericRow(row));
-  const summary = rowsFromSummary(jsa);
-  if (!detailed.length) return summary;
-  const remainingSummary = summary.filter(row => {
-    if (!hasText(row.step)) return hasText(row.hazards) || hasText(row.controls);
-    return !detailed.some(detail => isNearDuplicate(detail.step, row.step));
-  });
-  return [...detailed, ...remainingSummary];
-}
 /* Physical print geometry constants — single source of truth shared by the
    pagination math below and the ?debug=print panel. Must stay in sync with
    the .printSheet / .printPage rules in styles.css's @media print block,
@@ -314,25 +305,12 @@ function estimateTextLines(value, charsPerLine) {
    Deduplicated, because the same control legitimately arrives twice when a
    task bundle and the summary field both carry it, and printing "Wear
    required PPE" twice makes a man stop and wonder what he missed. */
-function getContentColumns(jsa) {
-  const tasks = [];
-  const hazards = [];
-  const controls = [];
-  const push = (into, value) => {
-    splitLines(value).forEach((line) => {
-      const text = line.trim();
-      if (!text) return;
-      if (into.some(existing => normalizeEntry(existing) === normalizeEntry(text))) return;
-      into.push(text);
-    });
-  };
-  getContentRows(jsa).forEach((row) => {
-    push(tasks, row.step);
-    push(hazards, row.hazards);
-    push(controls, row.controls);
-  });
-  return { tasks, hazards, controls };
-}
+/* getContentColumns and getContentRows now live in src/jsa/jsaContent.js
+   and are imported at the top of this file. They moved because the crew's
+   phone kept its own near-copy of the same logic and the two had DRIFTED:
+   the phone ignored the summary fields whenever a JSA carried task rows,
+   while this file merged both, so a man could sign a JSA on his phone that
+   was missing a hazard the paper carried. One copy now, shared. */
 
 /* How tall one column's worth of items is, in printed lines. Each column is
    measured on its OWN width, which is the whole point -- controls get the

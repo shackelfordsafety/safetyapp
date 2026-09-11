@@ -126,3 +126,30 @@ button.brdCardMain:hover .brdSeeDoc { text-decoration: underline; }
 }
 .brdTakeDown:hover:not(:disabled) { color: var(--brand-red, #C1121F); }
 .brdTakeDown:disabled { opacity: .6; cursor: default; text-decoration: none; }
+
+/* ── "Signatures not sent yet" ───────────────────────────────────────────
+   Sits above the full-screen kiosk because it is the one thing that must
+   not be missed. The old behaviour counted a signature up the instant the
+   stylus lifted and swallowed the upload error, so a man watched the
+   number rise and walked off with nothing saved. */
+.sigPendingBar {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 10000;
+  max-width: min(92vw, 520px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--danger-tint, #FBEBEE);
+  border: 1px solid var(--danger, #C1121F);
+  border-left-width: 5px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.28);
+}
+.sigPendingBar strong { font-size: 15px; color: var(--danger, #C1121F); flex: 1 1 100%; }
+.sigPendingBar span { font-size: 13.5px; line-height: 1.35; flex: 1 1 14rem; color: var(--text); }
+.sigPendingBar .btn { flex: 0 0 auto; }

@@ -93,69 +93,17 @@ export function boardLabel(jsa) {
   return task || site || 'Job Safety Analysis';
 }
 
-/* The JSA's steps/hazards/controls, flattened for reading on a phone.
+/* What a crew member reads, and it is the SAME function the printed
+   form uses -- see src/jsa/jsaContent.js.
 
-   A deliberately simpler read than the app's own getContentRows(): that one
-   reconciles the two entry styles for PRINT accuracy, with near-duplicate
-   matching, and lives in main.jsx which this page must never import (the
-   crew page renders instead of the app and should not drag it along).
-   Here the job is only "show the man what he is signing", so detailed rows
-   win when they exist and the newline summaries are used when they don't.
-
-   Split on newlines because that is exactly how the summary fields are
-   stored -- one task per line, hazards and controls positionally matched. */
-export function readableRows(jsa) {
-  const lines = v => String(v || '').split('\n').map(s => s.trim()).filter(Boolean);
-  const detailed = (Array.isArray(jsa?.taskRows) ? jsa.taskRows : [])
-    .map(r => ({ step: (r?.step || '').trim(), hazards: (r?.hazards || '').trim(), controls: (r?.controls || '').trim() }))
-    .filter(r => r.step || r.hazards || r.controls);
-  if (detailed.length) return detailed;
-
-  const steps = lines(jsa?.dailyTasks);
-  const haz = lines(jsa?.hazardsSummary);
-  const con = lines(jsa?.controlsSummary);
-  const n = Math.max(steps.length, haz.length, con.length);
-  return Array.from({ length: n }, (_, i) => ({
-    step: steps[i] || '', hazards: haz[i] || '', controls: con[i] || '',
-  }));
-}
-
-/* The same content as readableRows, but kept in its three columns instead
-   of zipped into rows.
-
-   readableRows pairs steps[i] with hazards[i] with controls[i], and for a
-   JSA written the normal way -- three independent lists, typed or spoken
-   in as separate thoughts -- that pairing is fiction. A real one had 8
-   tasks, 19 hazards and 21 controls in it: line them up and the page
-   claims "Build lift elevation" causes "Line of fire" and is answered by
-   "Maintain eye contact with operator", which is not what anybody wrote.
-   On a document a man is about to sign, and might hand to a safety
-   inspector, an invented relationship between a hazard and a control is
-   worse than a plain list.
-
-   The printed JSA has always shown these as three columns. This makes the
-   readable view agree with the paper. */
-export function readableColumns(jsa) {
-  const lines = v => String(v || '').split('\n').map(s => s.trim()).filter(Boolean);
-  const rows = (Array.isArray(jsa?.taskRows) ? jsa.taskRows : [])
-    .filter(r => r && (r.step || r.hazards || r.controls));
-
-  // Detailed rows genuinely do pair up, but they still print as three
-  // columns, so flatten them the same way rather than showing this one
-  // screen two different ways depending on how the JSA was written.
-  if (rows.length) {
-    return {
-      tasks: rows.flatMap(r => lines(r.step)),
-      hazards: rows.flatMap(r => lines(r.hazards)),
-      controls: rows.flatMap(r => lines(r.controls)),
-    };
-  }
-  return {
-    tasks: lines(jsa?.dailyTasks),
-    hazards: lines(jsa?.hazardsSummary),
-    controls: lines(jsa?.controlsSummary),
-  };
-}
+   There used to be two here: readableRows, which zipped the three lists
+   together by position and invented pairings, and readableColumns, which
+   kept its own near-copy of the merge logic. The copy had drifted and
+   dropped summary hazards whenever a JSA carried task rows, so a man could
+   sign on his phone a JSA missing a hazard the paper carried. readableRows
+   had no callers left at all. Both deleted rather than repaired: a copy is
+   how they came apart in the first place. */
+export { getContentColumns as readableColumns } from '../jsa/jsaContent';
 
 async function currentUser() {
   try {
@@ -400,8 +348,20 @@ export async function fetchMyBoard() {
   const user = await currentUser();
   if (!user) throw new NotSignedInError();
 
-  // Back to the start of today, local time, so "this morning's JSAs" stay
-  // visible after they expire without dragging in last week's.
+  /* Filtered on when a posting STOPS being live, not on when it was
+     published -- and that distinction is the night shift.
+
+     It used to ask for anything published since local midnight, which
+     quietly dropped every overnight JSA the moment the clock rolled over:
+     published at 5pm, good until 4am, gone from the superintendent's board
+     at midnight while his crew could still scan it and sign. He loses the
+     signed count on exactly the shift where he is least likely to be
+     standing next to anybody. Found by an outside reviewer, 2026-09-11.
+
+     expires_at past local midnight keeps everything still relevant --
+     this morning's JSAs after they close, tonight's while it runs, and
+     tomorrow's if it is already up -- and still leaves last week's out,
+     which is what the old filter was reaching for. */
   const since = new Date();
   since.setHours(0, 0, 0, 0);
 
@@ -409,7 +369,7 @@ export async function fetchMyBoard() {
     .from('jsa_publications')
     .select('id, area_label, job_site, location, job_number, doc_date, published_at, expires_at, version, client_doc_id, data, pdf_path')
     .eq('board_owner', user.id)
-    .gte('published_at', since.toISOString())
+    .gt('expires_at', since.toISOString())
     .order('published_at', { ascending: false });
   if (error) throw new Error(error.message);
 
@@ -495,15 +455,31 @@ export async function fetchUnfiledExpired() {
   const user = await currentUser();
   if (!user) return [];
 
-  const { data: expired, error } = await db
+  /* Two steps, and the order is the whole point.
+     This used to take the 20 OLDEST expired postings and then filter out
+     the ones already filed. Once those 20 were all filed, every run
+     produced an empty list and posting 21 was never looked at again --
+     auto-archiving stopped forever, silently, with paperwork simply never
+     reaching the archive. Found by an outside reviewer, 2026-09-11.
+
+     So the ids come first and cheaply (no `data`, which is a whole JSA
+     with signature images in it), get filtered against what is already
+     filed, and only then are the survivors fetched in full. The window is
+     bounded because a posting that expired months ago and never got filed
+     is not going to start now, and dragging the entire history back on
+     every app start to discover that would be its own bug. */
+  const WINDOW_DAYS = 60;
+  const since = new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: candidates, error } = await db
     .from('jsa_publications')
-    .select('id, client_doc_id, area_label, data, expires_at')
+    .select('id')
     .eq('board_owner', user.id)
     .lt('expires_at', new Date().toISOString())
-    .order('expires_at', { ascending: true })
-    .limit(20);
+    .gt('expires_at', since)
+    .order('expires_at', { ascending: true });
   if (error) throw new Error(error.message);
-  if (!expired?.length) return [];
+  if (!candidates?.length) return [];
 
   /* Deduped per PUBLICATION, not per JSA. Republishing the same JSA --
      correcting a time, putting it back up for a second crew -- produces
@@ -520,7 +496,17 @@ export async function fetchUnfiledExpired() {
   if (filedErr) throw new Error(filedErr.message);
   const already = new Set((filed || []).map(r => r.marker).filter(Boolean));
 
-  const pending = expired.filter(p => !already.has(p.id));
+  /* Now the filter, THEN the limit -- so progress is always made. */
+  const todo = candidates.filter(p => !already.has(p.id)).slice(0, 20).map(p => p.id);
+  if (!todo.length) return [];
+
+  const { data: expired, error: fullErr } = await db
+    .from('jsa_publications')
+    .select('id, client_doc_id, area_label, data, expires_at')
+    .in('id', todo)
+    .order('expires_at', { ascending: true });
+  if (fullErr) throw new Error(fullErr.message);
+  const pending = expired || [];
   if (!pending.length) return [];
 
   const { data: sigs, error: sigErr } = await db
