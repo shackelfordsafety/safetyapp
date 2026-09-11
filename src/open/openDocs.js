@@ -467,6 +467,32 @@ export function canApproveWithoutTheForm(docType) {
   return Boolean(DIRECT_DRAW[docType]);
 }
 
+/* Find the submitted document this local draft came from, without relying
+   on the pick-up link.
+
+   Why this exists: the link is written when a document is opened out of
+   the review queue, so anyone who opened one BEFORE that code shipped has
+   edits on their device and no link. Re-opening would fix the link and
+   destroy the edits, which is the worst possible trade. Matching on
+   client_doc_id -- the document's own id, which travelled up with it --
+   finds the same row without touching anything.
+
+   Real case, 2026-09-11: HR had corrected a separation form on screen and
+   could not file it. */
+export async function findSubmittedDocumentFor(docType, clientDocId) {
+  if (!clientDocId) return null;
+  await requireUser();
+  const { data } = await db
+    .from('open_documents')
+    .select('id, state')
+    .eq('doc_type', docType)
+    .eq('client_doc_id', clientDocId)
+    .eq('state', 'submitted')
+    .limit(1)
+    .maybeSingle();
+  return data?.id || null;
+}
+
 /* The approver's whole job in one action: correct it if it needs
    correcting, make the final printout, and file it.
 

@@ -40,22 +40,33 @@ export default function ApproveAndFileButton({ docType, model }) {
     let dead = false;
     (async () => {
       try {
-        const { readPickedUpLink } = await loadModule(() => import('./pickUp'));
-        const found = readPickedUpLink();
-        if (!found || found.docType !== docType) return;
         const mod = await loadModule(() => import('./openDocs'));
         const who = await mod.whoAmI();
         if (dead) return;
-        setLink(found);
+
+        const { readPickedUpLink } = await loadModule(() => import('./pickUp'));
+        const found = readPickedUpLink();
+        if (found && found.docType === docType) {
+          setLink(found);
+        } else {
+          /* No pick-up link. Do not give up: anyone who opened a document
+             out of the queue BEFORE that link existed has corrections on
+             their device and nothing pointing at the row. Re-opening would
+             fix the link and destroy the corrections, so find the row by
+             the document's own id instead. */
+          const id = await mod.findSubmittedDocumentFor(docType, model?.id);
+          if (dead || !id) return;
+          setLink({ openDocumentId: id, docType, recovered: true });
+        }
         setMe(who);
         setCanDraw(mod.canApproveWithoutTheForm(docType));
       } catch {
-        /* Not signed in, or nothing picked up. Either way this button
-           simply is not for this person right now. */
+        /* Not signed in, or nothing waiting. Either way this button simply
+           is not for this person right now. */
       }
     })();
     return () => { dead = true; };
-  }, [docType]);
+  }, [docType, model?.id]);
 
   const allowed = link && me && (APPROVERS[docType] || []).includes(me.role);
   if (!allowed) return null;
