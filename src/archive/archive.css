@@ -218,3 +218,9 @@
    removed. Said plainly rather than left blank -- an empty cell reads as a
    loading bug, and "not recorded" is the honest answer. */
 .arcNoFiler { color: var(--text-very-faint); font-style: italic; }
+
+/* Job site standing in for a job number, on the five document types that
+   never ask for one. Dimmed so a scan down the column reads real job
+   numbers first -- which is the whole point of the column (Fonzo,
+   2026-09-11: "easier to notice which jobs we have"). */
+.arcFallback { color: var(--text-3, var(--muted)); }

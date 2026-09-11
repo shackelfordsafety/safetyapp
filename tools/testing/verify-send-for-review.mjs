@@ -80,9 +80,18 @@ async function main() {
     check('it is not hidden behind "Create Document" first',
       await sendBtn.first().isEnabled());
 
-    // Now make the printout the old way, so the rest of the checks see the
-    // ready panel too.
-    await page.locator('button:has-text("Create Document"), button:has-text("Update Document")').first().click();
+    /* "Create Document" is gone from this screen -- it was a big primary
+       button that still read as the main thing to do, sitting above
+       Submit (Fonzo: "why does it still say create document tho"). Paper
+       is secondary now and says so. */
+    const wholeBefore = await page.locator('body').innerText();
+    check('"Create Document" is no longer the primary action',
+      !/Create Document/i.test(wholeBefore),
+      /Create Document/i.test(wholeBefore) ? 'still on the page' : 'gone');
+
+    // Make the printout via the secondary route, so the rest of the checks
+    // see the ready panel too.
+    await page.getByRole('button', { name: /paper copy first/i }).first().click();
     await page.locator('.pdfReadyPanel').waitFor({ state: 'visible', timeout: 60000 });
     await page.waitForTimeout(400);
 

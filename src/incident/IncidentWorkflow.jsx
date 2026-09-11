@@ -512,44 +512,17 @@ function StepReview({ incident, prev, pdfExportState, isPdfStale, onGeneratePdf,
       </div>
 
       <div className="card">
-        {!isReady && (
-          <div className="reviewPrimaryAction">
-            <button className="btn primary lg" onClick={onGeneratePdf} disabled={isGenerating} aria-busy={isGenerating}>
-              {isGenerating ? c.generating : c.generatePdf}
-            </button>
-          </div>
-        )}
+        {/* ONE button. Fonzo, 2026-09-11: "once they're done they click one
+            button 'submit'". It was three -- Create Document, then
+            Download, then Send -- and after the first pass at this it was
+            still two, because Submit went in UNDER a big primary "Create
+            Document" that still read as the main thing to do. His words:
+            "why does it still say create document tho".
 
-        {isReady && isPdfStale && (
-          <div className="pdfStaleWarning">
-            <strong>Document changed &mdash; update it before downloading.</strong>
-            <p>{c.stale}</p>
-            <button className="btn primary sm" onClick={onGeneratePdf} disabled={isGenerating} aria-busy={isGenerating}>{c.regeneratePdf}</button>
-          </div>
-        )}
-
-        {isReady && !isPdfStale && (
-          <div className="pdfReadyPanel">
-            <span className="pdfReadyEyebrow">Document Ready</span>
-            <strong className="pdfReadyHeadline">{pdfExportState.pageCount} page{pdfExportState.pageCount === 1 ? '' : 's'}</strong>
-            <p className="pdfReadyFilename">{pdfExportState.filename}</p>
-            <div className="pdfReadyActions">
-              <button className="btn primary lg" onClick={onDownload}>{c.download}</button>
-            </div>
-            <p className="helperText pdfReadyHelper">Download the document, then open it to print.</p>
-            {ARCHIVE_FILING_ENABLED && (
-              <FileToArchiveButton docType="incident" model={incident} pdfBlob={pdfExportState.blob} />
-            )}
-          </div>
-        )}
-
-        {/* Submit is ALWAYS here, not tucked inside the "document ready"
-            panel, because it is the one thing a man came to this screen to
-            do. Fonzo, 2026-09-11: "once they're done they click one button
-            'submit'". Making the printout used to be a separate tap before
-            it, so the button makes it itself when there isn't one yet --
-            and reuses the existing one when there is, rather than
-            regenerating six pages for nothing. */}
+            Submit is the only primary action on this card now. It makes
+            the printout itself if there isn't one. Paper is a secondary
+            thing below it, for the man who wants a copy in his hand --
+            which is a real need, just not the reason he came here. */}
         <SendForReviewButton
           docType="incident"
           model={incident}
@@ -560,6 +533,37 @@ function StepReview({ incident, prev, pdfExportState, isPdfStale, onGeneratePdf,
         {!checklistComplete && (
           <p className="helperText">Finish the list above before sending it up.</p>
         )}
+
+        <div className="reviewPaperRow">
+          {!isReady && (
+            <button type="button" className="btn secondary" onClick={onGeneratePdf} disabled={isGenerating} aria-busy={isGenerating}>
+              {isGenerating ? c.generating : 'Want a paper copy first?'}
+            </button>
+          )}
+
+          {isReady && isPdfStale && (
+            <div className="pdfStaleWarning">
+              <strong>Document changed &mdash; update it before downloading.</strong>
+              <p>{c.stale}</p>
+              <button className="btn secondary sm" onClick={onGeneratePdf} disabled={isGenerating} aria-busy={isGenerating}>{c.regeneratePdf}</button>
+            </div>
+          )}
+
+          {isReady && !isPdfStale && (
+            <div className="pdfReadyPanel">
+              <span className="pdfReadyEyebrow">Printout ready</span>
+              <strong className="pdfReadyHeadline">{pdfExportState.pageCount} page{pdfExportState.pageCount === 1 ? '' : 's'}</strong>
+              <p className="pdfReadyFilename">{pdfExportState.filename}</p>
+              <div className="pdfReadyActions">
+                <button className="btn secondary" onClick={onDownload}>{c.download}</button>
+              </div>
+              <p className="helperText pdfReadyHelper">Download it, then open it to print. Submitting does not need this.</p>
+              {ARCHIVE_FILING_ENABLED && (
+                <FileToArchiveButton docType="incident" model={incident} pdfBlob={pdfExportState.blob} />
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="card">

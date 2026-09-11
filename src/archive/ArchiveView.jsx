@@ -188,6 +188,10 @@ function DocumentDetail({ row, onClose }) {
         <div className="arcKv">
           <div><span className="k">Document type</span><span className="v">{DOC_LABELS[row.doc_type] || row.doc_type}</span></div>
           <div><span className="k">Employee</span><span className="v">{row.employee_name || '—'}</span></div>
+          {/* Both, on the detail panel. The list has one narrow column and
+              has to choose; a document you have actually opened has room
+              to say the job number AND where it was. */}
+          {row.jobNumber && <div><span className="k">Job #</span><span className="v">{row.jobNumber}</span></div>}
           <div><span className="k">Job site</span><span className="v">{row.job_site || '—'}</span></div>
           <div><span className="k">Document date</span><span className="v">{fmtDate(row.doc_date)}</span></div>
           <div><span className="k">Filed</span><span className="v">{fmtWhen(row.submitted_at)}</span></div>
@@ -300,7 +304,20 @@ export default function ArchiveView() {
         const { data: people } = await db.from('profiles').select('id, full_name').in('id', filerIds);
         (people || []).forEach((person) => { filers[person.id] = person.full_name; });
       }
-      setRows(docs.map(d => ({ ...d, filedByName: filers[d.submitted_by] || null })));
+      /* Job number, pulled out of the document itself. Fonzo, 2026-09-11:
+         "instead of filtering by job site, change that to job #, easier to
+         notice which jobs we have."
+
+         It is not a column on public.documents -- it lives inside `data`,
+         and only the JSA asks for one at all. The other five document
+         types have no job-number field, so those rows fall back to the job
+         site rather than showing an empty column that makes the archive
+         look broken. */
+      setRows(docs.map(d => ({
+        ...d,
+        filedByName: filers[d.submitted_by] || null,
+        jobNumber: (d.data && typeof d.data === 'object' && d.data.jobNumber) ? String(d.data.jobNumber).trim() : '',
+      })));
       setStatus('ready');
     } catch (ex) {
       setError(ex?.message || 'Something went wrong loading the archive.');
@@ -361,7 +378,7 @@ export default function ArchiveView() {
       if (range.from && (!r.doc_date || r.doc_date < range.from)) return false;
       if (range.to && (!r.doc_date || r.doc_date > range.to)) return false;
       if (needle) {
-        const hay = `${r.employee_name || ''} ${r.job_site || ''} ${r.filedByName || ''}`.toLowerCase();
+        const hay = `${r.employee_name || ''} ${r.jobNumber || ''} ${r.job_site || ''} ${r.filedByName || ''}`.toLowerCase();
         if (!hay.includes(needle)) return false;
       }
       return true;
@@ -507,7 +524,7 @@ export default function ArchiveView() {
           <table className="arcTable">
             <thead>
               <tr>
-                <th>Type</th><th>Employee</th><th>Job site</th><th>Document date</th><th>Filed</th><th>Filed by</th><th aria-label="Actions" />
+                <th>Type</th><th>Employee</th><th>Job #</th><th>Document date</th><th>Filed</th><th>Filed by</th><th aria-label="Actions" />
               </tr>
             </thead>
             <tbody>
@@ -523,7 +540,11 @@ export default function ArchiveView() {
                     {r.data?.source === 'uploaded' && <span className="arcUploaded">Uploaded</span>}
                   </td>
                   <td>{r.employee_name || '—'}</td>
-                  <td>{r.job_site || '—'}</td>
+                  {/* Job # where the document carries one -- only the JSA
+                      asks for it today. The five others fall back to the
+                      job site rather than showing an empty column, which
+                      would make the archive look broken. */}
+                  <td>{r.jobNumber || (r.job_site ? <span className="arcFallback">{r.job_site}</span> : '—')}</td>
                   <td>{fmtDate(r.doc_date)}</td>
                   <td>{fmtWhen(r.submitted_at)}</td>
                   <td>{r.filedByName || <span className="arcNoFiler">Not recorded</span>}</td>

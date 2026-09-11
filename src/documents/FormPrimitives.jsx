@@ -393,10 +393,39 @@ export function ReviewExportPanel({
       </div>
 
       <div className="card">
+        {/* ONE primary action: Submit. It was three taps, then two, because
+            Submit went in UNDER a big primary "Create Document" that still
+            read as the main thing to do -- Fonzo: "why does it still say
+            create document tho". Paper is secondary, below.
+
+            A document type that passes no archiveFiling has no review
+            route, so for those the generate button stays primary -- it is
+            the only thing on the card. */}
+        {archiveFiling && (
+          <>
+            <SendForReviewButton
+              docType={archiveFiling.docType}
+              model={archiveFiling.model}
+              pdfBlob={isReady && !isPdfStale ? pdfExportState.blob : null}
+              ensurePdf={onGeneratePdf}
+              disabled={!checklistComplete}
+            />
+            {!checklistComplete && (
+              <p className="helperText">Finish the list above before sending it up.</p>
+            )}
+          </>
+        )}
+
         {!isReady && (
           <div className="reviewPrimaryAction">
-            <button type="button" className="btn primary lg" onClick={onGeneratePdf} disabled={isGenerating} aria-busy={isGenerating}>
-              {isGenerating ? generatingLabel : generateLabel}
+            <button
+              type="button"
+              className={archiveFiling ? 'btn secondary' : 'btn primary lg'}
+              onClick={onGeneratePdf}
+              disabled={isGenerating}
+              aria-busy={isGenerating}
+            >
+              {isGenerating ? generatingLabel : (archiveFiling ? 'Want a paper copy first?' : generateLabel)}
             </button>
           </div>
         )}
@@ -434,26 +463,6 @@ export function ReviewExportPanel({
           </div>
         )}
 
-        {/* Submit is ALWAYS here, not tucked inside the "document ready"
-            panel, because it is the one thing a man came to this screen to
-            do. Fonzo, 2026-09-11: "once they're done they click one button
-            'submit'". Making the printout used to be a separate tap before
-            it, so the button makes it itself when there isn't one yet --
-            and reuses the existing one when there is. */}
-        {archiveFiling && (
-          <>
-            <SendForReviewButton
-              docType={archiveFiling.docType}
-              model={archiveFiling.model}
-              pdfBlob={isReady && !isPdfStale ? pdfExportState.blob : null}
-              ensurePdf={onGeneratePdf}
-              disabled={!checklistComplete}
-            />
-            {!checklistComplete && (
-              <p className="helperText">Finish the list above before sending it up.</p>
-            )}
-          </>
-        )}
       </div>
 
       {onStartNew && <button type="button" className="btn ghost reviewStartNew" onClick={onStartNew}>{startNewLabel}</button>}
