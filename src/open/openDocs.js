@@ -168,6 +168,33 @@ export async function shareOpenDocument({ id, docType, model, waitingOn, assigne
     return { id };
   }
 
+  /* No id given does NOT mean "make a new one". A submit that failed after
+     this insert -- a PDF upload that timed out, a dead zone halfway
+     through -- comes back through here on the retry, and so does a man who
+     reopens the report and sends it again. Both used to produce a second
+     open document, so an approver saw the same incident twice and could
+     file it twice. Found by an outside reviewer, 2026-09-11.
+
+     client_doc_id is the document's own id on the device, so it is the
+     natural key for "this is the same report". Matching on it plus the
+     creator means a retry updates rather than duplicates, without the
+     client having to remember anything across a reload. */
+  const clientId = model?.id || null;
+  if (clientId) {
+    const { data: existing } = await db
+      .from('open_documents')
+      .select('id')
+      .eq('client_doc_id', clientId)
+      .eq('created_by', user.id)
+      .limit(1)
+      .maybeSingle();
+    if (existing?.id) {
+      const { error } = await db.from('open_documents').update(row).eq('id', existing.id);
+      if (error) throw new Error(`Could not save it: ${error.message}`);
+      return { id: existing.id, reused: true };
+    }
+  }
+
   const { data, error } = await db
     .from('open_documents')
     .insert({ ...row, created_by: user.id })
@@ -341,35 +368,22 @@ export async function signOffAndFile(id) {
      HR/owner, and refuses everybody else including safety. A tampered
      client cannot get past it. */
 
-  const { data: filed, error: insertError } = await db.from('documents').insert({
-    doc_type: row.doc_type,
-    submitted_by: user.id,
-    employee_name: blank(row.employee_name),
-    job_site: blank(row.job_site),
-    doc_date: blank(row.doc_date),
-    data: row.data,
-    client_doc_id: row.client_doc_id || null,
-    pdf_path: row.pdf_path || null,
-  }).select('id').single();
-  if (insertError) throw new Error(`Could not file it: ${insertError.message}`);
+  /* ONE call, one transaction. This used to be an archive insert followed
+     by a separate delete of the open row, and an outside reviewer was
+     right that it could duplicate: two approvers tapping at once, or a
+     delete that fails after the insert and then gets retried. A duplicate
+     in public.documents cannot be removed, because that table has no
+     DELETE policy on purpose.
 
-  /* Point any outstanding change notices at the filed document before the
-     open row disappears. The author may not look at his phone until after
-     this has happened, and a notice that says "somebody changed your
-     report" with nothing to point at is worse than none. Best effort: the
-     document IS filed, and failing to re-link a notice must not make that
-     look like it failed. */
-  if (filed?.id) {
-    try {
-      /* Through an RPC, not a direct update: the UPDATE policy on
-         document_edits allows only the AUTHOR, and the person filing is
-         the approver. A direct update matches no rows and returns clean --
-         a silent no-op. See the link_edit_notices_to_filed migration. */
-      await db.rpc('link_edits_to_filed', { open_id: id, filed_id: filed.id });
-    } catch { /* the notice still carries what changed and who changed it */ }
-  }
-
-  await closeAfterFiling(id);
+     The function also settles who owns a filed document. It used to record
+     the APPROVER as submitted_by, and the archive read policy reads
+     submitted_by = auth.uid() as "your own documents" -- so approving a
+     superintendent's incident report made it disappear from that
+     superintendent's own records. The author stays submitted_by; the
+     approver is recorded separately as filed_by. */
+  const { data: newId, error: fileError } = await db.rpc('file_reviewed_document', { open_id: id });
+  if (fileError) throw new Error(fileError.message);
+  return { id: newId };
 }
 
 /* ── The approver's own edits ────────────────────────────────────────────
@@ -381,6 +395,18 @@ export async function signOffAndFile(id) {
    What it buys: a dated record of exactly which words moved, who moved
    them, and when the man who wrote it was told. That is the answer to "I
    never saw that". */
+
+/* Fetch one and put it in the workflow that knows how to show it. The
+   caller confirms any replacement of what is already on the device first
+   -- this does not ask, it just does it. */
+export async function pickUpOpenDocument(id) {
+  blockInDemo('Opening a shared document');
+  await requireUser();
+  const row = await getOpenDocument(id);
+  const { placeIntoWorkflow } = await import('./pickUp');
+  const placed = placeIntoWorkflow(row);
+  return { ...placed, row };
+}
 
 export async function saveApproverEdit({ id, model }) {
   blockInDemo('Editing a document');

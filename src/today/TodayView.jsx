@@ -66,7 +66,7 @@ function Section({ label, count, children }) {
   );
 }
 
-export default function TodayView({ entries = [], goDocs }) {
+export default function TodayView({ entries = [], goDocs, onPickedUp }) {
   const [filed, setFiled] = useState(undefined);   // undefined = loading, null = signed out
   const [board, setBoard] = useState(undefined);
   const [error, setError] = useState('');
@@ -160,7 +160,7 @@ export default function TodayView({ entries = [], goDocs }) {
           own drafts. Renders nothing at all when there is nothing there,
           which is most people most days. */}
       <Suspense fallback={null}>
-        <OpenDocsView embedded onPickUp={goDocs} />
+        <OpenDocsView embedded onPickUp={row => onPickedUp?.(row.doc_type)} />
       </Suspense>
 
       <Section label="Still open" count={stillOpen.length}>

@@ -167,6 +167,38 @@ export default function OpenDocsView({ onPickUp, embedded = false }) {
     }
   }
 
+  /* Opening a shared document puts it in the workflow's own draft slot,
+     which is the slot whatever the man is already working on lives in. So
+     it asks first, and only when there is actually something to lose --
+     asking every time trains people to tap through it.
+
+     The confirm is deliberately plain rather than the app's nicer dialog:
+     this component renders inside My Work, and a second modal system on a
+     screen that already has two would be worse than a blunt one. */
+  async function pickUp(row) {
+    setBusy(true);
+    setError('');
+    try {
+      const mod = await loadModule(() => import('./openDocs'));
+      const { draftKeyFor } = await loadModule(() => import('./pickUp'));
+      const key = draftKeyFor(row.doc_type);
+      const existing = key ? localStorage.getItem(key) : null;
+      if (existing) {
+        const ok = window.confirm(
+          'Opening this will replace what you have started on this device for that kind of document.\n\n'
+          + 'Anything you have not sent up will be lost. Open it anyway?'
+        );
+        if (!ok) { setBusy(false); return; }
+      }
+      await mod.pickUpOpenDocument(row.id);
+      onPickUp?.(row);
+    } catch (ex) {
+      setError(ex?.message || 'Could not open it. Check your signal and try again.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function openHandOver(row) {
     setHanding({ row, to: row.assigned_to || '', note: row.waiting_on || '' });
     if (!people.length) {
@@ -231,7 +263,7 @@ export default function OpenDocsView({ onPickUp, embedded = false }) {
           {forMe.map(r => (
             <Row
               key={r.id} row={r} me={me} busy={busy}
-              onOpen={onPickUp}
+              onOpen={pickUp}
               onHandOver={openHandOver}
               onSignOff={row => act(async () => {
                 const mod = await loadModule(() => import('./openDocs'));
@@ -255,7 +287,7 @@ export default function OpenDocsView({ onPickUp, embedded = false }) {
           {everythingElse.map(r => (
             <Row
               key={r.id} row={r} me={me} busy={busy}
-              onOpen={onPickUp}
+              onOpen={pickUp}
               onHandOver={openHandOver}
               onSignOff={() => {}}
               onSendBack={() => {}}

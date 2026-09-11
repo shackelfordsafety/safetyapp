@@ -1585,6 +1585,29 @@ function App() {
      says published and nothing else made a man navigate to the thing he
      obviously wanted next. Fonzo's call, 2026-09-10. */
   function goToBoard() { setActiveDoc(null); setTab('board'); }
+
+  /* Opening a document somebody shared or sent for sign-off.
+     pickUpOpenDocument has already written it into that document type's own
+     localStorage slot; this is the other half -- pulling it into React
+     state and going to the right workflow.
+
+     It has to be both. Every workflow reads its slot once, at mount, so
+     writing to storage while the app is running changes nothing on screen
+     until something re-reads it. Skipping this half was how "Open" could
+     look like it did nothing at all. */
+  function openPickedUpDocument(docType) {
+    switch (docType) {
+      case 'jsa': return loadSavedDraft();
+      case 'incident': return loadSavedIncidentDraft();
+      case 'disciplinary': return disciplinaryEntry.loadSavedDraft();
+      case 'uncontrolledEvent': return uncontrolledEventEntry.loadSavedDraft();
+      case 'medicalEvent': return medicalEventEntry.loadSavedDraft();
+      case 'separation': return separationEntry.loadSavedDraft();
+      default:
+        showToast('This device does not know how to open that kind of document.');
+        return undefined;
+    }
+  }
   function goJsaStart() { setTab('documents'); setActiveDoc('jsa-start'); }
   function goJsa(step = 'job') { setTab('documents'); setActiveDoc('jsa'); setJsaStep(step); }
   function goIncident(step = 'details') { setTab('documents'); setActiveDoc('incident'); setIncidentStep(step); }
@@ -2589,7 +2612,7 @@ function App() {
           )}
           {tab === 'today' && (
             <Suspense fallback={<p className="helperText">Loading today…</p>}>
-              <TodayView entries={draftEntries} goDocs={goDocs} />
+              <TodayView entries={draftEntries} goDocs={goDocs} onPickedUp={openPickedUpDocument} />
             </Suspense>
           )}
           {tab === 'templates' && <TemplatesView allTemplates={allTemplates} customTemplates={customTemplates} loadTemplate={requestLoadTemplate} deleteTemplate={deleteTemplate} startBlank={requestStartBlank} shareTemplate={shareTemplate} importTemplateFile={importTemplateFile} />}
