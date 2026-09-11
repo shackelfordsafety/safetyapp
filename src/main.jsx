@@ -296,6 +296,93 @@ function estimateTextLines(value, charsPerLine) {
    Arial body text is roughly 0.55x the font size, so: usable column width /
    (0.55 * 9.8px), rounded down for a safety margin against Safari rendering
    slightly wider than Chromium/desktop font metrics. */
+/* ── The three columns ───────────────────────────────────────────────────
+   What a JSA actually contains: a list of tasks, a list of hazards, and a
+   list of controls. Three lists, usually of different lengths.
+
+   The printed form used to zip them together index by index, one table row
+   per position, which invented a relationship that was never there. On
+   Fonzo's real JSA of 2026-09-10 -- 6 tasks, 20 hazards, 17 controls --
+   that produced 20 rows and 34 empty cells, with "Chemical splash" sitting
+   as a hazard of nothing with no control beside it. Shown to him side by
+   side against this layout; his answer was "perfect".
+
+   Deduplicated, because the same control legitimately arrives twice when a
+   task bundle and the summary field both carry it, and printing "Wear
+   required PPE" twice makes a man stop and wonder what he missed. */
+function getContentColumns(jsa) {
+  const tasks = [];
+  const hazards = [];
+  const controls = [];
+  const push = (into, value) => {
+    splitLines(value).forEach((line) => {
+      const text = line.trim();
+      if (!text) return;
+      if (into.some(existing => normalizeEntry(existing) === normalizeEntry(text))) return;
+      into.push(text);
+    });
+  };
+  getContentRows(jsa).forEach((row) => {
+    push(tasks, row.step);
+    push(hazards, row.hazards);
+    push(controls, row.controls);
+  });
+  return { tasks, hazards, controls };
+}
+
+/* How tall one column's worth of items is, in printed lines. Each column is
+   measured on its OWN width, which is the whole point -- controls get the
+   widest column because control text is the longest. */
+const COLUMN_CHARS = { tasks: 36, hazards: 37, controls: 43 };
+
+/* Capacity is measured in TABLE ROWS, because that is what the task table
+   used to be -- each row a 24px box (PRINT_TASK_ROW_MIN_PX). A list line is
+   about half that: 9.8px type at 1.25 line-height plus 1.5px of padding.
+
+   So a page that holds 18 old rows holds roughly 36 list lines, and using
+   the row number directly is why the first version of this layout cut the
+   hazards at 17 of 20 and pushed three onto a continuation sheet while
+   leaving the bottom 40% of page one blank. Converting rather than
+   re-deriving keeps every existing capacity rule -- the dynamic shrink for
+   long upper-section text, the medical-address row, the measured override
+   -- doing exactly what it already does. */
+const PRINT_LIST_LINE_PX = 12.3;
+function rowsToListLines(rowCapacity) {
+  return Math.max(1, Math.floor(rowCapacity * (PRINT_TASK_ROW_MIN_PX / PRINT_LIST_LINE_PX)));
+}
+function columnLines(items, chars) {
+  return items.reduce((total, item) => total + Math.max(1, estimateTextLines(item, chars)), 0);
+}
+
+/* Fill one page from all three columns at once. Each column takes as many
+   of its own items as fit in the height available, so a short task list
+   does not hold back a long hazard list -- they simply end at different
+   depths in the same block, which is what they do on paper. */
+function takeColumnPage(remaining, capacity) {
+  const page = {};
+  const left = {};
+  let tallest = 0;
+  ['tasks', 'hazards', 'controls'].forEach((key) => {
+    const chars = COLUMN_CHARS[key];
+    const taken = [];
+    let used = 0;
+    let i = 0;
+    for (; i < remaining[key].length; i += 1) {
+      const cost = Math.max(1, estimateTextLines(remaining[key][i], chars));
+      /* Always take at least one, even if a single monstrous entry is
+         taller than the page -- otherwise it can never be printed at all
+         and the planner loops forever. */
+      if (taken.length && used + cost > capacity) break;
+      taken.push(remaining[key][i]);
+      used += cost;
+    }
+    page[key] = taken;
+    left[key] = remaining[key].slice(i);
+    tallest = Math.max(tallest, used);
+  });
+  return { page, left, tallest };
+}
+
 function estimateRowUnits(row) {
   return Math.max(
     estimateTextLines(row.step, 36),
@@ -360,7 +447,34 @@ function fillRows(rows, minCount) {
 }
 function paginateTaskContent(jsa) {
   const rows = getContentRows(jsa);
+  const columns = getContentColumns(jsa);
   const mainCapacity = mainRowCapacity(jsa);
+
+  /* Columns, page by page. The main page gets whatever is left after the
+     info and hazard-category sections above it; continuation sheets have a
+     small fixed header and get more. */
+  let remaining = columns;
+  const first = takeColumnPage(remaining, rowsToListLines(mainCapacity));
+  remaining = first.left;
+  const continuationColumns = [];
+  let guard = 0;
+  while ((remaining.tasks.length || remaining.hazards.length || remaining.controls.length) && guard < 40) {
+    const next = takeColumnPage(remaining, rowsToListLines(continuationRowCapacity()));
+    continuationColumns.push(next.page);
+    remaining = next.left;
+    guard += 1;
+  }
+  /* Where each column's numbering continues from, so item 7 on the
+     continuation sheet says 7 and not 1. */
+  const offsets = [];
+  const running = { tasks: 0, hazards: 0, controls: 0 };
+  [first.page, ...continuationColumns].forEach((page) => {
+    offsets.push({ ...running });
+    running.tasks += page.tasks.length;
+    running.hazards += page.hazards.length;
+    running.controls += page.controls.length;
+  });
+
   let mainRows = [];
   let mainUsed = 0;
   let cutAt = rows.length;
@@ -375,8 +489,8 @@ function paginateTaskContent(jsa) {
     mainUsed += units;
   }
 
-  const remaining = rows.slice(cutAt);
-  const paged = paginateRowsByUnits(remaining, continuationRowCapacity());
+  const remainingRows = rows.slice(cutAt);
+  const paged = paginateRowsByUnits(remainingRows, continuationRowCapacity());
   oversized = oversized || paged.oversized;
   // Pad with blank rows for a visually filled page, but never past this JSA's
   // own actual capacity — padding used to reference a hardcoded 22 regardless
@@ -388,6 +502,14 @@ function paginateTaskContent(jsa) {
     mainContentRows: mainRows,
     mainRows: fillRows(mainRows, mainMinRows),
     continuationPages: paged.pages.map(page => fillRows(page, 10)),
+    /* The columns are what actually prints now; the row-based values above
+       are kept because the fit badge, the debug panel and the measuring rig
+       all still read them, and ripping those out is a separate job from
+       changing what a man holds in his hand. */
+    mainColumns: first.page,
+    continuationColumns,
+    columnOffsets: offsets,
+    columns,
     oversized,
     mainCapacity,
     mainUsed,
@@ -486,7 +608,10 @@ function getPagePlan(jsa) {
   return {
     ...taskPlan,
     signInPages,
-    totalPages: 1 + taskPlan.continuationPages.length + signInPages.length,
+    // Counts the continuation sheets actually RENDERED, which since the
+    // column layout are continuationColumns. Reading continuationPages here
+    // printed "Page 1 of 5" on a four-page document.
+    totalPages: 1 + taskPlan.continuationColumns.length + signInPages.length,
   };
 }
 // A fingerprint of everything that could affect pagination height: row
@@ -612,7 +737,10 @@ function resolvePagePlan(jsa, measurements) {
   return {
     ...taskPlan,
     signInPages,
-    totalPages: 1 + taskPlan.continuationPages.length + signInPages.length,
+    // Counts the continuation sheets actually RENDERED, which since the
+    // column layout are continuationColumns. Reading continuationPages here
+    // printed "Page 1 of 5" on a four-page document.
+    totalPages: 1 + taskPlan.continuationColumns.length + signInPages.length,
   };
 }
 function calcFitFromPlan(plan) {
@@ -4429,7 +4557,7 @@ function JsaPreviewPagerModal({ jsa, plan, initialIndex = 0, onClose }) {
 
   const pages = useMemo(() => [
     { kind: 'main', label: 'Main JSA' },
-    ...plan.continuationPages.map((rows, idx) => ({
+    ...(plan.continuationColumns || []).map((cols, idx) => ({
       kind: 'continuation', rows, idx,
       label: `Continuation ${idx + 1} of ${plan.continuationPages.length}`,
     })),
@@ -4497,7 +4625,7 @@ function JsaPreviewPagerModal({ jsa, plan, initialIndex = 0, onClose }) {
                   pageNumber={2 + current.idx}
                   totalPages={plan.totalPages}
                   continuationNumber={current.idx + 1}
-                  continuationTotal={plan.continuationPages.length}
+                  continuationTotal={(plan.continuationColumns || []).length}
                   className="documentPage"
                 />
               )}
@@ -4768,11 +4896,32 @@ function PrintBrandHeader({ title, subtitle, pageNumber, totalPages }) {
   );
 }
 
-function PrintTaskTable({ rows, className = '' }) {
+/* Three columns, three independent numbered lists, one table row.
+   See getContentColumns for why -- the old version zipped the three lists
+   together by position and printed a page of empty cells. `start` carries
+   each column's numbering across a continuation sheet. */
+function PrintTaskTable({ columns, start, className = '' }) {
+  const cols = columns || { tasks: [], hazards: [], controls: [] };
+  const from = start || { tasks: 0, hazards: 0, controls: 0 };
+  const column = (items, offset) => (
+    items.length
+      ? (
+        <ol className="printTaskList" start={offset + 1}>
+          {items.map((item, i) => <li key={`${offset}-${i}`}>{item}</li>)}
+        </ol>
+      )
+      : null
+  );
   return (
     <table className={`printTaskTable ${className}`.trim()}>
       <thead><tr><th>Individual Task Steps</th><th>Hazards</th><th>Controls &amp; Mitigations</th></tr></thead>
-      <tbody>{rows.map((r, i) => <tr key={i}><td>{r.step}</td><td>{r.hazards}</td><td>{r.controls}</td></tr>)}</tbody>
+      <tbody>
+        <tr>
+          <td>{column(cols.tasks, from.tasks)}</td>
+          <td>{column(cols.hazards, from.hazards)}</td>
+          <td>{column(cols.controls, from.controls)}</td>
+        </tr>
+      </tbody>
     </table>
   );
 }
@@ -4823,9 +4972,9 @@ function MainJsaDocumentPage({ jsa, plan, className = '', pageRef }) {
         </div>
       </section>
       <div className="taskTableFill">
-        <PrintTaskTable rows={plan.mainRows} />
+        <PrintTaskTable columns={plan.mainColumns} start={plan.columnOffsets && plan.columnOffsets[0]} />
       </div>
-      {plan.continuationPages.length > 0 && <div className="continuationFlag">Additional task rows continue on the attached JSA continuation sheet.</div>}
+      {(plan.continuationColumns || []).length > 0 && <div className="continuationFlag">Additional task rows continue on the attached JSA continuation sheet.</div>}
       <footer className="printFooter">Shackelford Construction and Hauling, LLC · Safety First · Main JSA</footer>
     </div>
   );
@@ -5108,15 +5257,16 @@ function PdfExportRoot({ jsa, plan, pageRefsRef }) {
   return (
     <div className="pdfExportRoot" aria-hidden="true">
       <MainJsaDocumentPage jsa={jsa} plan={plan} className="printPage" pageRef={mainRef} />
-      {plan.continuationPages.map((rows, idx) => (
+      {(plan.continuationColumns || []).map((cols, idx) => (
         <TaskContinuationPage
           key={idx}
           jsa={jsa}
-          rows={rows}
+          columns={cols}
+          start={plan.columnOffsets && plan.columnOffsets[idx + 1]}
           pageNumber={2 + idx}
           totalPages={plan.totalPages}
           continuationNumber={idx + 1}
-          continuationTotal={plan.continuationPages.length}
+          continuationTotal={(plan.continuationColumns || []).length}
           pageRef={el => { continuationRefs.current[idx] = el; }}
         />
       ))}
@@ -5377,15 +5527,16 @@ function PrintableJsa({ jsa }) {
         <MainJsaDocumentPage jsa={jsa} plan={plan} className="printPage" />
       </section>
 
-      {plan.continuationPages.map((rows, idx) => (
+      {(plan.continuationColumns || []).map((cols, idx) => (
         <section className="printSheet" key={idx}>
           <TaskContinuationPage
             jsa={jsa}
-            rows={rows}
+            columns={cols}
+          start={plan.columnOffsets && plan.columnOffsets[idx + 1]}
             pageNumber={2 + idx}
             totalPages={plan.totalPages}
             continuationNumber={idx + 1}
-            continuationTotal={plan.continuationPages.length}
+            continuationTotal={(plan.continuationColumns || []).length}
           />
         </section>
       ))}
@@ -5400,7 +5551,7 @@ function PrintableJsa({ jsa }) {
   );
 }
 
-function TaskContinuationPage({ jsa, rows, pageNumber, totalPages, continuationNumber, continuationTotal, pageRef, className = '' }) {
+function TaskContinuationPage({ jsa, columns, start, pageNumber, totalPages, continuationNumber, continuationTotal, pageRef, className = '' }) {
   return (
     <div className={`printPage continuationPage ${className}`.trim()} ref={pageRef}>
       <PrintBrandHeader title="JSA Continuation Sheet" subtitle={`Continuation ${continuationNumber} of ${continuationTotal}`} pageNumber={pageNumber} totalPages={totalPages} />
@@ -5411,7 +5562,7 @@ function TaskContinuationPage({ jsa, rows, pageNumber, totalPages, continuationN
         </tbody>
       </table>
       <div className="continuationNotice">Continuation of the task, hazard, and control table from the main JSA. Review with the crew as part of the same JSA.</div>
-      <PrintTaskTable rows={rows} className="continuationTaskTable" />
+      <PrintTaskTable columns={columns} start={start} className="continuationTaskTable" />
       <footer className="printFooter">Shackelford Construction and Hauling, LLC · JSA Continuation</footer>
     </div>
   );

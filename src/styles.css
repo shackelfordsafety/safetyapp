@@ -3456,3 +3456,62 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   color: var(--text-2, var(--muted));
 }
 .paperSignNote span { font-size: 14px; line-height: 1.4; }
+
+/* ── The JSA task/hazard/control columns ─────────────────────────────────
+   Three independent numbered lists in one table row, replacing a row per
+   position that invented pairings between three lists of different lengths
+   (see getContentColumns in main.jsx). Fonzo approved the layout against
+   his own real JSA, 2026-09-11.
+
+   Declared for BOTH the on-screen .documentPage and inside @media print,
+   the same way every other rule in this table is, because the PDF path
+   rasterises the on-screen DOM and the paper path uses print media -- a
+   rule in only one of them is a layout that differs between the printout
+   and the PDF, which is the exact class of bug this file has been bitten
+   by before. */
+.documentPage .printTaskTable td,
+.documentPage .continuationTaskTable td { vertical-align: top; }
+.documentPage .printTaskList,
+.documentPage .continuationTaskTable .printTaskList {
+  margin: 0;
+  padding-left: 15px;
+  list-style-position: outside;
+}
+.documentPage .printTaskList li {
+  font-size: 9.8px;
+  line-height: 1.25;
+  padding: 0 0 1.5px;
+  overflow-wrap: break-word;
+  /* pre-line is on the td for the old row layout; a list item is already
+     one entry, so it must not reintroduce the cell's newline handling. */
+  white-space: normal;
+}
+.documentPage .printTaskList li::marker { font-size: 8.6px; color: #333; }
+
+@media print {
+  .printTaskTable td, .continuationTaskTable td { vertical-align: top; }
+  .printTaskList { margin: 0; padding-left: 15px; list-style-position: outside; }
+  .printTaskList li {
+    font-size: 9.8px;
+    line-height: 1.25;
+    padding: 0 0 1.5px;
+    overflow-wrap: break-word;
+    white-space: normal;
+  }
+  .printTaskList li::marker { font-size: 8.6px; color: #333; }
+}
+
+/* The column layout is ONE table row, so the table no longer grows by
+   having more rows added to it -- without an explicit height it stops
+   wherever the longest list ends and leaves the bottom of the page blank.
+   That is what the first generated PDF of this layout did: lists ended 40%
+   down and the rest of the sheet was white. The cells stretch to the box
+   the planner already reserved, exactly as the padded blank rows used to. */
+.documentPage .taskTableFill .printTaskTable { height: 100%; }
+.documentPage .printTaskTable tbody,
+.documentPage .printTaskTable tbody tr { height: 100%; }
+
+@media print {
+  .mainJsaPage .taskTableFill .printTaskTable { height: 100%; }
+  .printTaskTable tbody, .printTaskTable tbody tr { height: 100%; }
+}
