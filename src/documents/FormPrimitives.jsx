@@ -4,6 +4,7 @@ import { useLocked } from './lockedContext';
 import SpeakButton from '../voice/SpeakButton';
 import FileToArchiveButton from '../archive/FileToArchiveButton';
 import SendForReviewButton from '../open/SendForReviewButton';
+import ApproveAndFileButton from '../open/ApproveAndFileButton';
 import { ARCHIVE_FILING_ENABLED } from '../archive/filingEnabled';
 
 /* ── Shared field-section/builder primitives for the four new documents ──
@@ -401,6 +402,14 @@ export function ReviewExportPanel({
             A document type that passes no archiveFiling has no review
             route, so for those the generate button stays primary -- it is
             the only thing on the card. */}
+        {/* For the approver who picked this up out of the review queue:
+            correct it and file it in one action, rather than sending it
+            back to its author over one wrong word. Renders nothing at all
+            for anybody else. */}
+        {archiveFiling && (
+          <ApproveAndFileButton docType={archiveFiling.docType} model={archiveFiling.model} />
+        )}
+
         {archiveFiling && (
           <>
             <SendForReviewButton

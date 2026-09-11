@@ -447,6 +447,93 @@ export async function saveApproverEdit({ id, model }) {
   return { changes };
 }
 
+/* Drawing a finished PDF from a model alone, with no workflow mounted.
+   Four of the six document types draw straight from their data, which is
+   what makes an approver able to correct a document and file a CLEAN copy
+   of it in one action.
+
+   Incident and JSA are not here: both rasterise mounted DOM, so producing
+   one needs their workflow on screen. An approver correcting one of those
+   still has to go through the form. Named rather than silently absent, so
+   the gap is a known gap and not a mystery. */
+const DIRECT_DRAW = {
+  disciplinary: () => import('../documents/disciplinary/disciplinaryPdfDraw').then(m => m.drawDisciplinaryPdf),
+  separation: () => import('../documents/separation/separationPdfDraw').then(m => m.drawSeparationPdf),
+  medicalEvent: () => import('../documents/medicalEvent/medicalEventPdfDraw').then(m => m.drawMedicalEventPdf),
+  uncontrolledEvent: () => import('../documents/uncontrolledEvent/uncontrolledEventPdfDraw').then(m => m.drawUncontrolledEventPdf),
+};
+
+export function canApproveWithoutTheForm(docType) {
+  return Boolean(DIRECT_DRAW[docType]);
+}
+
+/* The approver's whole job in one action: correct it if it needs
+   correcting, make the final printout, and file it.
+
+   Fonzo, 2026-09-11, watching HR bounce a separation back to a clerk over
+   one wrong word: "she's the final person why can't she just file it after
+   making the changes". No reason. This is that.
+
+   The PDF is regenerated here, from the approved wording, with the
+   document marked complete -- so the copy that lands in the archive is
+   clean. The author's copy carries a DRAFT stamp on purpose and always
+   will; taking that stamp off is the approver's act, and now it literally
+   is. */
+export async function approveWithEdits({ id, model }) {
+  blockInDemo('Approving a document');
+  const user = await requireUser();
+  const row = await getOpenDocument(id);
+
+  const draw = DIRECT_DRAW[row.doc_type];
+  if (!draw) {
+    throw new Error('This kind of document has to be corrected in its own form. Open it, fix it, then submit it.');
+  }
+
+  /* Record what changed BEFORE filing. If the file then fails, the author
+     has still been told -- better than a silent correction. */
+  const { diffDocuments } = await import('./documentDiff');
+  const changes = diffDocuments(row.data, model);
+  if (changes.length && row.created_by && row.created_by !== user.id) {
+    await db.from('document_edits').insert({
+      open_document_id: id,
+      doc_type: row.doc_type,
+      edited_by: user.id,
+      notify_user: row.created_by,
+      changes,
+    });
+  }
+
+  /* Marked complete for the draw, not on the saved document -- the status
+     that matters from here on is "filed", and the archive row IS the
+     finished thing. */
+  const drawPdf = await draw();
+  const { blob } = await drawPdf({ ...model, status: 'completed' }, () => {});
+
+  const name = (crypto.randomUUID && crypto.randomUUID())
+    || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const path = `${user.id}/${name}.pdf`;
+  const { error: uploadError } = await db.storage
+    .from('documents')
+    .upload(path, blob, { contentType: 'application/pdf', upsert: false });
+  if (uploadError) throw new Error(`Could not upload the final PDF: ${uploadError.message}`);
+
+  const summarize = SUMMARY[row.doc_type];
+  const summary = summarize ? summarize(model || {}) : {};
+  const { error: saveError } = await db.from('open_documents').update({
+    data: model,
+    pdf_path: path,
+    employee_name: blank(summary.employee_name),
+    job_site: blank(summary.job_site),
+    doc_date: blank(summary.doc_date),
+  }).eq('id', id);
+  if (saveError) throw new Error(`Could not save your corrections: ${saveError.message}`);
+
+  const { data: newId, error: fileError } = await db.rpc('file_reviewed_document', { open_id: id });
+  if (fileError) throw new Error(fileError.message);
+
+  return { id: newId, changes };
+}
+
 /* What this person has been told about and not yet acknowledged. Drives
    the banner at the top of My Work. */
 export async function myUnacknowledgedChanges() {
