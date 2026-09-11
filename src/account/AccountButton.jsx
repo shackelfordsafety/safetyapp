@@ -75,16 +75,41 @@ export default function AccountButton() {
     }
   }
 
+  /* Signing out takes the paperwork with you. HR signed out on a shared
+     device 2026-09-11 and her half-written separation form was still sitting
+     there for whoever picked it up -- localStorage is per DEVICE, so on the
+     one iPad in a job trailer "signed out" meant nothing at all.
+
+     Asked first, and only when there is genuinely something to lose, with
+     the documents named. Somebody who has spent twenty minutes on an
+     incident report deserves to be told before it goes, not after. */
   async function signOut() {
+    const { unfinishedOnThisDevice, clearWorkFromThisDevice } = await import('../shared/clearOnSignOut');
+    const unfinished = unfinishedOnThisDevice();
+    if (unfinished.length) {
+      const list = unfinished.map(x => `  • ${x}`).join('\n');
+      const ok = window.confirm(
+        `Signing out removes unfinished paperwork from this device:\n\n${list}\n\n`
+        + 'This is so the next person to pick it up cannot read it. Anything you '
+        + 'have already submitted is safe on your account.\n\nSign out and remove it?'
+      );
+      if (!ok) return;
+    }
+
     setBusy(true);
     try {
       const { db } = await loadModule(() => import('../archive/archiveClient'));
       await db.auth.signOut();
     } catch { /* clearing the local session below is what actually matters */ }
+    clearWorkFromThisDevice();
     refresh();
     setSession(null);
     setBusy(false);
     setOpen(false);
+    /* Reloaded rather than re-rendered: every workflow holds its document
+       in React state, and clearing storage under a mounted form would let
+       its 900ms autosave write the whole thing straight back. */
+    window.location.reload();
   }
 
   return (

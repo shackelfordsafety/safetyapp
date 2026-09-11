@@ -340,12 +340,29 @@ export default function ArchiveView() {
     return () => { cancelled = true; };
   }, [loadEverything]);
 
+  /* The second sign-out in the app. It has to do exactly what the account
+     chip's does, or signing out from Records would leave the very
+     paperwork the other one exists to clear -- which is the shape of bug
+     that gets found by a person and not by a test. See clearOnSignOut.js. */
   async function signOut() {
+    const { unfinishedOnThisDevice, clearWorkFromThisDevice } = await import('../shared/clearOnSignOut');
+    const unfinished = unfinishedOnThisDevice();
+    if (unfinished.length) {
+      const list = unfinished.map(x => `  • ${x}`).join('\n');
+      const ok = window.confirm(
+        `Signing out removes unfinished paperwork from this device:\n\n${list}\n\n`
+        + 'This is so the next person to pick it up cannot read it. Anything you '
+        + 'have already submitted is safe on your account.\n\nSign out and remove it?'
+      );
+      if (!ok) return;
+    }
     await db.auth.signOut();
+    clearWorkFromThisDevice();
     setSession(null);
     setProfile(null);
     setRows([]);
     setStatus('signedout');
+    window.location.reload();
   }
 
   const seesAll = profile?.role === 'safety' || profile?.role === 'hr';
