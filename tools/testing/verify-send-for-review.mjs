@@ -69,16 +69,24 @@ async function main() {
     await page.waitForTimeout(800);
     await page.getByRole('button', { name: 'Continue Incident Report' }).click();
     await page.getByRole('tab', { name: /^Review & Export/ }).click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(700);
+
+    /* The whole point of this pass: Submit is there BEFORE any printout
+       has been made. It used to be Create Document, then Download, then
+       Send -- three taps for one intention. */
+    const sendBtn = page.getByRole('button', { name: /Submit for review/i });
+    check('Submit is on the screen before any printout has been made',
+      await sendBtn.count() > 0);
+    check('it is not hidden behind "Create Document" first',
+      await sendBtn.first().isEnabled());
+
+    // Now make the printout the old way, so the rest of the checks see the
+    // ready panel too.
     await page.locator('button:has-text("Create Document"), button:has-text("Update Document")').first().click();
     await page.locator('.pdfReadyPanel').waitFor({ state: 'visible', timeout: 60000 });
     await page.waitForTimeout(400);
 
-    const sendBtn = page.getByRole('button', { name: /Send it for review/i });
-    check('the "Send it for review" button is on the finished document',
-      await sendBtn.count() > 0);
-
-    const panel = await page.locator('.pdfReadyPanel').innerText();
+    const panel = await page.locator(".stepPanel").first().innerText();
     check('it says where the document is going, in the words of the job',
       /PM or an owner/i.test(panel), panel.split('\n').filter(l => /PM|owner|archive/i.test(l)).join(' | '));
 
@@ -100,7 +108,7 @@ async function main() {
     // With nobody signed in it must ask for a login, not fail quietly.
     await sendBtn.first().click();
     await page.waitForTimeout(2500);
-    const afterText = await page.locator('.pdfReadyPanel').innerText();
+    const afterText = await page.locator("body").innerText();
     check('with no account it asks for a sign-in instead of failing silently',
       /Sign in to send this for review/i.test(afterText),
       afterText.split('\n').slice(-4).join(' | '));

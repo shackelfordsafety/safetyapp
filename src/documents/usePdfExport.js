@@ -33,6 +33,11 @@ export function usePdfExport({ buildFilename, fingerprint, onGenerated, showToas
         : await capturePagesToPdf(pageRefsRef, onProgress);
       setPdfExportState({ phase: 'ready', blob, filename, pageCount, fingerprint, shareMessage: null });
       onGenerated?.(pageCount);
+      /* Handed back so ONE button can generate and submit in a single tap.
+         The state above is still what the screen reads; this is only for a
+         caller that needs the bytes in the same breath, because React
+         state is not readable synchronously after setting it. */
+      return blob;
     } catch (err) {
       console.error('[pdf export]', err);
       showToast?.(`PDF export failed (${err?.message || 'unknown error'}).`);

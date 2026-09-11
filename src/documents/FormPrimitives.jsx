@@ -431,17 +431,28 @@ export function ReviewExportPanel({
                 pdfBlob={pdfExportState.blob}
               />
             )}
-            {/* The route that replaces filing for everybody who is not a
-                PM, HR or an owner -- which is everybody who actually
-                writes these. Send it up; they file it. */}
-            {archiveFiling && (
-              <SendForReviewButton
-                docType={archiveFiling.docType}
-                model={archiveFiling.model}
-                pdfBlob={pdfExportState.blob}
-              />
-            )}
           </div>
+        )}
+
+        {/* Submit is ALWAYS here, not tucked inside the "document ready"
+            panel, because it is the one thing a man came to this screen to
+            do. Fonzo, 2026-09-11: "once they're done they click one button
+            'submit'". Making the printout used to be a separate tap before
+            it, so the button makes it itself when there isn't one yet --
+            and reuses the existing one when there is. */}
+        {archiveFiling && (
+          <>
+            <SendForReviewButton
+              docType={archiveFiling.docType}
+              model={archiveFiling.model}
+              pdfBlob={isReady && !isPdfStale ? pdfExportState.blob : null}
+              ensurePdf={onGeneratePdf}
+              disabled={!checklistComplete}
+            />
+            {!checklistComplete && (
+              <p className="helperText">Finish the list above before sending it up.</p>
+            )}
+          </>
         )}
       </div>
 

@@ -38,8 +38,8 @@ const GOES_TO = {
   jsa: 'a PM or an owner',
 };
 
-export default function SendForReviewButton({ docType, model, pdfBlob, disabled }) {
-  const [phase, setPhase] = useState('idle'); // idle | needsSignIn | working | sent | error
+export default function SendForReviewButton({ docType, model, pdfBlob, ensurePdf, disabled }) {
+  const [phase, setPhase] = useState('idle'); // idle | needsSignIn | working | making | sent | error
   const [message, setMessage] = useState('');
   const [note, setNote] = useState('');
   const [email, setEmail] = useState('');
@@ -48,9 +48,24 @@ export default function SendForReviewButton({ docType, model, pdfBlob, disabled 
   const goesTo = GOES_TO[docType] || 'a PM or an owner';
 
   async function send() {
-    setPhase('working');
     setMessage('');
     try {
+      /* One button, not three. Fonzo, 2026-09-11: "once they're done they
+         click one button 'submit'". Making the printout was a separate tap
+         before this, and then downloading it was another, and only then
+         could you send it -- three actions for one intention. If the PDF
+         does not exist yet this makes it first. */
+      let blob = pdfBlob;
+      if (!blob && ensurePdf) {
+        setPhase('making');
+        blob = await ensurePdf();
+        if (!blob) {
+          setMessage('The printout could not be made, so nothing was sent. Try again.');
+          setPhase('error');
+          return;
+        }
+      }
+      setPhase('working');
       const mod = await loadModule(() => import('./openDocs'));
       try {
         /* Two steps and they have to be in this order: the row has to
@@ -58,7 +73,7 @@ export default function SendForReviewButton({ docType, model, pdfBlob, disabled 
            an upsert on the id it returns, so tapping this twice does not
            make two documents. */
         const { id } = await mod.shareOpenDocument({ id: null, docType, model });
-        await mod.submitForSignOff({ id, pdfBlob, note });
+        await mod.submitForSignOff({ id, pdfBlob: blob, note });
         setPhase('sent');
       } catch (err) {
         if (err instanceof mod.NotSignedInError || err?.name === 'NotSignedInError') {
@@ -134,9 +149,9 @@ export default function SendForReviewButton({ docType, model, pdfBlob, disabled 
         type="button"
         className="btn primary lg"
         onClick={send}
-        disabled={disabled || phase === 'working'}
+        disabled={disabled || phase === 'working' || phase === 'making'}
       >
-        {phase === 'working' ? 'Sending…' : 'Send it for review'}
+        {phase === 'making' ? 'Making the printout…' : phase === 'working' ? 'Sending…' : 'Submit for review'}
       </button>
       {phase === 'error' && <p className="archiveError">{message}</p>}
       <p className="helperText">

@@ -1846,6 +1846,9 @@ function App() {
         setIncident(savedNow);
         setSavedIncidentDraft(savedNow);
       }
+      /* Handed back so ONE button can generate and submit in a single tap
+         -- React state is not readable synchronously after setting it. */
+      return blob;
     } catch (err) {
       console.error('[incident pdf export]', err);
       showToast(`PDF export failed (${err?.message || 'unknown error'}).`);
