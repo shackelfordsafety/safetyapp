@@ -458,7 +458,6 @@ function StepNotes({ incident, upd, prev, next }) {
 /* ── Step: Review & Export ── */
 function StepReview({ incident, prev, pdfExportState, isPdfStale, onGeneratePdf, onDownload, onMarkReady, onMarkIncomplete, onStartNew, setStep }) {
   const c = t.review;
-  const [confirmingFinish, setConfirmingFinish] = useState(false);
   const checks = getIncidentReadinessChecks(incident);
   const checklistComplete = isIncidentReady(incident);
   const isGenerating = pdfExportState?.phase === 'generating';
@@ -493,30 +492,22 @@ function StepReview({ incident, prev, pdfExportState, isPdfStale, onGeneratePdf,
             </button>
           ))}
         </div>
-        {status === 'draft' && (
-          <div className="reviewInlineAction">
-            <button className="btn secondary" onClick={() => setConfirmingFinish(true)} disabled={!checklistComplete}>{c.markReady}</button>
-          </div>
-        )}
+        {/* "Mark Complete" is gone, 2026-09-11. It let the man writing the
+            report decide it was finished, which took the DRAFT watermark
+            off a document nobody had approved. Fonzo: "i don't want any
+            foreman/supers accidentally submitted forms without HR or a PM
+            approving it."
+
+            A report is a draft until somebody with the authority signs it
+            off. That is not a button on this screen any more -- it is
+            Send it for review, below, and the approver's decision. */}
         {status !== 'draft' && (
           <>
-            <p className="helperText">Marked complete. Editing is locked while it's marked this way — creating or updating the PDF does not change this.</p>
+            <p className="helperText">Marked complete on an older version of the app. Unlock it to keep editing — completing is now the approver&apos;s call.</p>
             <div className="reviewInlineAction">
-              <button className="btn secondary" onClick={onMarkIncomplete}>Mark Incomplete</button>
+              <button className="btn secondary" onClick={onMarkIncomplete}>Unlock for editing</button>
             </div>
           </>
-        )}
-        {confirmingFinish && (
-          <ConfirmDialog
-            title="Mark this document complete?"
-            message={[
-              'Marking it complete locks the fields from further editing and removes the DRAFT watermark from the PDF.',
-              'You can come back here and choose "Mark Incomplete" any time to unlock it and keep editing.',
-            ]}
-            confirmLabel="Mark Complete"
-            onCancel={() => setConfirmingFinish(false)}
-            onConfirm={() => { setConfirmingFinish(false); onMarkReady(); }}
-          />
         )}
       </div>
 

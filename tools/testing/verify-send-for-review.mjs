@@ -85,6 +85,16 @@ async function main() {
     check('direct "File to the archive" is still hidden for a non-JSA document',
       !/File to the archive/i.test(panel));
 
+    /* The author no longer gets to declare his own report finished. That
+       button took the DRAFT watermark off a document nobody had approved,
+       which is exactly what Fonzo did not want a super able to do. */
+    const wholePage = await page.locator('body').innerText();
+    check('the author cannot mark his own report complete any more',
+      !/Mark Complete/i.test(wholePage),
+      /Mark Complete/i.test(wholePage) ? 'Mark Complete is still on the page' : 'gone');
+    check('a document completed under the old behaviour can still be unlocked',
+      /Unlock for editing/i.test(wholePage) || !/marked complete/i.test(wholePage));
+
     await page.screenshot({ path: path.join(outDir, '01-ready-panel.png'), fullPage: true });
 
     // With nobody signed in it must ask for a login, not fail quietly.

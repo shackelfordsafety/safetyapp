@@ -353,7 +353,7 @@ export function ReviewExportPanel({
      this gets adopted one form at a time. */
   archiveFiling,
 }) {
-  const [confirmingFinish, setConfirmingFinish] = useState(false);
+
   const isGenerating = pdfExportState?.phase === 'generating';
   const isReady = pdfExportState?.phase === 'ready';
   const remainingCount = checks.filter(c => !c.ok).length;
@@ -377,27 +377,18 @@ export function ReviewExportPanel({
         {status !== 'draft' && (
           <p className="helperText">Marked complete. Editing is locked while it's marked this way — creating or updating the PDF does not change this.</p>
         )}
-        <SegmentedToggle
-          label="Is this document complete?"
-          value={status === 'draft' ? 'no' : 'yes'}
-          disabledValues={status === 'draft' && !checklistComplete ? ['yes'] : []}
-          onChange={v => {
-            if (v === 'yes') { if (checklistComplete) setConfirmingFinish(true); }
-            else if (status !== 'draft') onMarkIncomplete();
-          }}
-          options={[{ value: 'yes', label: 'Yes', tone: 'yes' }, { value: 'no', label: 'No', tone: 'no' }]}
-        />
-        {confirmingFinish && (
-          <ConfirmDialog
-            title="Mark this document complete?"
-            message={[
-              'Marking it complete locks the fields from further editing.',
-              'You can come back here and choose "Mark Incomplete" any time to unlock it and keep editing.',
-            ]}
-            confirmLabel="Mark Complete"
-            onCancel={() => setConfirmingFinish(false)}
-            onConfirm={() => { setConfirmingFinish(false); onMarkReady(); }}
-          />
+        {/* "Is this document complete?" is gone, 2026-09-11 -- same reason
+            as Incident's Mark Complete. The man writing it does not get to
+            decide it is finished, because that took the DRAFT watermark
+            off a document nobody had approved. Completing is the
+            approver's call now; this screen's job is Send it for review.
+
+            Only kept for a document already marked complete under the old
+            behaviour, so it can be unlocked. */}
+        {status !== 'draft' && (
+          <div className="reviewInlineAction">
+            <button type="button" className="btn secondary" onClick={onMarkIncomplete}>Unlock for editing</button>
+          </div>
         )}
       </div>
 
