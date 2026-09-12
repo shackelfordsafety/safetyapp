@@ -26,16 +26,22 @@
 
 const KEY = 'sdc.viewAs.v1';
 
+/* Roles, never people. This list named Hunter, Reeves, Pat and Nic until
+   2026-09-11 -- Fonzo: "hunter and reeves dont need to be named, no one
+   needs to be named". He is right, and not only because it reads cleaner:
+   it sits on a settings screen anybody might be looking over his shoulder
+   at, the names go stale the day somebody changes job, and what the
+   picker is actually for is a ROLE's screen, not a person's. */
 export const VIEW_AS_ROLES = [
   { id: '', label: 'Myself', hint: 'Everything. The account above all of it.' },
-  { id: 'owner', label: 'An owner', hint: 'Hunter or Reeves — sees and files everything' },
-  { id: 'hr', label: 'HR', hint: 'Pat — approves disciplinary and separation' },
-  { id: 'pm', label: 'A PM', hint: 'Approves incident, medical and uncontrolled' },
-  { id: 'safety', label: 'Safety', hint: 'Sees everything, approves nothing' },
-  { id: 'clerk', label: 'A clerk', hint: 'Nic — sees everything, approves nothing' },
-  { id: 'superintendent', label: 'A superintendent', hint: 'Own documents, plus every disciplinary' },
-  { id: 'foreman', label: 'A foreman', hint: 'Same as a superintendent' },
-  { id: 'field', label: 'A field employee', hint: 'Only their own documents' },
+  { id: 'owner', label: 'See as an owner', hint: 'Sees and files everything' },
+  { id: 'hr', label: 'See as HR', hint: 'Approves disciplinary and separation' },
+  { id: 'pm', label: 'See as a PM', hint: 'Approves incident, medical and uncontrolled' },
+  { id: 'safety', label: 'See as safety', hint: 'Sees everything, approves nothing' },
+  { id: 'clerk', label: 'See as a clerk', hint: 'Sees everything, approves nothing' },
+  { id: 'superintendent', label: 'See as a superintendent', hint: 'Own documents, plus every disciplinary' },
+  { id: 'foreman', label: 'See as a foreman', hint: 'Same as a superintendent' },
+  { id: 'field', label: 'See as a field employee', hint: 'Only their own documents' },
 ];
 
 export function readViewAs() {
