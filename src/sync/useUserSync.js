@@ -5,6 +5,7 @@ import { readStoredSession, deviceName } from '../shared/session';
    userSync.js which drags the whole Supabase library in with it. */
 import { mergeTemplates } from './mergeRules';
 import { readTombstones } from './syncMeta';
+import { readLastFinished, writeLastFinished } from '../shared/handOff';
 
 /* ── Keeping templates and settings in step across devices ───────────────
    Deliberately quiet. This never shows a spinner, never blocks a screen,
@@ -43,11 +44,21 @@ export function useUserSync({ templates, setTemplates, settings, setSettings, on
       const merged = await mod.syncUserData({
         templates: dataRef.current.templates,
         settings: dataRef.current.settings,
+        /* Read at the moment of the call rather than held in state: it is
+           written by the hand-off when a JSA is published, which never
+           goes through React state at all. */
+        lastJsa: readLastFinished('jsa'),
         deviceLabel: deviceName(),
       });
       if (!merged) return;
 
       if (onNeedsName) onNeedsName(Boolean(merged.needsName));
+
+      /* A JSA finished on another device. Written straight to storage in
+         exactly the shape the local hand-off writes, so "Same info as last
+         time?" cannot tell the two apart -- which is the whole point:
+         "i need it across devices wherever you're signed in". */
+      if (merged.jsaFromCloud) writeLastFinished('jsa', merged.jsaFromCloud);
 
       /* Did anything change on this device while the round trip was out?
          If so, the merged list coming back does not know about it, and
@@ -111,4 +122,11 @@ export function useUserSync({ templates, setTemplates, settings, setSettings, on
     const t = setTimeout(run, DEBOUNCE_MS);
     return () => clearTimeout(t);
   }, [templates, settings, run]);
+
+  /* Handed back so publishing a JSA can push it up straight away.
+     Publishing writes the snapshot to storage and touches neither
+     templates nor settings, so nothing above would notice -- and a man who
+     publishes on his phone at 6am and puts it in his pocket may not give
+     this app another focus event before he picks up the iPad. */
+  return run;
 }

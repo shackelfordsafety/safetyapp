@@ -91,3 +91,24 @@ export function handOffDraft(docType, model) {
     return false;
   }
 }
+
+/* Replaces this device's snapshot with one that came from another device.
+   Used by sync -- see src/sync/userSync.js.
+
+   Same shape snapshotFinished writes, so everything that reads it
+   (readLastFinished, and "Same info as last time?" through it) cannot
+   tell the difference between a JSA finished here and one finished on the
+   phone this morning. Which is the entire point. */
+export function writeLastFinished(docType, snapshot) {
+  const key = SNAPSHOT_KEYS[docType];
+  if (!key || !snapshot?.model) return false;
+  try {
+    localStorage.setItem(key, JSON.stringify({
+      savedAt: snapshot.savedAt || new Date().toISOString(),
+      model: snapshot.model,
+    }));
+    return true;
+  } catch {
+    return false;
+  }
+}

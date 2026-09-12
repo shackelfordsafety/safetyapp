@@ -21,6 +21,41 @@ import { IS_DEMO } from '../shared/demoMode';
    want" conversation rather than a merge. Separate piece of work, on
    purpose -- doing it badly is how somebody loses a morning of typing. */
 
+/* What is safe and useful to carry between a man's own devices.
+
+   "Same info as last time?" only ever reuses the JOB: the site, the
+   number, the crew leads, the tasks, the hazards, the controls. Everything
+   day-specific is reset the moment it is applied anyway
+   (makeTodayFromTemplate does it), so sending it would be pointless
+   weight on a job-trailer connection.
+
+   The crew signatures are the ones that MUST NOT travel. They are images
+   of real men's signatures, they are already recorded properly against
+   the publication they belong to, and a copy of them riding around in a
+   sync row serves nobody. Stripped here, before the upload, not filtered
+   out on the way back down -- so they are never sent in the first place. */
+function stripForRepeat(model) {
+  if (!model || typeof model !== 'object') return null;
+  const {
+    crewSignatures, signInMode, archivedPublicationId,
+    date, timeIssued, timeExpired, tailgateTopic, previousDaySafety,
+    notes, lastSavedAt, status, completedAt,
+    ...job
+  } = model;
+  return job;
+}
+
+/* Newest wins, by when the JSA was actually finished -- not by which
+   device synced last. Same lesson as the settings stamp: "most recently
+   opened" is not "newest". */
+function newerSnapshot(a, b) {
+  const at = Date.parse(a?.savedAt || 0) || 0;
+  const bt = Date.parse(b?.savedAt || 0) || 0;
+  if (!a?.model) return b?.model ? b : null;
+  if (!b?.model) return a;
+  return bt > at ? b : a;
+}
+
 async function userId() {
   const { data } = await db.auth.getUser();
   return data?.user?.id || null;
@@ -32,7 +67,7 @@ async function userId() {
    throws only on a real failure the caller may want to report -- callers
    treat a throw as "stay local", never as an error worth interrupting
    anyone over. */
-export async function syncUserData({ templates, settings, deviceLabel }) {
+export async function syncUserData({ templates, settings, lastJsa, deviceLabel }) {
   /* Skipped entirely on the testing site, not just the write half. A demo
      that pulled the real account's templates down would also push whatever
      the owners invented back up into it, and Fonzo would find their
@@ -44,7 +79,7 @@ export async function syncUserData({ templates, settings, deviceLabel }) {
 
   const { data: row, error } = await db
     .from('user_sync')
-    .select('templates, template_tombstones, settings, updated_at')
+    .select('templates, template_tombstones, settings, last_jsa, updated_at')
     .eq('user_id', uid)
     .maybeSingle();
   if (error) throw error;
@@ -72,19 +107,31 @@ export async function syncUserData({ templates, settings, deviceLabel }) {
 
   writeTombstones(tombstones);
 
-  const before = JSON.stringify([row?.templates || [], row?.settings || {}, row?.template_tombstones || []]);
-  const after = JSON.stringify([mergedTemplates, mergedSettings, tombstones]);
+  /* The last JSA, so "same info as last time?" answers the same on the
+     phone and the iPad. Stripped on the way UP -- crew signatures and
+     day-specific fields never leave the device. */
+  const localJsa = lastJsa?.model
+    ? { savedAt: lastJsa.savedAt, model: stripForRepeat(lastJsa.model) }
+    : null;
+  const mergedJsa = newerSnapshot(localJsa, row?.last_jsa || null);
+
+  const before = JSON.stringify([row?.templates || [], row?.settings || {}, row?.template_tombstones || [], row?.last_jsa || null]);
+  const after = JSON.stringify([mergedTemplates, mergedSettings, tombstones, mergedJsa]);
   if (before !== after) {
     const { error: upErr } = await db.from('user_sync').upsert({
       user_id: uid,
       templates: mergedTemplates,
       template_tombstones: tombstones,
       settings: mergedSettings,
+      last_jsa: mergedJsa,
       updated_at: new Date().toISOString(),
       updated_by_device: deviceLabel || null,
     }, { onConflict: 'user_id' });
     if (upErr) throw upErr;
   }
 
-  return { templates: mergedTemplates, settings: mergedSettings, cloudWins, needsName };
+  /* jsaFromCloud is set only when the cloud's copy actually won, so the
+     caller knows whether there is anything to write to this device. */
+  const jsaFromCloud = mergedJsa && mergedJsa !== localJsa ? mergedJsa : null;
+  return { templates: mergedTemplates, settings: mergedSettings, cloudWins, needsName, jsaFromCloud };
 }

@@ -1538,7 +1538,7 @@ function App() {
   const [needsName, setNeedsName] = useState(false);
   const [nameNudgeHidden, setNameNudgeHidden] = useState(false);
 
-  useUserSync({
+  const syncNow = useUserSync({
     templates: customTemplates,
     setTemplates: setCustomTemplates,
     settings,
@@ -2303,6 +2303,11 @@ function App() {
        moment it resurrected itself. */
     stopJsaAutosave();
     handOffDraft('jsa', jsa);
+    /* Push it up now, so the iPad can offer "same info as last time?" a
+       minute later. Not awaited and never blocking: publishing has already
+       succeeded, and a JSA that reached the board matters more than a
+       snapshot that reached the cloud. */
+    Promise.resolve(syncNow?.()).catch(() => {});
     setJsa(emptyJsa());
     setSavedDraft(null);
     setTemplateId('blank-jsa');
