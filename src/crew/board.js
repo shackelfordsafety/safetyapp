@@ -511,13 +511,28 @@ export async function fetchUnfiledExpired() {
 
   const { data: sigs, error: sigErr } = await db
     .from('jsa_signatures')
-    .select('publication_id, signature_data, signed_at')
+    /* signer_name matters as much as the signature. A man scanning the QR
+       on his own phone types his name before he signs -- 55 of the 62
+       signatures on one real sheet had one -- and this query used to leave
+       it behind, so the printed record was 26 squiggles and no way to tell
+       who was who. Fonzo, 2026-09-11, reading a filed sheet: "would be
+       dope if on the pdf their names show up along w the signature, so we
+       know who is who".
+
+       Kiosk signatures genuinely have no name and never did -- one iPad
+       passed down a line of 50 men, numbered only, on purpose. Those print
+       as they always have. */
+    .select('publication_id, signature_data, signed_at, signer_name')
     .in('publication_id', pending.map(p => p.id))
     .order('signed_at', { ascending: true });
   if (sigErr) throw new Error(sigErr.message);
 
   const byPub = (sigs || []).reduce((acc, s) => {
-    (acc[s.publication_id] = acc[s.publication_id] || []).push({ dataUrl: s.signature_data, signedAt: s.signed_at });
+    (acc[s.publication_id] = acc[s.publication_id] || []).push({
+      dataUrl: s.signature_data,
+      signedAt: s.signed_at,
+      name: s.signer_name || '',
+    });
     return acc;
   }, {});
 

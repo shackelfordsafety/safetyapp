@@ -13,7 +13,7 @@ import path from 'node:path';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..', '..');
-const PORT = 4361;
+const PORT = 4364;
 const BASE_URL = `http://localhost:${PORT}`;
 
 const results = [];

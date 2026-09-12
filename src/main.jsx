@@ -575,7 +575,9 @@ function getSignaturePages(jsa) {
     pages.push(Array.from({ length: size }, () => {
       const n = next++;
       const signed = crew[n - 1];
-      return signed ? { n, dataUrl: signed.dataUrl } : { n };
+      /* The typed name rides along with the signature. Blank for kiosk
+         signatures, which are numbered-only by design -- see board.js. */
+      return signed ? { n, dataUrl: signed.dataUrl, name: signed.name || '' } : { n };
     }));
   }
   return pages;
@@ -5729,10 +5731,15 @@ function AttachedSignIn({ jsa, pages, pageOffset, totalPages, getPageRef, indexO
             </table>
             <div className="ackBlock signInAck"><strong>Acknowledgement:</strong> I have reviewed and understand the JSA and tailgate meeting information and will exercise stop work authority for unsafe acts, conditions, or hazards.</div>
             <div className="attachedSignatureGrid" style={{ '--sig-row-h': `${SIGNIN_ROW_HEIGHT_PX}px` }}>
-              {lines.map(({ n, dataUrl }) => (
+              {lines.map(({ n, dataUrl, name }) => (
                 <div className={`attachedSigLine${dataUrl ? ' attachedSigLineDigital' : ''}`} key={n}>
                   <span className="attachedSigLineNum">{n}.</span>
                   {dataUrl && <img className="attachedSigLineImg" src={dataUrl} alt="" />}
+                  {/* Printed under the signature, the way a paper form has a
+                      "print name" line under the signing line. The signature
+                      is still the record; this says who it belongs to. Absent
+                      for kiosk signatures, which never had a name. */}
+                  {name ? <span className="attachedSigLineName">{name}</span> : null}
                 </div>
               ))}
             </div>

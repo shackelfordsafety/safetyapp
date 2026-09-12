@@ -2593,8 +2593,10 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 }
 .documentPage .attachedSigLine {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  align-content: center;
+  gap: 0 6px;
   border-right: 1px solid #000;
   border-bottom: 1px solid #000;
   padding: 5px 7px;
@@ -2603,10 +2605,26 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 .documentPage .attachedSigLineNum { flex: 0 0 auto; }
 .documentPage .attachedSigLineImg {
   flex: 0 0 auto;
-  height: calc(var(--sig-row-h) - 16px);
+  height: calc(var(--sig-row-h) - 30px);
   width: auto;
   max-width: 100%;
   display: block;
+}
+/* The typed name, printed under the signature the way a paper form has a
+   "print name" line under the signing line. See .attachedSigLineName in
+   the @media print block for the full reasoning -- all three copies of
+   these rules must stay identical or the preview, the print and the PDF
+   start disagreeing about the same sheet. */
+.documentPage .attachedSigLineName {
+  flex: 0 0 100%;
+  padding-left: 16px;
+  font-size: 8px;
+  line-height: 10px;
+  letter-spacing: 0.02em;
+  color: #000;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 @media (max-width: 840px) {
@@ -2833,14 +2851,45 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   }
   .attachedSigLine {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 6px;
+    align-content: center;
+    gap: 0 6px;
     border-right: 1px solid #000;
     border-bottom: 1px solid #000;
     padding: 5px 7px;
     font-size: 10px;
   }
   .attachedSigLineNum { flex: 0 0 auto; }
+  /* Who the signature belongs to.
+     A man scanning the QR types his name before he signs, and that name
+     was being dropped between the database and this sheet -- so a filed
+     record was 26 squiggles with no way to tell one from another (Fonzo,
+     2026-09-11, reading a real filed sheet: "would be dope if on the pdf
+     their names show up along w the signature, so we know who is who").
+     The signature is still the record; this says whose it is.
+
+     It gets its own line inside the SAME fixed 55px row rather than
+     growing the row -- row height is what the whole sign-in pagination is
+     built on (see getSignaturePages/SIGNIN_ROW_HEIGHT_PX), and changing it
+     would move every page boundary on the sheet. The signature gives up
+     14px of height to make room, which is why .attachedSigLineImg now
+     subtracts 30 rather than 16.
+
+     Kiosk signatures carry no name and never did -- one iPad down a line
+     of 50 men, numbered only, on purpose -- so nothing renders for those
+     and they print exactly as before. */
+  .attachedSigLineName {
+    flex: 0 0 100%;
+    padding-left: 16px;
+    font-size: 8px;
+    line-height: 10px;
+    letter-spacing: 0.02em;
+    color: #000;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   /* A captured kiosk signature ("printer ink," per Fonzo) prints inline next
      to its number, sized directly off the row's own fixed, known height --
      16px accounts for the row's vertical padding plus a small margin so ink
@@ -2855,7 +2904,7 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
      of that runtime measurement/fitting in the first place. */
   .attachedSigLineImg {
     flex: 0 0 auto;
-    height: calc(var(--sig-row-h) - 16px);
+    height: calc(var(--sig-row-h) - 30px);
     width: auto;
     max-width: 100%;
     display: block;
@@ -3057,17 +3106,32 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 }
 .pdfExportRoot .attachedSigLine {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  align-content: center;
+  gap: 0 6px;
   border-right: 1px solid #000;
   border-bottom: 1px solid #000;
   padding: 5px 7px;
   font-size: 10px;
 }
 .pdfExportRoot .attachedSigLineNum { flex: 0 0 auto; }
+/* Must match .attachedSigLineName in the @media print block exactly --
+   this is the copy that actually becomes the PDF. */
+.pdfExportRoot .attachedSigLineName {
+  flex: 0 0 100%;
+  padding-left: 16px;
+  font-size: 8px;
+  line-height: 10px;
+  letter-spacing: 0.02em;
+  color: #000;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .pdfExportRoot .attachedSigLineImg {
   flex: 0 0 auto;
-  height: calc(var(--sig-row-h) - 16px);
+  height: calc(var(--sig-row-h) - 30px);
   width: auto;
   max-width: 100%;
   display: block;
