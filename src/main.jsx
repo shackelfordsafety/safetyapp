@@ -65,6 +65,7 @@ import {
   separationStepProgress, separationNextStepHint,
 } from './documents/separation/separationModel';
 import SeparationWorkflow from './documents/separation/SeparationWorkflow';
+import { workWasClearedForSignOut } from './shared/clearOnSignOut';
 
 /* The company document archive is the only part of this app that needs a
    login and a network. Loaded lazily on purpose: a superintendent filling
@@ -1609,6 +1610,10 @@ function App() {
   const [confirmReplace, setConfirmReplace] = useState(null); // null | { action: 'blank' } | { action: 'template', templateId }
   const autoSaveTimer = useRef(null);
   const lastAutoSaveSnapshot = useRef('');
+  /* What autosave is holding but has not written yet -- see flushPendingAutosaves
+     below for why these exist. One per document that autosaves. */
+  const jsaPendingSave = useRef(null);
+  const incidentPendingSave = useRef(null);
   // null (idle)
   // | { phase: 'generating', status: 'preparing'|'rendering'|'finalizing', pageIndex?, totalPages? }
   // | { phase: 'ready', blob, filename, pageCount, fingerprint, shareMessage }
@@ -1629,10 +1634,20 @@ function App() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = settings.theme || 'light';
-    localStorage.setItem(KEYS.settings, JSON.stringify(settings));
-    // Records WHEN this device last changed settings, so sync can tell
-    // whose copy is newer. localStorage only -- see syncMeta.js.
-    markSettingsChanged();
+    const next = JSON.stringify(settings);
+    /* Only stamp when the settings REALLY changed. This effect also runs
+       the moment the app opens, and stamping there told sync "this device
+       changed its settings just now" every single time -- so an iPad that
+       had been in a truck for a month would open, claim to be the newest,
+       and push its month-old settings over everything the phone had
+       changed since. Whoever opened an app last won, which is not what
+       anyone means by newest. Found by an outside reviewer, 2026-09-11. */
+    if (next !== localStorage.getItem(KEYS.settings)) {
+      localStorage.setItem(KEYS.settings, next);
+      // Records WHEN this device last changed settings, so sync can tell
+      // whose copy is newer. localStorage only -- see syncMeta.js.
+      markSettingsChanged();
+    }
   }, [settings]);
 
   useEffect(() => {
@@ -1665,12 +1680,14 @@ function App() {
     const snapshot = JSON.stringify({ ...jsa, lastSavedAt: '' });
     if (snapshot === lastAutoSaveSnapshot.current) return undefined;
     setSaveStatus('saving');
+    jsaPendingSave.current = { snapshot, jsa };
     clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
       const next = { ...jsa, status: jsa.status === 'ready' ? 'ready' : 'draft', lastSavedAt: new Date().toISOString() };
       try {
         localStorage.setItem(KEYS.draft, JSON.stringify(next));
         lastAutoSaveSnapshot.current = snapshot;
+        jsaPendingSave.current = null;
         setSavedDraft(next);
         setJsa(prev => ({ ...prev, lastSavedAt: next.lastSavedAt }));
         setSaveStatus('saved');
@@ -1689,11 +1706,13 @@ function App() {
     const snapshot = JSON.stringify({ ...incident, lastSavedAt: '' });
     if (snapshot === lastIncidentAutoSaveSnapshot.current) return undefined;
     setIncidentSaveStatus('saving');
+    incidentPendingSave.current = { snapshot, incident };
     clearTimeout(incidentAutoSaveTimer.current);
     incidentAutoSaveTimer.current = setTimeout(() => {
       const next = { ...incident, lastSavedAt: new Date().toISOString() };
       if (saveIncidentDraft(next)) {
         lastIncidentAutoSaveSnapshot.current = snapshot;
+        incidentPendingSave.current = null;
         setSavedIncidentDraft(next);
         setIncident(prev => ({ ...prev, lastSavedAt: next.lastSavedAt }));
         setIncidentSaveStatus('saved');
@@ -1703,6 +1722,85 @@ function App() {
     }, 900);
     return () => clearTimeout(incidentAutoSaveTimer.current);
   }, [incident, activeDoc]);
+
+  /* Autosave waits 900ms before writing. Anything that ended that wait
+     early used to throw the work away instead of writing it: closing the
+     tab, the iPad putting the browser to sleep, or just leaving the JSA for
+     another document -- the last thing typed was gone, and the older saved
+     copy came back next time as though it had never been written.
+
+     Found by an outside reviewer, 2026-09-11. Same fix as the one in
+     useDraftDocument.js for the other four documents.
+
+     Storage only, no setState: by the time this runs the screen is already
+     going away, and a state update then does nothing but warn. */
+  /* Returns what it wrote, keyed by document, so a caller still on screen
+     can keep the "in progress" badge honest. Callers on the way out ignore
+     it -- setting state then does nothing. */
+  function flushPendingAutosaves() {
+    /* Signing out wipes the drafts and then reloads the page, and a reload
+       looks exactly like leaving. Without this, signing out would write the
+       paperwork straight back -- see clearOnSignOut.js. */
+    if (workWasClearedForSignOut()) {
+      jsaPendingSave.current = null;
+      incidentPendingSave.current = null;
+      return {};
+    }
+    const written = {};
+    const heldJsa = jsaPendingSave.current;
+    if (heldJsa) {
+      jsaPendingSave.current = null;
+      clearTimeout(autoSaveTimer.current);
+      try {
+        const next = { ...heldJsa.jsa, status: heldJsa.jsa.status === 'ready' ? 'ready' : 'draft', lastSavedAt: new Date().toISOString() };
+        localStorage.setItem(KEYS.draft, JSON.stringify(next));
+        lastAutoSaveSnapshot.current = heldJsa.snapshot;
+        written.jsa = next;
+      } catch { /* storage full -- nothing useful to do on the way out */ }
+    }
+    const heldIncident = incidentPendingSave.current;
+    if (heldIncident) {
+      incidentPendingSave.current = null;
+      clearTimeout(incidentAutoSaveTimer.current);
+      const next = { ...heldIncident.incident, lastSavedAt: new Date().toISOString() };
+      if (saveIncidentDraft(next)) {
+        lastIncidentAutoSaveSnapshot.current = heldIncident.snapshot;
+        written.incident = next;
+      }
+    }
+    return written;
+  }
+
+  useEffect(() => {
+    const onLeave = () => flushPendingAutosaves();
+    /* pagehide, not beforeunload: iOS Safari routinely never fires
+       beforeunload when an app is swiped away, and this app lives on
+       iPads. visibilitychange covers the home-button case. */
+    const onHide = () => { if (document.visibilityState === 'hidden') flushPendingAutosaves(); };
+    window.addEventListener('pagehide', onLeave);
+    document.addEventListener('visibilitychange', onHide);
+    return () => {
+      window.removeEventListener('pagehide', onLeave);
+      document.removeEventListener('visibilitychange', onHide);
+      flushPendingAutosaves();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* Leaving a document for another one ends its autosave wait the same way.
+     The effect above only covers the tab going away, so catch the switch
+     too -- this runs when activeDoc changes, writing whatever the document
+     being left was still holding. */
+  const previousActiveDoc = useRef(activeDoc);
+  useEffect(() => {
+    if (previousActiveDoc.current !== activeDoc) {
+      const written = flushPendingAutosaves();
+      if (written.jsa) setSavedDraft(written.jsa);
+      if (written.incident) setSavedIncidentDraft(written.incident);
+      previousActiveDoc.current = activeDoc;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDoc]);
 
   function upd(patch) { setJsa(prev => ({ ...prev, ...patch })); }
   function showToast(msg) { setToast(msg); setTimeout(() => setToast(''), 2500); }
@@ -1865,6 +1963,9 @@ function App() {
   function resetIncidentToBlank() {
     const discardedId = incident.id;
     clearIncidentDraft();
+    // Drop whatever autosave was still holding, or leaving the screen would
+    // write the just-discarded report straight back.
+    incidentPendingSave.current = null;
     setSavedIncidentDraft(null);
     setIncident(emptyIncident());
     setIncidentPdfExportState(null);
@@ -2066,6 +2167,7 @@ function App() {
     if (!confirm('Clear this JSA draft? Custom templates will not be affected.')) return;
     setJsa(emptyJsa());
     localStorage.removeItem(KEYS.draft);
+    jsaPendingSave.current = null; // see resetIncidentToBlank
     setSavedDraft(null);
     setTemplateId('blank-jsa');
     goJsaStart();
@@ -2365,19 +2467,51 @@ function App() {
   const archiveTarget = archiveQueue[0] || null;
   const archivePlan = useMemo(() => (archiveTarget ? getPagePlan(archiveTarget.jsa) : null), [archiveTarget]);
 
+  /* This used to run ONCE, when the app opened, and that was not enough.
+     A superintendent opens the app at six in the morning and leaves it
+     open on the dash all day; the JSA he published expires at the end of
+     the shift, hours later, with the app still sitting there. Nothing
+     looked again, so it was not filed until somebody happened to reload.
+     Same story for a tunnel with no signal at open, or signing in after
+     the app was already up. Found by an outside reviewer, 2026-09-11.
+
+     So it also looks again when the app comes back to the foreground, when
+     the connection returns, and on a slow timer for the day it never gets
+     put down. Cheap: it fetches ids only, and does nothing when there is
+     nothing to file. */
   useEffect(() => {
     let alive = true;
-    (async () => {
+    let running = false;
+    async function lookForExpired() {
+      if (!alive || running) return;
+      running = true;
       try {
         const { fetchUnfiledExpired } = await loadModule(() => import('./crew/board'));
         const items = await fetchUnfiledExpired();
-        if (alive && items.length) setArchiveQueue(items);
+        if (alive && items.length) setArchiveQueue(prev => (prev.length ? prev : items));
       } catch {
-        // Signed out, or no signal. Nothing to report -- it retries on the
-        // next open, and the work is derived fresh each time.
+        // Signed out, or no signal. Nothing to report -- it tries again on
+        // the next trigger, and the work is derived fresh each time.
+      } finally {
+        running = false;
       }
-    })();
-    return () => { alive = false; };
+    }
+
+    lookForExpired();
+    const onFocus = () => lookForExpired();
+    const onOnline = () => lookForExpired();
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('online', onOnline);
+    // Every ten minutes: often enough that a JSA finishing at the end of a
+    // shift is filed while the man is still on the job, rare enough to be
+    // invisible.
+    const timer = setInterval(lookForExpired, 10 * 60 * 1000);
+    return () => {
+      alive = false;
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('online', onOnline);
+      clearInterval(timer);
+    };
   }, []);
 
   useEffect(() => {
@@ -2528,7 +2662,7 @@ function App() {
       draftTitle: savedDraft?.jobSite || savedDraft?.templateName || 'JSA Draft',
       metaLine: `Next: ${savedDraft ? nextStepHint(savedDraft) : ''} · ${savedDraft?.lastSavedAt ? `Last saved ${nowNice(new Date(savedDraft.lastSavedAt))}` : 'Saved on this device'}`,
       onOpen: loadSavedDraft,
-      onDelete: () => { if (!savedDraft) return; if (!confirm('Delete this draft?')) return; setJsa(emptyJsa()); localStorage.removeItem(KEYS.draft); setSavedDraft(null); showToast('Draft deleted.'); },
+      onDelete: () => { if (!savedDraft) return; if (!confirm('Delete this draft?')) return; setJsa(emptyJsa()); localStorage.removeItem(KEYS.draft); jsaPendingSave.current = null; setSavedDraft(null); showToast('Draft deleted.'); },
     },
     {
       id: 'incident',

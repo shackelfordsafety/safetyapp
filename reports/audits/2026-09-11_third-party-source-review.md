@@ -45,18 +45,35 @@ session), OPEN (not yet checked), DISPUTED (I think the reviewer is wrong).
 
 7. Archive search only covers the newest 500 documents, filtered
    client-side; older paperwork silently never matches. Also downloads
-   full document bodies to build a list. — OPEN
+   full document bodies to build a list. — FIXED 2026-09-11: pages through
+   the whole archive instead of stopping at 500, says so on screen if it
+   ever hits the ceiling, and asks the database for the one field it needed
+   out of each body rather than downloading all of them. The body is
+   fetched only for the document somebody opens.
 8. Settings sync can let a stale device win: opening the app restamps
-   local settings as newly changed. — OPEN
-9. A slow sync can clobber a template edit made while it was in flight. — OPEN
+   local settings as newly changed. — FIXED 2026-09-11: the stamp is only
+   written when the settings actually differ from what is stored, so
+   "newest" no longer means "opened most recently".
+   tools/testing/verify-settings-stamp.mjs
+9. A slow sync can clobber a template edit made while it was in flight. —
+   FIXED 2026-09-11: what the device held when the round trip started is
+   compared against what it holds when the answer lands; if it moved, the
+   merge rules run once more against the new list and the sync is left
+   marked unsynced so it pushes again.
 10. Auto-archive only runs on mount; no retry on expiry, reconnect or
-    sign-in. — OPEN
+    sign-in. — FIXED 2026-09-11: also looks again on focus, on reconnect,
+    and every ten minutes, so a JSA that expires while the app sits open on
+    a dashboard is filed the same day.
 11. Overnight JSAs vanish from the superintendent's board at midnight —
     `fetchMyBoard` filters on published_at >= today, so a JSA published at
     5pm and good until 4am disappears while still live. — OPEN, and this
     one bites Fonzo's actual night-crew workflow.
 12. Navigating away can discard the last edits: 900ms autosave debounce is
-    cancelled on unmount. — OPEN
+    cancelled on unmount. — FIXED 2026-09-11: the pending write is flushed
+    rather than thrown away -- on leaving the document, on the tab closing,
+    and when iOS hides the page. Sign-out is exempt, or it would put the
+    paperwork straight back after wiping it.
+    tools/testing/verify-autosave-flush.mjs, verify-signout-still-clears.mjs
 
 ## Database findings
 

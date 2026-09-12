@@ -95,13 +95,20 @@ async function main() {
       await page.getByRole('textbox', { name: 'What will the company do?', exact: true }).fill('The company will retrain the employee on fall protection requirements.');
       await page.getByRole('textbox', { name: "What happens if this isn't corrected?", exact: true }).fill('Further violations will result in suspension or termination.');
 
-      // Draw both signatures with real pointer input. Button text is scoped
+      /* Signatures live on their own step now, and there are THREE of
+         them -- manager, employee, and a witness who was in the room
+         (Fonzo, 2026-09-11: a clerk can witness a firing). The old script
+         expected two, on this step, and so found none. */
+      await page.getByRole('tab', { name: /Signature/i }).first().click();
+      await page.waitForTimeout(400);
+
+      // Draw every signature with real pointer input. Button text is scoped
       // to .signaturePadActions/.signaturePad with an exact "Save" match —
       // the builder header's own "Save Now" button also contains the
       // substring "Save", which a loose hasText match would collide with.
       const sigButtons = page.locator('.signaturePad button', { hasText: 'Add signature' });
       const sigCount = await sigButtons.count();
-      check(sigCount === 2, `Both signature pads present before signing (found ${sigCount})`);
+      check(sigCount === 3, `Manager, employee and witness pads all present (found ${sigCount})`);
       for (let i = 0; i < sigCount; i += 1) {
         await page.locator('.signaturePad button', { hasText: 'Add signature' }).first().click();
         const canvas = page.locator('canvas.signatureCanvas').first();
@@ -117,38 +124,51 @@ async function main() {
         await page.locator('.signaturePadActions button', { hasText: /^Save$/ }).first().click();
       }
       const remainingAdd = await page.locator('.signaturePad button', { hasText: 'Add signature' }).count();
-      check(remainingAdd === 0, 'Both signatures captured (no "Add signature" buttons remain)');
+      check(sigCount > 0 && remainingAdd === 0, 'Every signature captured (no "Add signature" buttons remain)');
 
-      await page.getByRole('button', { name: 'Go to Review' }).click();
+      /* From the signatures step the way on is the step nav -- Review is a
+         step like any other, not a footer button. */
+      await page.getByRole('tab', { name: /Review/i }).first().click();
       await page.waitForSelector('text=Readiness');
 
       const pendingItems = await page.locator('.incidentReadinessItem.pending').count();
       check(pendingItems === 0, `Readiness checklist fully satisfied (${pendingItems} pending item(s))`);
 
-      await page.getByRole('button', { name: 'Mark Complete', exact: true }).click();
-      await page.locator('.dialogPanel', { hasText: 'Mark this document complete?' }).getByRole('button', { name: 'Mark Complete', exact: true }).click();
-      await page.waitForTimeout(300);
-      // .badge renders text-transform:uppercase — innerText reflects that
-      // CSS-rendered casing, so compare case-insensitively against the
-      // underlying "Completed" label the component actually sets.
-      const badgeText = await page.locator('.builderHeaderBadges .badge').innerText();
-      check(badgeText.trim().toLowerCase() === 'completed', `Status badge reads "Completed" after confirming Mark Complete (got "${badgeText.trim()}")`);
+      /* Review (the checklist) and Submit (where it leaves your hands) are
+         two different steps -- Submit is the one that used to be called
+         Finish & Export. */
+      await page.getByRole('tab', { name: /Submit/i }).first().click();
+      await page.waitForTimeout(400);
 
-      await page.getByRole('button', { name: /Create Document/ }).click();
+      /* Marking a document complete yourself is gone, 2026-09-11: taking
+         the DRAFT watermark off something nobody had approved was the
+         author's call, and it should never have been. Completing is the
+         approver's job now, and that whole chain has its own tests
+         (verify-send-for-review.mjs, simulate-review-chain.mjs). What is
+         still this script's business is that the form stays a draft. */
+      const badgeText = await page.locator('.builderHeaderBadges .badge').first().innerText();
+      check(badgeText.trim().toLowerCase() === 'draft', `Stays a draft until somebody approves it (got "${badgeText.trim()}")`);
+
+      await page.locator('.reviewPrimaryAction button').first().click();
       await page.waitForSelector('.pdfReadyPanel', { timeout: 30000 });
       const headline = await page.locator('.pdfReadyHeadline').innerText();
       console.log(`  PDF ready: ${headline}`);
-      check(/^1 page$/.test(headline.trim()), `Normal-length content fits on 1 page (got "${headline.trim()}")`);
+      /* Two pages now, not one: the witness signature block Fonzo asked
+         for on 2026-09-11 pushes the signature section onto its own page.
+         Expected, not a layout fault. */
+      check(/^2 pages$/.test(headline.trim()), `Notice plus its signature page (got "${headline.trim()}")`);
 
       const { pdf, suggestedName, savedTo } = await downloadGeneratedPdf(page, path.join(outDir, 'ui-workflow-generated.pdf'));
       console.log('  Saved PDF ->', savedTo);
 
       // A completed document: no DRAFT watermark, no _DRAFT suffix, and
       // everything typed above present in full.
-      check(!/_DRAFT/.test(suggestedName), `Completed export filename drops the _DRAFT suffix (got "${suggestedName}")`);
+      /* An unapproved document keeps _DRAFT in its filename -- that is the
+         only mark it carries now that the watermark is gone. */
+      check(/_DRAFT/.test(suggestedName), `Unapproved export is named _DRAFT (got "${suggestedName}")`);
       const contract = await checkPdfContract(pdf, {
         label: 'ui-workflow',
-        pages: 1,
+        pages: 2,
         draft: false,
         mustContain: [
           'Jordan Blake', 'Casey Renn', 'Laborer',
@@ -170,7 +190,9 @@ async function main() {
       // Mark Complete stores 'ready' ('completed' is the accepted legacy
       // value) — and creating/downloading the PDF must NOT change status
       // (auto-locking on export was removed by the completion-toggle work).
-      check(persisted?.status === 'ready' || persisted?.status === 'completed', `Locked status persisted across reload (got "${persisted?.status}")`);
+      // Nobody can mark their own document complete any more, so a reload
+      // must find it exactly as it was: a draft, waiting on an approver.
+      check(persisted?.status === "draft", `Still a draft after reload (got "${persisted?.status}")`);
 
       check(consoleErrors.length === 0, `No console errors (${consoleErrors.length} found)${consoleErrors.length ? ': ' + consoleErrors.join(' | ') : ''}`);
       check(pageErrors.length === 0, `No page errors (${pageErrors.length} found)${pageErrors.length ? ': ' + pageErrors.join(' | ') : ''}`);
@@ -180,7 +202,7 @@ async function main() {
       await context.close();
     }
 
-    // ── 2. Employee refused/unavailable to sign — must unblock Mark Complete ──
+    // ── 2. Employee refused/unavailable to sign — must not block the checklist ──
     // A real, common outcome: the employee isn't present, or won't sign. That
     // must not leave the notice permanently stuck as an unfinished DRAFT with
     // no way to mark it complete (see disciplinaryModel.js's
@@ -213,7 +235,14 @@ async function main() {
       // <div class="yesNoToggle"><button>Yes/No</button></div></label> — the
       // button's own accessible name is just "No"/"Yes", so scope by the
       // .field container's text instead of the button's own name.
-      await page.locator('label.field', { hasText: 'Employee refused / unavailable to sign' }).locator('button').click();
+      // The refused toggle lives on the signatures step alongside the pads.
+      await page.getByRole('tab', { name: /Signature/i }).first().click();
+      await page.waitForTimeout(400);
+      /* Asked as a plain question now -- "Is the employee signing this?"
+         with Yes / "No — refused or not available" -- rather than a
+         negative toggle a foreman had to read twice. */
+      await page.getByRole('button', { name: /No — refused or not available/ }).first().click();
+      await page.waitForTimeout(300);
       const employeeAddSigCount = await page.locator('.signaturePad', { hasText: 'Employee Signature' }).getByRole('button', { name: 'Add signature' }).count();
       check(employeeAddSigCount === 0, 'Employee signature pad is not offered once refused/unavailable is toggled on');
 
@@ -228,23 +257,24 @@ async function main() {
       await page.mouse.up();
       await page.locator('.signaturePadActions button', { hasText: /^Save$/ }).first().click();
 
-      await page.getByRole('button', { name: 'Go to Review' }).click();
+      await page.getByRole('tab', { name: /Submit/i }).first().click();
+      await page.waitForTimeout(400);
       await page.waitForSelector('text=Readiness');
       const pendingItems = await page.locator('.incidentReadinessItem.pending').count();
       check(pendingItems === 0, `Checklist fully satisfied with only a manager signature, once refused is set (${pendingItems} pending item(s))`);
 
-      const finishBtn = page.getByRole('button', { name: 'Mark Complete', exact: true });
-      check(await finishBtn.isEnabled(), 'Mark Complete is enabled — this is the bug being fixed: it used to stay permanently disabled');
-      await finishBtn.click();
-      await page.locator('.dialogPanel', { hasText: 'Mark this document complete?' }).getByRole('button', { name: 'Mark Complete', exact: true }).click();
-      await page.waitForTimeout(300);
-      const badge = await page.locator('.builderHeaderBadges .badge').innerText();
-      check(badge.trim().toLowerCase() === 'completed', `Status badge reads "Completed" (got "${badge.trim()}")`);
+      /* The old bug here was that Mark Complete stayed permanently
+         disabled when the employee refused to sign. That button is gone
+         now, so what matters is that the CHECKLIST clears with only a
+         manager signature -- otherwise the notice could never be sent for
+         review at all. That is the check above. */
+      const badge = await page.locator('.builderHeaderBadges .badge').first().innerText();
+      check(badge.trim().toLowerCase() === 'draft', `Draft until approved (got "${badge.trim()}")`);
 
-      await page.getByRole('button', { name: /Create Document/ }).click();
+      await page.locator('.reviewPrimaryAction button').first().click();
       await page.waitForSelector('.pdfReadyPanel', { timeout: 30000 });
       const { pdf, suggestedName } = await downloadGeneratedPdf(page, path.join(outDir, 'employee-refused.pdf'));
-      check(!/_DRAFT/.test(suggestedName), `No DRAFT stamp / _DRAFT suffix on the completed export (got "${suggestedName}")`);
+      check(/_DRAFT/.test(suggestedName), `Unapproved export is named _DRAFT (got "${suggestedName}")`);
       const contract = await checkPdfContract(pdf, {
         label: 'employee-refused',
         pages: 1,
@@ -329,15 +359,15 @@ async function main() {
       // Load the fixture via the real Drafts -> Open Draft path (the entry
       // point that actually populates the editable model — "Start" always
       // begins a blank document, see makeDraftEntryPoints in main.jsx).
-      await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'Today' }).first().click();
+      await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'My Work' }).first().click();
       const draftRow = page.locator('.listItem', { hasText: 'Warning level' });
       await draftRow.getByRole('button', { name: 'Open' }).click();
       await page.waitForSelector('text=Notice Details').catch(() => {});
 
-      await page.getByRole('button', { name: 'Next' }).click().catch(() => {});
-      await page.getByRole('button', { name: 'Go to Review' }).click().catch(() => {});
-      await page.waitForSelector('text=Readiness', { timeout: 5000 }).catch(() => {});
-      await page.getByRole('button', { name: /Create Document/ }).click();
+      // Submit is a step of its own, reached from the step nav.
+      await page.getByRole('tab', { name: /Submit/i }).first().click();
+      await page.waitForTimeout(400);
+      await page.locator('.reviewPrimaryAction button').first().click();
       await page.waitForSelector('.pdfReadyPanel', { timeout: 30000 });
       const headline = (await page.locator('.pdfReadyHeadline').innerText()).trim();
       const pageCount = parseInt(headline, 10);
@@ -352,7 +382,12 @@ async function main() {
       const contract = await checkPdfContract(pdf, {
         label: fx.label,
         pages: [1, fx.expectMaxPages],
-        draft: true, // these fixtures are unfinished drafts
+        /* The DRAFT watermark was removed from these four documents
+           entirely (Fonzo, 2026-09-09: "remove the draft stamp
+           completely") -- a stamp saying DRAFT on a filed record is worse
+           than no stamp. The _DRAFT filename is what marks an unapproved
+           copy now. */
+        draft: false,
         mustContain: fx.mustContain || [],
       });
       contract.forEach(r => check(r.ok, r.label));
@@ -373,7 +408,10 @@ async function main() {
       const pageErrors = [];
       page.on('pageerror', e => pageErrors.push(String(e)));
       await page.goto(BASE_URL, { waitUntil: 'networkidle' });
-      await page.locator('.mobileNavItem', { hasText: 'Documents' }).click();
+      /* The mobile bar carries Home, My Work, Board, Records and Settings.
+         Documents is not one of them -- you reach it from Home, the same
+         way a superintendent does. */
+      await page.getByRole('button', { name: 'Documents', exact: false }).first().click();
       const row = page.locator('.listItem', { hasText: 'Employee Disciplinary Notice' });
       await row.getByRole('button', { name: 'Start' }).click();
       await page.waitForSelector('text=Notice Details');
@@ -388,9 +426,18 @@ async function main() {
       // Smoke-test the shared SignaturePad's native touch listener path
       // (see src/incident/SignaturePad.jsx) with real CDP touch dispatch,
       // not synthetic JS calls into the component's internals.
+      /* Signatures stay locked until the notice actually says something --
+         you cannot sign a blank write-up -- so fill the content first,
+         same as a foreman would. */
       await page.getByRole('textbox', { name: 'Employee Name', exact: true }).fill('Touch Smoke Test');
+      await page.getByRole('textbox', { name: 'Supervisor', exact: true }).fill('Casey Renn');
+      await page.getByRole('button', { name: 'Written Warning', exact: true }).click();
+      await page.getByRole('textbox', { name: 'What happened?', exact: true }).fill('Smoke test of the signature pad on a phone-sized screen.');
       await page.getByRole('button', { name: 'Next' }).click();
       await page.waitForSelector('text=Corrective Action');
+      await page.getByRole('textbox', { name: 'What must the employee do to correct this?', exact: true }).fill('Nothing — this is a test document.');
+      await page.getByRole('tab', { name: /Signature/i }).first().click();
+      await page.waitForTimeout(400);
       await page.locator('.signaturePad button', { hasText: 'Add signature' }).first().click();
       const canvas = page.locator('canvas.signatureCanvas').first();
       await canvas.scrollIntoViewIfNeeded();
@@ -417,8 +464,8 @@ async function main() {
       await context.close();
     }
 
-    // ── 5. Mark Complete confirmation and editing lock ──
-    console.log('\n=== 6. Mark Complete confirmation and editing lock ===');
+    // ── 6. Stays a draft, stays editable, until an approver files it ──
+    console.log('\n=== 6. Draft stays editable until approved ===');
     {
       const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
       const page = await context.newPage();
@@ -433,6 +480,8 @@ async function main() {
       await page.getByRole('button', { name: 'Next' }).click();
       await page.waitForSelector('text=Corrective Action');
       await page.getByRole('textbox', { name: 'What must the employee do to correct this?', exact: true }).fill('Test corrective action.');
+      await page.getByRole('tab', { name: /Signature/i }).first().click();
+      await page.waitForTimeout(400);
       for (let i = 0; i < 2; i += 1) {
         await page.locator('.signaturePad button', { hasText: 'Add signature' }).first().click();
         const canvas = page.locator('canvas.signatureCanvas').first();
@@ -444,24 +493,22 @@ async function main() {
         await page.mouse.up();
         await page.locator('.signaturePadActions button', { hasText: /^Save$/ }).first().click();
       }
-      await page.getByRole('button', { name: 'Go to Review' }).click();
-      await page.waitForSelector('text=Readiness');
+      await page.getByRole('tab', { name: /Submit/i }).first().click();
+      await page.waitForTimeout(400);
 
-      const finishBtn = page.getByRole('button', { name: 'Mark Complete', exact: true });
-      check(await finishBtn.isEnabled(), 'Mark Complete is enabled once the checklist is complete');
-      await finishBtn.click();
-      const dialog = page.locator('.dialogPanel', { hasText: 'Mark this document complete?' });
-      check(await dialog.isVisible(), 'Confirmation dialog appears on Mark Complete click');
-      await dialog.getByRole('button', { name: 'Mark Complete', exact: true }).click();
-      await page.waitForTimeout(300);
-      const badge = await page.locator('.builderHeaderBadges .badge').innerText();
-      check(badge.toLowerCase() === 'completed', `Badge reads "Completed" after confirming (got "${badge}")`);
+      /* This section used to prove that Mark Complete locked the form.
+         That button is gone (2026-09-11): the man writing a write-up does
+         not get to decide it is finished, because that took the DRAFT
+         marking off a document nobody had approved. What has to be true
+         now is the opposite -- it stays a draft, and stays editable, until
+         an approver files it. The approver half is covered by
+         verify-send-for-review.mjs and simulate-review-chain.mjs. */
+      const badge = await page.locator('.builderHeaderBadges .badge').first().innerText();
+      check(badge.toLowerCase() === 'draft', `Badge still reads Draft (got "${badge}")`);
 
       await page.getByRole('tab', { name: /Notice Details/ }).click();
       const nameField = page.getByRole('textbox', { name: 'Employee Name', exact: true });
-      check(await nameField.isDisabled(), 'Employee Name field is disabled once finished');
-      const replaceBtn = page.locator('.signaturePadActions button', { hasText: 'Replace' });
-      check(await replaceBtn.count() === 0, 'No Replace button remains on a finished signature');
+      check(!(await nameField.isDisabled()), 'Still editable -- nothing is locked until it is approved');
 
       await page.evaluate(key => window.localStorage.removeItem(key), STORAGE_KEY);
       await context.close();

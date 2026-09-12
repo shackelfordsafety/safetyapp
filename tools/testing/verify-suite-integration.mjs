@@ -139,7 +139,7 @@ async function main() {
       const pageErrors = [];
       page.on('pageerror', e => pageErrors.push(String(e)));
       await page.goto(BASE_URL, { waitUntil: 'networkidle' });
-      await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'Today' }).first().click();
+      await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'My Work' }).first().click();
       await page.waitForSelector('text=Saved Drafts');
       // Both fixtures use "Marcus Doyle" as the employee name, so rows are
       // distinguished by their own meta line text (Warning level vs.
@@ -183,7 +183,7 @@ async function main() {
       check(overflow <= 1, `[${vp.name}px] Documents: no horizontal overflow (diff=${overflow})`);
       await page.screenshot({ path: path.join(outDir, `${vp.name}-documents.png`), fullPage: true });
 
-      await page.locator(navSelector, { hasText: 'Today' }).first().click();
+      await page.locator(navSelector, { hasText: 'My Work' }).first().click();
       await page.waitForTimeout(200);
       overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       check(overflow <= 1, `[${vp.name}px] Drafts: no horizontal overflow (diff=${overflow})`);

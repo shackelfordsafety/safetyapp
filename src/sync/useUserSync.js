@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { loadModule } from '../shared/loadModule';
 import { readStoredSession, deviceName } from '../shared/session';
+/* Pure functions that import nothing -- safe to load eagerly, unlike
+   userSync.js which drags the whole Supabase library in with it. */
+import { mergeTemplates } from './mergeRules';
+import { readTombstones } from './syncMeta';
 
 /* ── Keeping templates and settings in step across devices ───────────────
    Deliberately quiet. This never shows a spinner, never blocks a screen,
@@ -28,6 +32,11 @@ export function useUserSync({ templates, setTemplates, settings, setSettings, on
     if (busyRef.current) return;
     if (!readStoredSession()) return;
     busyRef.current = true;
+    /* What this device held when the round trip STARTED. A sync takes a
+       second or two on a job-site connection, and a man can easily save a
+       template in that window -- so the merged answer coming back is an
+       answer to an older question. Compared against now, below. */
+    const startedWith = dataRef.current;
     try {
       const mod = await loadModule(() => import('./userSync'));
       if (!mod) return;
@@ -38,15 +47,41 @@ export function useUserSync({ templates, setTemplates, settings, setSettings, on
       });
       if (!merged) return;
 
-      lastSyncedRef.current = JSON.stringify([merged.templates, merged.settings]);
       if (onNeedsName) onNeedsName(Boolean(merged.needsName));
+
+      /* Did anything change on this device while the round trip was out?
+         If so, the merged list coming back does not know about it, and
+         writing it straight into state would delete a template somebody
+         had just saved -- gone from the screen AND from storage, with
+         nothing left to bring it back. Found by an outside reviewer,
+         2026-09-11. */
+      const templatesMovedUnderUs =
+        JSON.stringify(dataRef.current.templates) !== JSON.stringify(startedWith.templates);
+      const settingsMovedUnderUs =
+        JSON.stringify(dataRef.current.settings) !== JSON.stringify(startedWith.settings);
+
+      /* The same merge rules the cloud half uses, run once more against
+         what the device holds NOW, so the just-saved template survives
+         alongside whatever came down. */
+      const nextTemplates = templatesMovedUnderUs
+        ? mergeTemplates(dataRef.current.templates, merged.templates, readTombstones())
+        : merged.templates;
+
+      /* Only mark this as synced when it really is. If something moved
+         under us the cloud has not seen it yet, and leaving the mark stale
+         is exactly what makes the debounce below run again and push it. */
+      if (!templatesMovedUnderUs && !settingsMovedUnderUs) {
+        lastSyncedRef.current = JSON.stringify([merged.templates, merged.settings]);
+      }
 
       // Only touch React state when the merge actually produced something
       // different, so a sync that changes nothing cannot re-trigger itself.
-      if (JSON.stringify(merged.templates) !== JSON.stringify(dataRef.current.templates)) {
-        setTemplates(merged.templates);
+      if (JSON.stringify(nextTemplates) !== JSON.stringify(dataRef.current.templates)) {
+        setTemplates(nextTemplates);
       }
-      if (merged.cloudWins
+      /* A settings edit made during the round trip is newer than anything
+         the cloud had when it started, so the local one stays. */
+      if (merged.cloudWins && !settingsMovedUnderUs
         && JSON.stringify(merged.settings) !== JSON.stringify(dataRef.current.settings)) {
         setSettings(merged.settings);
       }

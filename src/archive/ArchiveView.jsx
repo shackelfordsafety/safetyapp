@@ -133,8 +133,22 @@ function SignIn({ onSignedIn }) {
 }
 
 function DocumentDetail({ row, onClose }) {
-  const uploaded = row.data?.source === 'uploaded';
-  const fields = Object.entries(row.data || {}).filter(([k, v]) => {
+  /* The list no longer carries every document's whole body -- it was
+     downloading all of them to read one field, which is what made the
+     archive slow to open on a job-trailer connection. The body is fetched
+     here instead, for the one document somebody actually opened. */
+  const [body, setBody] = useState(row.data || null);
+  useEffect(() => {
+    if (row.data) { setBody(row.data); return undefined; }
+    let alive = true;
+    db.from('documents').select('data').eq('id', row.id).maybeSingle()
+      .then(({ data }) => { if (alive) setBody(data?.data || {}); })
+      .catch(() => { if (alive) setBody({}); });
+    return () => { alive = false; };
+  }, [row.id, row.data]);
+
+  const uploaded = body?.source === 'uploaded';
+  const fields = Object.entries(body || {}).filter(([k, v]) => {
     if (v === null || v === undefined || v === '') return false;
     if (Array.isArray(v) && v.length === 0) return false;
     // Bookkeeping about the upload itself, not content of the document.
@@ -167,7 +181,7 @@ function DocumentDetail({ row, onClose }) {
   }
 
   function download() {
-    const blob = new Blob([JSON.stringify(row, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify({ ...row, data: body || {} }, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -234,6 +248,10 @@ export default function ArchiveView() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [rows, setRows] = useState([]);
+  /* Non-zero only if the archive ever grows past the page-through ceiling.
+     Shown on screen, because a search over part of the archive that says
+     nothing is how you lose a record. */
+  const [truncatedAt, setTruncatedAt] = useState(0);
   const [status, setStatus] = useState('checking'); // checking | signedout | loading | ready | error
   const [error, setError] = useState('');
   const [selected, setSelected] = useState(null);
@@ -283,12 +301,43 @@ export default function ArchiveView() {
       if (profErr) throw profErr;
       setProfile(prof || { role: 'field', full_name: null });
 
-      const { data, error: docErr } = await db
-        .from('documents')
-        .select('id, doc_type, employee_name, job_site, doc_date, submitted_at, submitted_by, data, pdf_path')
-        .order('submitted_at', { ascending: false })
-        .limit(500);
-      if (docErr) throw docErr;
+      /* Two things used to be wrong here, both found by an outside
+         reviewer on 2026-09-11.
+
+         It asked for the newest 500 and stopped. Searching happens on what
+         came back, so the 501st document was not missing from the list --
+         it was missing from every SEARCH, silently, with nothing on screen
+         to say so. An archive you cannot trust to find a record is not an
+         archive.
+
+         And it pulled the whole body of every document down to read ONE
+         field out of it. On a job-trailer connection that is the
+         difference between the screen opening and the screen hanging.
+
+         So: ask the database for the two fields actually needed out of the
+         body, and page through the whole thing rather than stopping at an
+         arbitrary line. The full body is fetched only for the one document
+         somebody opens. */
+      const PAGE = 1000;
+      /* A ceiling so a runaway cannot lock up an iPad. Ten thousand
+         documents is years of this company's paperwork; if it is ever
+         reached the screen says so rather than quietly cutting the search
+         short, which was the whole bug. */
+      const CEILING = 10000;
+      const data = [];
+      let truncated = false;
+      for (let from = 0; from < CEILING; from += PAGE) {
+        const { data: page, error: docErr } = await db
+          .from('documents')
+          .select('id, doc_type, employee_name, job_site, doc_date, submitted_at, submitted_by, pdf_path, jobNumber:data->>jobNumber, source:data->>source')
+          .order('submitted_at', { ascending: false })
+          .range(from, from + PAGE - 1);
+        if (docErr) throw docErr;
+        data.push(...(page || []));
+        if (!page || page.length < PAGE) break;
+        if (from + PAGE >= CEILING) truncated = true;
+      }
+      setTruncatedAt(truncated ? data.length : 0);
 
       /* Who filed each one. The archive showed documents with no author at
          all, so an owner opening it could not tell whether a clerk wrote
@@ -316,7 +365,7 @@ export default function ArchiveView() {
       setRows(docs.map(d => ({
         ...d,
         filedByName: filers[d.submitted_by] || null,
-        jobNumber: (d.data && typeof d.data === 'object' && d.data.jobNumber) ? String(d.data.jobNumber).trim() : '',
+        jobNumber: String(d.jobNumber || '').trim(),
       })));
       setStatus('ready');
     } catch (ex) {
@@ -522,6 +571,18 @@ export default function ArchiveView() {
         </div>
       )}
 
+      {/* Said out loud, never assumed. If the archive ever outgrows what
+          one screen loads, searching it stops being complete -- and a
+          search you believe is complete when it is not is how a record
+          goes missing. */}
+      {truncatedAt > 0 && (
+        <div className="arcErr">
+          Showing the newest {truncatedAt.toLocaleString()} documents. There are older ones
+          this search is not looking at — narrow it down by type or period, or ask for the
+          archive to be searched properly.
+        </div>
+      )}
+
       {visible.length === 0 ? (
         <div className="arcEmpty">
           {rows.length === 0 ? (
@@ -554,7 +615,7 @@ export default function ArchiveView() {
                 <tr key={r.id} onClick={() => openPdf(r)} style={{ cursor: r.pdf_path ? 'pointer' : 'default' }}>
                   <td>
                     <span className="arcType">{DOC_LABELS[r.doc_type] || r.doc_type}</span>
-                    {r.data?.source === 'uploaded' && <span className="arcUploaded">Uploaded</span>}
+                    {r.source === 'uploaded' && <span className="arcUploaded">Uploaded</span>}
                   </td>
                   <td>{r.employee_name || '—'}</td>
                   {/* Job # where the document carries one -- only the JSA

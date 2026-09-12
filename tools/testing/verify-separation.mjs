@@ -211,7 +211,7 @@ async function main() {
       page.on('pageerror', e => pageErrors.push(String(e)));
 
       await page.goto(BASE_URL, { waitUntil: 'networkidle' });
-      await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'Today' }).first().click();
+      await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'My Work' }).first().click();
       const draftRow = page.locator('.listItem', { hasText: fx.title });
       await draftRow.getByRole('button', { name: 'Open' }).click();
       await page.waitForSelector('text=Separation Details').catch(() => {});
@@ -271,7 +271,7 @@ async function main() {
       page.on('pageerror', e => pageErrors.push(String(e)));
 
       await page.goto(BASE_URL, { waitUntil: 'networkidle' });
-      await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'Today' }).first().click();
+      await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'My Work' }).first().click();
       const draftRow = page.locator('.listItem', { hasText: fx.title });
       await draftRow.getByRole('button', { name: 'Open' }).click();
       await page.waitForSelector('text=Separation Details').catch(() => {});

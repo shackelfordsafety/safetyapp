@@ -10,11 +10,12 @@
 //   Draft
 //   -> Create Document        (filename carries _DRAFT)
 //   -> STILL EDITABLE         (generating a PDF must not lock anything)
-//   -> Mark Complete          (badge Completed, fields disabled)
-//   -> prior document STALE   (the watermarked DRAFT must not stay downloadable)
-//   -> Update Document        (filename has NO _DRAFT)
-//   -> Mark Incomplete        (badge Draft, fields editable again)
-//   -> prior FINAL STALE      (an un-watermarked file must not survive unlocking)
+//   -> no Mark Complete       (the author cannot un-draft his own document)
+//
+// Rewritten 2026-09-11: the second half used to walk Mark Complete /
+// Mark Incomplete. That button is gone -- completing a document is the
+// approver's call now, covered by verify-send-for-review.mjs and
+// simulate-review-chain.mjs.
 //
 // The DRAFT and FINAL PDFs are saved for raster inspection, so this doubles
 // as the fresh-PDF generator for the four Superintendent documents.
@@ -73,20 +74,43 @@ const badgeText = page => page.locator('.builderHeaderBadges .badge').first().in
 // "Editable" means a real form control on a real content step accepts input —
 // not merely that the review panel offers a button.
 async function firstStepFieldsDisabled(page) {
-  await page.locator('.stepperSeg').first().click();
+  await page.locator('.stepNavRow').first().click();
   await page.waitForTimeout(350);
   const field = page.locator('input:not([type=hidden]), textarea, select').first();
   await field.waitFor({ state: 'attached', timeout: 10000 });
   const disabled = await field.isDisabled();
   // back to the last step (Review)
-  await page.locator('.stepperSeg').last().click();
+  await page.locator('.stepNavRow').last().click();
   await page.waitForTimeout(350);
   return disabled;
 }
 
+/* Where the PDF gets made. On the four Superintendent documents that is
+   the Submit step (called Finish & Export until 2026-09-11); Incident
+   still calls its last step Review. Try the step nav first -- these
+   fixtures are complete, so nothing is locked -- and fall back to walking
+   the footer buttons. */
 async function gotoReview(page) {
+  /* Incident has its own review screen rather than FormPrimitives'
+     ReviewExportPanel, so it has no .reviewPrimaryAction -- look for the
+     button that actually makes the PDF as well as the panel classes. */
+  const done = async () => (
+    await page.locator('.pdfReadyPanel, .pdfStaleWarning, .reviewPrimaryAction').count()
+    + await page.locator('button', { hasText: /^(Create Document|Update Document|Want a paper copy first\?)$/ }).count()
+  );
+  if (await done() > 0) return true;
+
+  for (const name of [/Submit/i, /Finish/i, /Review/i]) {
+    const tab = page.getByRole('tab', { name });
+    if (await tab.count() > 0) {
+      await tab.first().click();
+      await page.waitForTimeout(400);
+      if (await done() > 0) return true;
+    }
+  }
+
   for (let i = 0; i < 14; i += 1) {
-    if (await page.locator('.pdfReadyPanel, .pdfStaleWarning, .reviewPrimaryAction').count() > 0) return true;
+    if (await done() > 0) return true;
     const review = page.getByRole('button', { name: 'Go to Review' });
     if (await review.count() > 0 && await review.first().isVisible().catch(() => false)) {
       await review.first().click(); await page.waitForTimeout(300); continue;
@@ -101,7 +125,11 @@ async function gotoReview(page) {
 }
 
 async function generate(page) {
-  await page.locator('button', { hasText: /^(Create Document|Update Document)$/ }).first().click();
+  /* The PDF button stopped being the primary action once Submit for review
+     went in -- for any document type that files to the archive it now
+     reads "Want a paper copy first?", because paper is the secondary path.
+     Either label means the same thing here: make the PDF. */
+  await page.locator('button', { hasText: /^(Create Document|Update Document|Want a paper copy first\?)$/ }).first().click();
   await page.waitForSelector('.pdfReadyPanel', { timeout: 90000 });
   return {
     filename: (await page.locator('.pdfReadyFilename').innerText()).trim(),
@@ -135,7 +163,7 @@ async function runDoc(browser, doc) {
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
 
   await page.goto(BASE_URL, { waitUntil: 'networkidle' });
-  await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'Today' }).first().click();
+  await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'My Work' }).first().click();
   await page.waitForTimeout(300);
   await page.locator('.listItem button', { hasText: 'Open' }).first().click();
   await page.waitForTimeout(500);
@@ -178,38 +206,21 @@ async function runDoc(browser, doc) {
   check(doc.id, 'still Draft after Create Document', (await badgeText(page)).trim().toLowerCase() === 'draft');
   check(doc.id, 'still editable after Create Document', (await firstStepFieldsDisabled(page)) === false);
 
-  // 4. Mark Complete -> locked
-  await page.locator('.reviewInlineAction button', { hasText: 'Mark Complete' }).first().click();
-  await page.waitForTimeout(300);
-  await page.locator('.dialogActions button.primary').click();
-  await page.waitForTimeout(600);
-  check(doc.id, 'badge reads Completed', (await badgeText(page)).trim().toLowerCase() === 'completed');
-  check(doc.id, 'fields locked once complete', (await firstStepFieldsDisabled(page)) === true);
-  check(doc.id, 'Mark Incomplete offered', await page.locator('.reviewInlineAction button', { hasText: 'Mark Incomplete' }).count() > 0);
+  /* Steps 4 to 8 used to prove that Mark Complete locked the form, took
+     the _DRAFT off the filename, and that Mark Incomplete undid all of
+     it. That button is gone (2026-09-11): the man writing a document does
+     not get to decide it is finished, because doing so took the DRAFT
+     marking off something nobody had approved. Approving and filing is a
+     different person, and it has its own tests -- verify-send-for-review
+     and simulate-review-chain.
 
-  // 5. the watermarked DRAFT must now be stale
-  check(doc.id, 'prior DRAFT document goes stale on completion',
-    await page.locator('.pdfStaleWarning').count() > 0);
-
-  // 6. Update Document -> FINAL, no _DRAFT suffix
-  const final = await generate(page);
-  check(doc.id, 'FINAL filename drops the _DRAFT suffix', !/_DRAFT\.pdf$/.test(final.filename), final.filename);
-  if (doc.expectPages) {
-    check(doc.id, `FINAL page count still ${doc.expectPages}`,
-      final.pageCount === `${doc.expectPages} pages`, final.pageCount);
-  }
-  await saveDownload(page, `${doc.id}-FINAL`);
-
-  // 7. Mark Incomplete -> unlocked again
-  await page.locator('.reviewInlineAction button', { hasText: 'Mark Incomplete' }).first().click();
-  await page.waitForTimeout(600);
-  check(doc.id, 'badge back to Draft', (await badgeText(page)).trim().toLowerCase() === 'draft');
-  check(doc.id, 'editable again after Mark Incomplete', (await firstStepFieldsDisabled(page)) === false);
-
-  // 8. and the un-watermarked FINAL must not survive unlocking
-  check(doc.id, 'prior FINAL document goes stale on unlock',
-    await page.locator('.pdfStaleWarning').count() > 0);
-
+     What has to hold here now is that nothing on the author's side can
+     lock or un-draft a document by itself. */
+  check(doc.id, 'still a draft', (await badgeText(page)).trim().toLowerCase() === 'draft');
+  check(doc.id, 'still editable -- nothing locks until it is approved',
+    (await firstStepFieldsDisabled(page)) === false);
+  check(doc.id, 'no way for the author to mark it complete',
+    await page.locator('button', { hasText: /^Mark Complete$/ }).count() === 0);
   check(doc.id, 'zero console/page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
   await context.close();
 }

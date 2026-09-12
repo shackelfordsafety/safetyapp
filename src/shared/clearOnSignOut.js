@@ -62,7 +62,24 @@ export function unfinishedOnThisDevice() {
   return found;
 }
 
+/* Once the wipe has run, nothing may write a draft back.
+
+   Signing out clears storage and then reloads the page, and a reload fires
+   the same browser events ("this page is going away") that tell the
+   autosave system to write down anything it was still holding. Without
+   this flag, signing out would wipe the separation form and then put it
+   straight back -- exactly the hole this file exists to close. The forms
+   hold that work in memory, so clearing storage alone is never enough.
+
+   Not reset anywhere: the page is on its way to reloading, and after the
+   reload this is a fresh module with the flag back to false. */
+let wiped = false;
+export function workWasClearedForSignOut() {
+  return wiped;
+}
+
 export function clearWorkFromThisDevice() {
+  wiped = true;
   /* Photos attached to an incident report live in IndexedDB, keyed by the
      report's id -- which is INSIDE the draft. So the id has to be read
      before the draft is removed, or the photos are orphaned in the browser
