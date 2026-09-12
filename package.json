@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0",
+    "check": "node tools/testing/core-checks.mjs",
+    "check:all": "node tools/testing/run-everything.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
