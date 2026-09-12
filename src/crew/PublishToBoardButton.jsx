@@ -29,9 +29,12 @@ export default function PublishToBoardButton({ jsa, pdfBlob, pdfPending, disable
   async function startPublish() {
     setMessage('');
     try {
-      const { windowHours, LONG_WINDOW_HOURS, describeWindow, computeExpiry } =
+      const { shiftHours, LONG_WINDOW_HOURS, describeWindow, computeExpiry } =
         await loadModule(() => import('./board'));
-      const hours = windowHours(jsa);
+      /* The SHIFT's length, not how long from now until it closes. Writing
+         tomorrow night's JSA in the morning used to trip this warning on a
+         perfectly ordinary ten-hour shift, and call it an 18-hour one. */
+      const hours = shiftHours(jsa);
       if (hours > LONG_WINDOW_HOURS) {
         setWarning({
           hours: Math.round(hours),

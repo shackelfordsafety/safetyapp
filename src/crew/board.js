@@ -45,12 +45,37 @@ export function computeExpiry(jsa, now = new Date()) {
   return expires;
 }
 
-/* How long a posting will stay open, in hours. The number that would have
-   caught the 5:00 PM / 5:00 AM mix-up: a night shift is ten hours, the
-   typo was twenty-five, and nothing Shackelford runs is in between. */
+/* How long a posting will stay open from this moment, in hours. */
 export function windowHours(jsa, now = new Date()) {
   const ms = computeExpiry(jsa, now).getTime() - now.getTime();
   return Math.max(0, ms / 3600000);
+}
+
+/* How long the SHIFT is -- Time Issued to Time Expired. The number that
+   catches the 5:00 PM / 5:00 AM mix-up: a night shift is ten hours, the
+   typo is twenty-five, and nothing Shackelford runs is in between.
+
+   This used to be windowHours, which measures from RIGHT NOW until the
+   JSA closes. Those are the same number only if you publish at the exact
+   moment the shift starts. Build tomorrow's night JSA over coffee at 11am
+   and now-to-close is eighteen hours, so the app warned about an
+   eighteen-hour shift that is really ten -- and it said "That's an
+   18-hour shift", which is simply not true. Caught by the stress run,
+   2026-09-12: a real 10-hour night shift was being warned about, which is
+   how a warning turns into something people click past without reading.
+
+   Falls back to the old measure when there is no Time Issued, because
+   then the shift's length genuinely is not known. */
+export function shiftHours(jsa, now = new Date()) {
+  const start = /^\d{2}:\d{2}$/.test(jsa?.timeIssued || '') ? jsa.timeIssued : null;
+  const end = /^\d{2}:\d{2}$/.test(jsa?.timeExpired || '') ? jsa.timeExpired : null;
+  if (!start || !end) return windowHours(jsa, now);
+
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
+  let minutes = (eh * 60 + em) - (sh * 60 + sm);
+  if (minutes <= 0) minutes += 24 * 60; // runs through midnight
+  return minutes / 60;
 }
 
 /* Anything past this is almost certainly a typed time, not a real shift.

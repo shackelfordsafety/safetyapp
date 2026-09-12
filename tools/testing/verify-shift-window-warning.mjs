@@ -7,7 +7,7 @@
 //
 // Two runs against the same draft, one number changed:
 //   05:00 -> a 10-hour night shift, publishes with no fuss
-//   17:00 -> a 25-hour window, stopped with a warning first
+//   17:00 -> a 22-hour shift, stopped with a warning first
 //
 // No login needed: the check runs entirely on the device before anything
 // is sent, which is the whole point of it.
@@ -106,9 +106,14 @@ async function main() {
 
     console.log('\n--- result ---');
     const pass1 = good.warned === false;
-    const pass2 = bad.warned === true && /25[- ]hour/.test(bad.text);
+    /* 22 hours, not 25. The warning measures the SHIFT now -- 19:00 to
+       17:00 the next day -- instead of how long from this moment until the
+       JSA closes, which is what it used to do and which changed with the
+       time of day you ran this. That old measure is also why a real
+       ten-hour night shift was being warned about. Fixed 2026-09-12. */
+    const pass2 = bad.warned === true && /22[- ]hour/.test(bad.text);
     console.log(`${pass1 ? 'PASS' : 'FAIL'}  a real 10-hour night shift publishes without a warning`);
-    console.log(`${pass2 ? 'PASS' : 'FAIL'}  the 17:00 typo is caught and named as a 25-hour shift`);
+    console.log(`${pass2 ? 'PASS' : 'FAIL'}  the 17:00 typo is caught and named a 22-hour shift`);
 
     await browser.close();
     process.exitCode = pass1 && pass2 ? 0 : 1;
