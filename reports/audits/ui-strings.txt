@@ -1,4 +1,4 @@
-859 distinct user-facing strings
+856 distinct user-facing strings
 
 — finished and filed.
     [text] src\today\TodayView.jsx:139
@@ -14,8 +14,6 @@
     [text] src\today\TodayView.jsx:137
 ‹ Prev
     [text] src\main.jsx:4868
-+ Add Photo
-    [copy] src\incident\incidentCopy.js:122
 ✓ Included
     [text] src\main.jsx:4973
 0 2px 14px rgba(0,0,0,.06)
@@ -50,8 +48,10 @@ Add an old document
     [text] src\archive\ArchiveView.jsx:521, src\archive\UploadDocument.jsx:65
 Add company- or site-specific language. You must choose whether it is a task, hazard, or control so it stays in the correct lane.
     [text] src\main.jsx:4560
-Add Custom Item
+Add custom item
     [text] src\main.jsx:4576
+Add photo
+    [copy] src\incident\incidentCopy.js:122
 Add photos of the scene, equipment, damage, or injury. Photos are optional.
     [copy] src\incident\incidentCopy.js:121
 Add related suggestions?
@@ -60,7 +60,7 @@ Add Selected Suggestions
     [text] src\main.jsx:1488
 Add signature
     [text] src\incident\SignaturePad.jsx:289
-Add Task Only
+Add task only
     [text] src\main.jsx:1487
 Add team member
     [copy] src\incident\incidentCopy.js:110
@@ -116,7 +116,7 @@ Available
     [copy] src\incident\incidentCopy.js:161, src\main.jsx:3335
 Back
     [copy] src\incident\incidentCopy.js:22, src\main.jsx:3442, src\main.jsx:4406
-Back to the archive
+Back to Records
     [text] src\archive\UploadDocument.jsx:69
 Basic facts about the employee and what occurred. Enter only what happened — do not decide the outcome here.
     [intro] src\documents\disciplinary\DisciplinaryWorkflow.jsx:24
@@ -246,7 +246,7 @@ Continue Draft
     [text] src\main.jsx:3382
 Continue Incident Report
     [copy] src\incident\incidentCopy.js:160
-Continue Signing
+Continue signing
     [text] src\jsa\CrewSignInKiosk.jsx:302
 Continued Section:
     [text] src\incident\IncidentPdf.jsx:473
@@ -350,8 +350,6 @@ Document an employee-reported medical condition or event and the response taken.
     [copy] src\documents\registry.js:59
 Document and investigate a workplace incident, step by step.
     [copy] src\documents\registry.js:39
-Document Archive
-    [text] src\archive\ArchiveView.jsx:117
 Document date
     [text] src\archive\ArchiveView.jsx:210, src\archive\ArchiveView.jsx:605
 Document Options
@@ -370,18 +368,14 @@ Done
     [text] src\archive\ArchiveView.jsx:667
 Done adding
     [text] src\archive\UploadDocument.jsx:131
-Done Signing
+Done signing
     [text] src\jsa\CrewSignInKiosk.jsx:303
 Done signing?
-    [aria-label] src\jsa\CrewSignInKiosk.jsx:297
-Done Signing?
-    [text] src\jsa\CrewSignInKiosk.jsx:299
+    [aria-label] src\jsa\CrewSignInKiosk.jsx:297, src\jsa\CrewSignInKiosk.jsx:299
 Done today
     [text] src\today\TodayView.jsx:139, src\today\TodayView.jsx:222
 Download
-    [text] src\main.jsx:4342
-Download Document
-    [downloadLabel] src\documents\FormPrimitives.jsx:345, src\incident\incidentCopy.js:151
+    [downloadLabel] src\documents\FormPrimitives.jsx:345, src\incident\incidentCopy.js:151, src\main.jsx:4342
 Download it, then open it to print. Submitting does not need this.
     [text] src\incident\IncidentWorkflow.jsx:558
 Download the details
@@ -480,9 +474,9 @@ Every safety and employee document, filed from the app or added from older paper
     [text] src\archive\ArchiveView.jsx:511
 Every type
     [text] src\archive\ArchiveView.jsx:651
-Everyone signs here now — manager, employee, and a witness who was in the room. Nothing has to be printed to be signed.
+Everyone signs here — manager, employee, and a witness who was in the room. Nothing has to be printed to be signed.
     [intro] src\documents\disciplinary\DisciplinaryWorkflow.jsx:127
-Everyone signs here now — supervisor, employee, a witness who was in the room, and HR. Nothing has to be printed to be signed.
+Everyone signs here — supervisor, employee, a witness who was in the room, and HR. Nothing has to be printed to be signed.
     [intro] src\documents\separation\SeparationWorkflow.jsx:182
 Everything required is filled in. Send it for review below.
     [copy] src\incident\incidentCopy.js:145
@@ -508,7 +502,7 @@ Filed by
     [text] src\archive\ArchiveView.jsx:212, src\archive\ArchiveView.jsx:605
 Filed document
     [aria-label] src\archive\ArchiveView.jsx:195
-Filed to the archive
+Filed to Records
     [text] src\archive\FileToArchiveButton.jsx:65
 Fill out the day's paperwork and send it where it needs to go.
     [text] src\main.jsx:3159
@@ -716,13 +710,13 @@ Load a custom template first, or use Save Custom Template.
     [toast/confirm] src\main.jsx:2418
 Load a Template
     [text] src\main.jsx:3390
-Load Template
+Load template
     [text] src\main.jsx:3401
 Loading a template starts a fresh JSA for today and never carries over signatures or daily work details.
     [text] src\main.jsx:4361
 Loading photo…
     [copy] src\incident\incidentCopy.js:131
-Loading the archive…
+Loading records…
     [text] src\archive\ArchiveView.jsx:455, src\main.jsx:3020
 Loading today…
     [text] src\main.jsx:3009
@@ -1065,7 +1059,7 @@ Record
 Record a near miss, weather event, equipment failure, or other uncontrolled event.
     [copy] src\documents\registry.js:49
 Records
-    [text] src\archive\ArchiveView.jsx:487, src\archive\ArchiveView.jsx:488, src\main.jsx:2889 (+2 more)
+    [text] src\archive\ArchiveView.jsx:117, src\archive\ArchiveView.jsx:487, src\archive\ArchiveView.jsx:488 (+3 more)
 Refresh
     [text] src\archive\ArchiveView.jsx:522, src\crew\MyBoard.jsx:271, src\open\OpenDocsView.jsx:241
 Refused / Unavailable to Sign
@@ -1080,9 +1074,9 @@ Remove member
     [copy] src\incident\incidentCopy.js:111
 Remove photo
     [copy] src\incident\incidentCopy.js:128
-Remove Task and Added Suggestions
+Remove task and added suggestions
     [text] src\main.jsx:1521
-Remove Task Only
+Remove task only
     [text] src\main.jsx:1520
 Remove this investigation team member?
     [copy] src\incident\incidentCopy.js:20
@@ -1144,13 +1138,13 @@ Save a file you can text, email, or AirDrop to someone else. They can open it in
     [text] src\incident\IncidentWorkflow.jsx:569
 Save as Template
     [text] src\main.jsx:4352
-Save failed \u2014 try Save Now
+Save failed \u2014 try Save now
     [copy] src\incident\incidentCopy.js:13
 Save failed. Check available storage on this device.
     [toast/confirm] src\main.jsx:1941, src\main.jsx:1960, src\main.jsx:1979 (+5 more)
-Save Now
+Save now
     [text] src\documents\FormPrimitives.jsx:296, src\incident\incidentCopy.js:15, src\main.jsx:1416
-Save Template
+Save template
     [text] src\main.jsx:4358
 Saved
     [copy] src\incident\incidentCopy.js:12
@@ -1208,10 +1202,10 @@ Select…
     [placeholder] src\documents\FormPrimitives.jsx:38
 Selected based on the facts above — this app does not determine or suggest a classification.
     [text] src\documents\medicalEvent\MedicalEventWorkflow.jsx:113
+Send draft to someone else
+    [text] src\documents\FormPrimitives.jsx:435, src\incident\IncidentWorkflow.jsx:568
 Send it back
     [aria-label] src\open\OpenDocsView.jsx:369, src\open\OpenDocsView.jsx:370
-Send to Someone Else to Finish
-    [text] src\documents\FormPrimitives.jsx:435, src\incident\IncidentWorkflow.jsx:568
 Sent for review
     [text] src\open\SendForReviewButton.jsx:118
 Sent for review. It has left this device — check My Work to see where it got to.
@@ -1336,7 +1330,7 @@ Start from a clean form. Save recurring information as your own custom template.
     [copy] src\main.jsx:838
 Start Incident Report
     [copy] src\incident\incidentCopy.js:159
-Start New Incident Report
+Start new Incident Report
     [copy] src\incident\incidentCopy.js:156
 Start Options
     [text] src\main.jsx:3356
@@ -1564,17 +1558,17 @@ unsafeConditions
     [copy] src\incident\incidentModel.js:69
 unsafeConditionsOther
     [copy] src\incident\incidentModel.js:71
-Update Document
-    [regenerateLabel] src\documents\FormPrimitives.jsx:344, src\incident\incidentCopy.js:150
-Update Loaded
+Update loaded template
     [text] src\main.jsx:4359
+Update the printout
+    [regenerateLabel] src\documents\FormPrimitives.jsx:344, src\incident\incidentCopy.js:150
 Uploaded
     [text] src\archive\ArchiveView.jsx:618
 upper-section wrapped lines
     [text] src\main.jsx:4644
 Use
     [text] src\archive\ArchiveView.jsx:501
-Use Blank
+Use blank
     [text] src\main.jsx:4437
 Use quick inserts as shortcuts, then adjust wording as needed.
     [text] src\main.jsx:3869
@@ -1692,7 +1686,7 @@ Years with company
     [label] src\incident\IncidentWorkflow.jsx:229
 Yes, same info
     [text] src\main.jsx:1366
-You can see every document in the archive.
+You can see every document in Records.
     [copy] src\account\ProfileCard.jsx:35, src\account\ProfileCard.jsx:36, src\account\ProfileCard.jsx:37 (+1 more)
 You can see every document, and sign off on any of them.
     [copy] src\account\ProfileCard.jsx:34

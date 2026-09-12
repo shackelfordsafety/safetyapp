@@ -296,11 +296,11 @@ export default function CrewSignInKiosk({ jsa, upd, onExit, onSign, signedCount:
       {phase === 'confirmingExit' && (
         <div className="crewKioskExitConfirmOverlay" role="alertdialog" aria-modal="true" aria-label="Done signing?">
           <div className="crewKioskExitConfirmPanel">
-            <h2>Done Signing?</h2>
+            <h2>Done signing?</h2>
             <p>{signedCount} crew member{signedCount === 1 ? '' : 's'} signed. 20 blank lines will be added after them for anyone who signs in ink later.</p>
             <div className="crewKioskExitConfirmActions">
-              <button type="button" className="btn ghost lg" onClick={continueSigning}>Continue Signing</button>
-              <button type="button" className="btn primary lg" onClick={confirmDoneSigning}>Done Signing</button>
+              <button type="button" className="btn ghost lg" onClick={continueSigning}>Continue signing</button>
+              <button type="button" className="btn primary lg" onClick={confirmDoneSigning}>Done signing</button>
             </div>
           </div>
         </div>

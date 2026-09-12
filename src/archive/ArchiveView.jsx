@@ -114,7 +114,7 @@ function SignIn({ onSignedIn }) {
   return (
     <div className="arcLoginWrap">
       <form className="arcLoginCard" onSubmit={submit}>
-        <h2>Document Archive</h2>
+        <h2>Records</h2>
         <p className="arcLead">Sign in to look up filed safety and employee documents.</p>
         <label className="arcField">
           <span>Email</span>
@@ -369,7 +369,7 @@ export default function ArchiveView() {
       })));
       setStatus('ready');
     } catch (ex) {
-      setError(ex?.message || 'Something went wrong loading the archive.');
+      setError(ex?.message || 'Something went wrong loading your records.');
       setStatus('error');
     }
   }, []);
@@ -452,7 +452,7 @@ export default function ArchiveView() {
   }, [rows, q, type, range]);
 
   if (status === 'checking' || status === 'loading') {
-    return <div className="page"><p className="helperText">Loading the archive…</p></div>;
+    return <div className="page"><p className="helperText">Loading records…</p></div>;
   }
 
   if (status === 'signedout') {

@@ -142,8 +142,8 @@ async function testDraftProtection(browser) {
 }
 
 async function testSaveNowAndFailure(browser) {
-  const a = makeAssertions('Save Now / Save failed (section 2)');
-  console.log('\n=== 2. Save Now / Save failed ===');
+  const a = makeAssertions('Save now / Save failed (section 2)');
+  console.log('\n=== 2. Save now / Save failed ===');
   const context = await browser.newContext({ viewport: { width: 1200, height: 900 } });
   const page = await context.newPage();
   page.on('pageerror', (err) => console.error('  [page error]', err.message));
@@ -152,14 +152,14 @@ async function testSaveNowAndFailure(browser) {
   await page.goto(BASE_URL, { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: 'Start Incident Report' }).click();
 
-  console.log('  [2/6] Typing into Workplace location and clicking Save Now immediately...');
-  await page.locator('.stepPanel input').first().fill('Save Now Test Site');
-  await page.getByRole('button', { name: 'Save Now' }).click();
+  console.log('  [2/6] Typing into Workplace location and clicking Save now immediately...');
+  await page.locator('.stepPanel input').first().fill('Save now Test Site');
+  await page.getByRole('button', { name: 'Save now' }).click();
   await page.waitForFunction(() => document.querySelector('.builderHeaderSaved')?.textContent === 'Saved', { timeout: 5000 }).catch(() => {});
   const savedLabel = await page.locator('.builderHeaderSaved').innerText();
-  a.check(savedLabel === 'Saved', `Save Now shows "Saved" on success (got: "${savedLabel}")`);
+  a.check(savedLabel === 'Saved', `Save now shows "Saved" on success (got: "${savedLabel}")`);
 
-  console.log('  [3/6] Simulating a storage failure and clicking Save Now again...');
+  console.log('  [3/6] Simulating a storage failure and clicking Save now again...');
   await page.evaluate(() => {
     const proto = Storage.prototype;
     const original = proto.setItem;
@@ -169,25 +169,25 @@ async function testSaveNowAndFailure(browser) {
       return original.call(this, key, value);
     };
   });
-  await page.locator('.stepPanel input').first().fill('Save Now Test Site (edited during failure)');
-  await page.getByRole('button', { name: 'Save Now' }).click();
+  await page.locator('.stepPanel input').first().fill('Save now Test Site (edited during failure)');
+  await page.getByRole('button', { name: 'Save now' }).click();
   await page.waitForFunction(() => document.querySelector('.builderHeaderSaved')?.textContent?.includes('Save failed'), { timeout: 5000 }).catch(() => {});
   const failedLabel = await page.locator('.builderHeaderSaved').innerText();
-  a.check(failedLabel === 'Save failed \u2014 try Save Now', `Save Now shows the exact failure copy (got: "${failedLabel}")`);
+  a.check(failedLabel === 'Save failed \u2014 try Save now', `Save now shows the exact failure copy (got: "${failedLabel}")`);
   const hasErrorClass = await page.locator('.builderHeaderSaved.error').count();
   a.check(hasErrorClass === 1, 'the failed save status is styled with the .error modifier');
 
   console.log('  [4/6] Waiting past the autosave debounce window to confirm it never silently reports "Saved" after the failure...');
   await page.waitForTimeout(1500);
   const labelStillFailed = await page.locator('.builderHeaderSaved').innerText();
-  a.check(labelStillFailed === 'Save failed \u2014 try Save Now', `status still shows failure after the autosave window elapses, never silently falls back to "Saved" (got: "${labelStillFailed}")`);
+  a.check(labelStillFailed === 'Save failed \u2014 try Save now', `status still shows failure after the autosave window elapses, never silently falls back to "Saved" (got: "${labelStillFailed}")`);
 
-  console.log('  [5/6] Restoring storage and confirming Save Now recovers...');
+  console.log('  [5/6] Restoring storage and confirming Save now recovers...');
   await page.evaluate(() => { Storage.prototype.setItem = window.__originalSetItem; });
-  await page.getByRole('button', { name: 'Save Now' }).click();
+  await page.getByRole('button', { name: 'Save now' }).click();
   await page.waitForFunction(() => document.querySelector('.builderHeaderSaved')?.textContent === 'Saved', { timeout: 5000 }).catch(() => {});
   const recoveredLabel = await page.locator('.builderHeaderSaved').innerText();
-  a.check(recoveredLabel === 'Saved', `Save Now recovers to "Saved" once storage works again (got: "${recoveredLabel}")`);
+  a.check(recoveredLabel === 'Saved', `Save now recovers to "Saved" once storage works again (got: "${recoveredLabel}")`);
 
   console.log('  [6/6] Cleaning up (clearing the test draft from localStorage)...');
   await page.evaluate(() => window.localStorage.removeItem('sdc.incident.draft.v1'));

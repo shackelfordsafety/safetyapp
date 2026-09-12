@@ -1413,7 +1413,7 @@ function DocumentOptionsSheet({ onClose, saveDraft, markReady, clearDraft, legac
         <div className="actionSheetBody">
           <div className="actionSheetGroup">
             <button type="button" className="actionSheetAction" onClick={() => { saveDraft(); onClose(); }} disabled={isGenerating}>
-              <strong>Save Now</strong>
+              <strong>Save now</strong>
               <span>Drafts already autosave automatically — this is optional.</span>
             </button>
             <button type="button" className="actionSheetAction" onClick={() => { markReady(); onClose(); }} disabled={isGenerating}>
@@ -1484,7 +1484,7 @@ function TaskSuggestionModal({ task, hazards, controls, onCancel, onTaskOnly, on
         </div>
         <div className="dialogActions suggestionModalActions">
           <button className="btn ghost" onClick={onCancel}>Cancel</button>
-          <button className="btn secondary" onClick={onTaskOnly}>Add Task Only</button>
+          <button className="btn secondary" onClick={onTaskOnly}>Add task only</button>
           <button className="btn primary" onClick={() => onAddSelected(selectedHazards, selectedControls)}>Add Selected Suggestions</button>
         </div>
       </div>
@@ -1517,8 +1517,8 @@ function RemoveBundleModal({ task, hazards, controls, onCancel, onRemoveTaskOnly
         </div>
         <div className="dialogActions suggestionModalActions">
           <button className="btn ghost" onClick={onCancel}>Cancel</button>
-          <button className="btn secondary" onClick={onRemoveTaskOnly}>Remove Task Only</button>
-          <button className="btn danger" onClick={onRemoveBundle}>Remove Task and Added Suggestions</button>
+          <button className="btn secondary" onClick={onRemoveTaskOnly}>Remove task only</button>
+          <button className="btn danger" onClick={onRemoveBundle}>Remove task and added suggestions</button>
         </div>
       </div>
     </div>
@@ -3017,7 +3017,7 @@ function App() {
             </Suspense>
           )}
           {tab === 'archive' && (
-            <Suspense fallback={<p className="helperText">Loading the archive…</p>}>
+            <Suspense fallback={<p className="helperText">Loading records…</p>}>
               <ArchiveView />
             </Suspense>
           )}
@@ -3398,7 +3398,7 @@ function JsaStartView({ allTemplates, selectedTemplate, templateId, setTemplateI
                 {allTemplates.map(t => <option key={t.id} value={t.id}>{t.source === 'custom' ? 'Custom: ' : ''}{t.name}</option>)}
               </select>
             </label>
-            <button className="btn secondary" onClick={() => loadTemplate(templateId)}>Load Template</button>
+            <button className="btn secondary" onClick={() => loadTemplate(templateId)}>Load template</button>
             {selectedTemplate?.description && <p className="helperText templateLauncher">{selectedTemplate.description}</p>}
           </div>
         </div>
@@ -4355,8 +4355,8 @@ function StepFinish({
               <input value={saveName} onChange={e => setSaveName(e.target.value)} placeholder="Example: Entergy JSA" />
             </label>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button type="button" className="btn primary sm" onClick={saveTemplate}>Save Template</button>
-              <button type="button" className="btn ghost sm" onClick={updateTemplate}>Update Loaded</button>
+              <button type="button" className="btn primary sm" onClick={saveTemplate}>Save template</button>
+              <button type="button" className="btn ghost sm" onClick={updateTemplate}>Update loaded template</button>
             </div>
             <p className="helperText">Loading a template starts a fresh JSA for today and never carries over signatures or daily work details.</p>
           </div>
@@ -4434,7 +4434,7 @@ function TemplatesView({ allTemplates, customTemplates, loadTemplate, deleteTemp
             <p>Start from a clean form and build a new template if needed.</p>
           </div>
           <div className="itemActions">
-            <button className="btn secondary sm" onClick={startBlank}>Use Blank</button>
+            <button className="btn secondary sm" onClick={startBlank}>Use blank</button>
           </div>
         </div>
         <div className="listItem">
@@ -4573,7 +4573,7 @@ function SettingsView({ settings, setSettings }) {
               <span>Custom wording</span>
               <input value={quickLabel} onChange={e => setQuickLabel(e.target.value)} placeholder={`Enter a custom ${quickType}`} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomQuick(); } }} />
             </label>
-            <button className="btn primary" onClick={addCustomQuick}>Add Custom Item</button>
+            <button className="btn primary" onClick={addCustomQuick}>Add custom item</button>
           </div>
           <div className="customQuickLists">
             {['task','hazard','control'].map(type => (

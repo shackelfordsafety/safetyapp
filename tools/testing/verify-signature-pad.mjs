@@ -295,7 +295,7 @@ async function runTouchGestureCheck(browser, fixtureJson) {
 
   console.log('  [7/7] Carrying the touch-drawn signature through full PDF export...');
   await page.getByRole('tab', { name: /^Review & Export/ }).click();
-  await page.locator('button:has-text("Create Document"), button:has-text("Update Document")').first().click();
+  await page.locator('button:has-text("Create Document"), button:has-text("Update the printout")').first().click();
   await page.locator('.pdfReadyPanel').waitFor({ state: 'visible', timeout: 30000 });
   const page3 = page.locator('.incidentPdfExportRoot .incidentPage').nth(2);
   const sigImages = page3.locator('.incSignatureImage');
@@ -394,7 +394,7 @@ async function runViewport(browser, fixtureJson, viewport) {
   if (viewport.runExport) {
     console.log('  [6/6] Carrying the drawn signature through full PDF export...');
     await page.getByRole('tab', { name: /^Review & Export/ }).click();
-    await page.locator('button:has-text("Create Document"), button:has-text("Update Document")').first().click();
+    await page.locator('button:has-text("Create Document"), button:has-text("Update the printout")').first().click();
     await page.locator('.pdfReadyPanel').waitFor({ state: 'visible', timeout: 30000 });
 
     const page3 = page.locator('.incidentPdfExportRoot .incidentPage').nth(2);

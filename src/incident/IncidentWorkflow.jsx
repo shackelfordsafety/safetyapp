@@ -565,7 +565,7 @@ function StepReview({ incident, prev, pdfExportState, isPdfStale, onGeneratePdf,
       </div>
 
       <div className="card">
-        <div className="cardHeader"><strong>Send to Someone Else to Finish</strong></div>
+        <div className="cardHeader"><strong>Send draft to someone else</strong></div>
         <p className="helperText">Save a file you can text, email, or AirDrop to someone else. They can open it in this app and pick up right where you left off — the checklist above doesn't need to be done first.</p>
         <button type="button" className="btn secondary" onClick={() => downloadDraftFile('incident', incident, buildDraftFilename(incident.workplaceLocation, 'Incident Report', incident.incidentDate))}>Export Draft File</button>
       </div>

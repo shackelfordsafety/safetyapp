@@ -258,7 +258,7 @@ export function useDraftDocument({ storageKey, emptyModel, hasMeaningfulContent,
    four new documents don't each repeat the ternary chain. */
 export function saveStatusLabel(saveStatus, lastSavedAt) {
   if (saveStatus === 'saving') return 'Saving…';
-  if (saveStatus === 'error') return 'Save failed — try Save Now';
+  if (saveStatus === 'error') return 'Save failed — try Save now';
   if (saveStatus === 'saved') return 'Saved';
   return lastSavedAt ? 'Saved' : 'Not saved yet';
 }

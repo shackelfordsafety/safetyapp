@@ -179,7 +179,7 @@ function witnessStatementFor(model) {
 
 function StepSignatures({ model, upd, prev, next }) {
   return (
-    <StepPanel title="Signatures" intro="Everyone signs here now — supervisor, employee, a witness who was in the room, and HR. Nothing has to be printed to be signed.">
+    <StepPanel title="Signatures" intro="Everyone signs here — supervisor, employee, a witness who was in the room, and HR. Nothing has to be printed to be signed.">
       <div className="formPairRow">
         <SignaturePad label="Supervisor Signature" value={model.supervisorSignatureData} onChange={data => upd({ supervisorSignatureData: data, supervisorSignatureDate: data ? new Date().toISOString().slice(0, 10) : model.supervisorSignatureDate })} />
         <Field label="Supervisor Signature Date" type="date" value={model.supervisorSignatureDate} onChange={v => upd({ supervisorSignatureDate: v })} />

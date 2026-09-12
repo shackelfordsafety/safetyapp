@@ -63,7 +63,7 @@ async function generateOne(browser, { id, key, fixture, label, touch }) {
 
   // Generic step navigation: walk forward until Create Document is reachable.
   for (let step = 0; step < 12; step += 1) {
-    const create = page.getByRole('button', { name: /Create Document|Update Document/ });
+    const create = page.getByRole('button', { name: /Create Document|Update the printout/ });
     if (await create.count() > 0 && await create.first().isVisible().catch(() => false)) {
       await create.first().click();
       break;
@@ -84,7 +84,7 @@ async function generateOne(browser, { id, key, fixture, label, touch }) {
   await page.waitForSelector('.pdfReadyPanel', { timeout: 45000 });
   const headline = (await page.locator('.pdfReadyHeadline').innerText()).trim();
   const downloadPromise = page.waitForEvent('download');
-  await page.locator('button', { hasText: 'Download Document' }).click();
+  await page.locator('button', { hasText: 'Download' }).click();
   const download = await downloadPromise;
   const pdfPath = path.join(outDir, `${label || id}.pdf`);
   await download.saveAs(pdfPath);

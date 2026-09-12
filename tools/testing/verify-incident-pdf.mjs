@@ -189,7 +189,7 @@ async function runFixture(browser, fixture) {
   await page.getByRole('tab', { name: /^Review & Export/ }).click();
 
   console.log('  [2/7] Triggering real PDF export (exportIncidentPdf -> generateIncidentPdf)...');
-  await page.locator('button:has-text("Create Document"), button:has-text("Update Document")').first().click();
+  await page.locator('button:has-text("Create Document"), button:has-text("Update the printout")').first().click();
   await page.locator('.pdfReadyPanel').waitFor({ state: 'visible', timeout: 30000 });
 
   const readyHeadline = await page.locator('.pdfReadyHeadline').innerText();
@@ -198,7 +198,7 @@ async function runFixture(browser, fixture) {
 
   console.log('  [4/7] Downloading generated PDF...');
   const downloadPromise = page.waitForEvent('download');
-  await page.locator('button:has-text("Download Document")').click();
+  await page.locator('button:has-text("Download")').click();
   const download = await downloadPromise;
   const pdfPath = path.join(outDir, `incident-${fixture.name}.pdf`);
   await download.saveAs(pdfPath);

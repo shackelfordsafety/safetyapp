@@ -88,7 +88,7 @@ async function assertNoClipping(a, page) {
 }
 
 async function generatePdf(page) {
-  await page.locator('button:has-text("Create Document"), button:has-text("Update Document")').first().click();
+  await page.locator('button:has-text("Create Document"), button:has-text("Update the printout")').first().click();
   await page.locator('.pdfReadyPanel').waitFor({ state: 'visible', timeout: 30000 });
 }
 

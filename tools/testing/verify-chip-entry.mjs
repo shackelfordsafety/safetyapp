@@ -52,7 +52,7 @@ async function shoot(page, name) {
 }
 
 async function startBlankJsa(page) {
-  await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'Documents' }).first().click();
+  await page.getByRole('button', { name: 'Documents', exact: false }).first().click();
   await page.waitForTimeout(300);
   const row = page.locator('.listItem', { hasText: 'Job Safety Analysis' }).first();
   await row.getByRole('button', { name: /Start|Open/ }).first().click();

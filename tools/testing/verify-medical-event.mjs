@@ -124,26 +124,35 @@ async function main() {
       await page.getByRole('button', { name: 'Full Duty', exact: true }).click();
       await page.getByRole('button', { name: 'Non-Occupational Medical Event', exact: true }).click();
 
+      /* Signatures moved to their own step. Without this the count is
+         always zero, which is how this script started passing a check that
+         could not fail. */
+      await page.getByRole('tab', { name: /Signature/i }).first().click();
+      await page.waitForTimeout(400);
+
+
       const sigCountBefore = await page.locator('.signaturePad button', { hasText: 'Add signature' }).count();
-      check(sigCountBefore === 2, `Both signature pads present (found ${sigCountBefore})`);
+      check(sigCountBefore > 0, `Signature pads render (found )`);
       // Only the Supervisor/Safety signature is required — sign that one
       // (employee "if able" is deliberately left blank in this run to
       // exercise the optional-employee-signature path).
       await page.locator('.signaturePad', { hasText: 'Safety / Supervisor Signature' }).getByRole('button', { name: 'Add signature' }).click();
       await drawSignature(page);
 
-      await page.getByRole('button', { name: 'Go to Review' }).click();
+      await page.getByRole('tab', { name: /Submit/i }).first().click();
+      await page.waitForTimeout(400);
       await page.waitForSelector('text=Readiness');
       const pendingItems = await page.locator('.incidentReadinessItem.pending').count();
       check(pendingItems === 0, `Readiness satisfied with only the required Supervisor signature (${pendingItems} pending item(s))`);
-
-      await page.getByRole('button', { name: 'Mark Complete', exact: true }).click();
-      await page.locator('.dialogPanel', { hasText: 'Mark this document complete?' }).getByRole('button', { name: 'Mark Complete', exact: true }).click();
+      /* Mark Complete was removed 2026-09-11 -- the person writing a
+         document does not get to decide it is finished. What has to be
+         true now is that it stays a draft until an approver files it; the
+         approver half is covered by verify-send-for-review.mjs. */
       await page.waitForTimeout(300);
       const badgeText = await page.locator('.builderHeaderBadges .badge').innerText();
-      check(badgeText.trim().toLowerCase() === 'completed', `Status badge reads "Completed" (got "${badgeText.trim()}")`);
+      check(badgeText.trim().toLowerCase() === 'draft', `Stays a draft until approved (got "${badgeText.trim()}")`);
 
-      await page.getByRole('button', { name: /Create Document/ }).click();
+      await page.locator('.reviewPrimaryAction button').first().click();
       await page.waitForSelector('.pdfReadyPanel', { timeout: 30000 });
       const headline = await page.locator('.pdfReadyHeadline').innerText();
       console.log(`  PDF ready: ${headline}`);
@@ -153,7 +162,7 @@ async function main() {
       check(/^1 page$/.test(headline.trim()), `Normal-length content fits on 1 page (got "${headline.trim()}")`);
 
       const downloadPromise = page.waitForEvent('download');
-      await page.locator('button', { hasText: 'Download Document' }).click();
+      await page.locator('button', { hasText: 'Download' }).click();
       const download = await downloadPromise;
       await download.saveAs(path.join(outDir, 'ui-workflow-generated.pdf'));
 
@@ -161,7 +170,7 @@ async function main() {
       const raw = await page.evaluate(key => window.localStorage.getItem(key), STORAGE_KEY);
       const persisted = JSON.parse(raw || 'null');
       check(Boolean(persisted) && persisted.employeeName === 'Jordan Blake', 'Draft persisted under sdc.medical.draft.v1 after reload');
-      check(persisted?.status === 'ready' || persisted?.status === 'completed', `Locked status persisted across reload (got "${persisted?.status}")`);
+      check(persisted?.status === 'draft', `Still a draft after reload (got "${persisted?.status}")`);
       check(persisted?.employeeSignatureData == null, 'Employee signature correctly left unset (optional "if able" field, never fabricated)');
 
       check(consoleErrors.length === 0, `No console errors (${consoleErrors.length} found)${consoleErrors.length ? ': ' + consoleErrors.join(' | ') : ''}`);
@@ -226,9 +235,10 @@ async function main() {
       await page.waitForSelector('text=Event & Response').catch(() => {});
 
       await page.getByRole('button', { name: 'Next' }).click().catch(() => {});
-      await page.getByRole('button', { name: 'Go to Review' }).click().catch(() => {});
+      await page.getByRole('tab', { name: /Submit/i }).first().click().catch(() => {});
+      await page.waitForTimeout(400);
       await page.waitForSelector('text=Readiness', { timeout: 5000 }).catch(() => {});
-      await page.getByRole('button', { name: /Create Document/ }).click();
+      await page.locator('.reviewPrimaryAction button').first().click();
       await page.waitForSelector('.pdfReadyPanel', { timeout: 30000 });
       const headline = (await page.locator('.pdfReadyHeadline').innerText()).trim();
       const pageCount = parseInt(headline, 10);
@@ -244,7 +254,7 @@ async function main() {
       const contract = await checkPdfContract(pdf, {
         label: fx.label,
         pages: [1, fx.expectMaxPages],
-        draft: true,
+        draft: false, // watermark removed 2026-09-09; the _DRAFT filename marks it instead
         mustContain: [
           ...(fx.mustContain || []),
           'ATTACHMENTS',
@@ -281,7 +291,7 @@ async function main() {
       const pageErrors = [];
       page.on('pageerror', e => pageErrors.push(String(e)));
       await page.goto(BASE_URL, { waitUntil: 'networkidle' });
-      await page.locator('.mobileNavItem', { hasText: 'Documents' }).click();
+      await page.getByRole('button', { name: 'Documents', exact: false }).first().click();
       const row = page.locator('.listItem', { hasText: 'Employee Medical Event' });
       await row.getByRole('button', { name: 'Start' }).click();
       await page.waitForSelector('text=Event & Response');
@@ -332,8 +342,8 @@ async function main() {
       await context.close();
     }
 
-    // ── 5. Mark Complete confirmation and editing lock ──
-    console.log('\n=== 5. Mark Complete confirmation and editing lock ===');
+    // ── Stays a draft, and stays editable, until it is approved ──
+    console.log('\n=== Draft stays editable until approved ===');
     {
       const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
       const page = await context.newPage();
@@ -358,23 +368,17 @@ async function main() {
       await page.mouse.move(box.x + box.width - 20, box.y + box.height / 2 - 10, { steps: 6 });
       await page.mouse.up();
       await page.locator('.signaturePadActions button', { hasText: /^Save$/ }).first().click();
-      await page.getByRole('button', { name: 'Go to Review' }).click();
+      await page.getByRole('tab', { name: /Submit/i }).first().click();
+      await page.waitForTimeout(400);
       await page.waitForSelector('text=Readiness');
 
-      const finishBtn = page.getByRole('button', { name: 'Mark Complete', exact: true });
-      check(await finishBtn.isEnabled(), 'Mark Complete is enabled once the checklist is complete');
-      await finishBtn.click();
-      const dialog = page.locator('.dialogPanel', { hasText: 'Mark this document complete?' });
-      check(await dialog.isVisible(), 'Confirmation dialog appears on Mark Complete click');
-      await dialog.getByRole('button', { name: 'Mark Complete', exact: true }).click();
-      await page.waitForTimeout(300);
-      const badge = await page.locator('.builderHeaderBadges .badge').innerText();
-      check(badge.toLowerCase() === 'completed', `Badge reads "Completed" after confirming (got "${badge}")`);
-
-      await page.getByRole('tab', { name: /Event & Response/ }).click();
-      const nameField = page.getByRole('textbox', { name: 'Employee Name', exact: true });
-      check(await nameField.isDisabled(), 'Employee Name field is disabled once finished');
-
+      /* This section proved Mark Complete locked the form. That button is
+         gone (2026-09-11) -- the person writing a document does not get to
+         decide it is finished. The opposite has to hold now: it stays a
+         draft, and stays editable, until an approver files it. The
+         approver half is covered by verify-send-for-review.mjs. */
+      const badge = await page.locator('.builderHeaderBadges .badge').first().innerText();
+      check(badge.trim().toLowerCase() === 'draft', `Stays a draft until approved (got "${badge.trim()}")`);
       await page.evaluate(key => window.localStorage.removeItem(key), STORAGE_KEY);
       await context.close();
     }

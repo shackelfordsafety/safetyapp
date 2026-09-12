@@ -134,30 +134,30 @@ async function main() {
       // Tap End Sign-In -- should show the Done Signing?/Continue Signing choice, not exit immediately.
       await page.locator('.crewKioskExitHold').click();
       await page.waitForTimeout(200);
-      check(await page.locator('.crewKioskExitConfirmOverlay').isVisible(), 'Tapping End Sign-In shows the "Done Signing?" choice instead of exiting immediately');
+      check(await page.locator('.crewKioskExitConfirmOverlay').isVisible(), 'Tapping End Sign-In shows the "Done signing?" choice instead of exiting immediately');
       await page.screenshot({ path: path.join(outDir, 'kiosk-flow-05-done-signing-prompt.png') });
 
       // Continue Signing should dismiss back to signing mode, not exit.
-      await page.locator('.crewKioskExitConfirmOverlay').getByRole('button', { name: 'Continue Signing' }).click();
+      await page.locator('.crewKioskExitConfirmOverlay').getByRole('button', { name: 'Continue signing' }).click();
       await page.waitForTimeout(200);
-      check(await page.locator('.crewKiosk').isVisible(), '"Continue Signing" stays in the kiosk (does not exit)');
-      check(!(await page.locator('.crewKioskExitConfirmOverlay').count()), '"Continue Signing" dismisses the confirm overlay');
+      check(await page.locator('.crewKiosk').isVisible(), '"Continue signing" stays in the kiosk (does not exit)');
+      check(!(await page.locator('.crewKioskExitConfirmOverlay').count()), '"Continue signing" dismisses the confirm overlay');
 
       // Now actually finish.
       await page.locator('.crewKioskExitHold').click();
       await page.waitForTimeout(200);
-      await page.getByRole('button', { name: 'Done Signing' }).click();
+      await page.getByRole('button', { name: 'Done signing' }).click();
       await page.waitForTimeout(300);
-      check(!(await page.locator('.crewKiosk').count()), '"Done Signing" actually closes the kiosk');
+      check(!(await page.locator('.crewKiosk').count()), '"Done signing" actually closes the kiosk');
       const landedStep = (await page.locator('.stepNavRow.current strong').innerText()).toLowerCase();
-      check(landedStep === 'finish & export', `Closing the kiosk via "Done Signing" advances straight to Finish & Export (landed on "${landedStep}")`);
+      check(landedStep === 'finish & export', `Closing the kiosk via "Done signing" advances straight to Finish & Export (landed on "${landedStep}")`);
       await page.screenshot({ path: path.join(outDir, 'kiosk-flow-06-landed-on-export.png') });
 
       console.log('    Generating real PDF...');
       await page.locator('.reviewPrimaryAction button').click();
       await page.locator('.pdfReadyPanel').waitFor({ state: 'visible', timeout: 30000 });
       const downloadPromise = page.waitForEvent('download');
-      await page.locator('.pdfReadyPanel button:has-text("Download Document")').click();
+      await page.locator('.pdfReadyPanel button:has-text("Download")').click();
       const download = await downloadPromise;
       await download.saveAs(path.join(outDir, 'jsa-kiosk-flow-generated.pdf'));
       console.log('    Saved -> jsa-kiosk-flow-generated.pdf');

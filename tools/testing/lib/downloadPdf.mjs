@@ -15,7 +15,7 @@ export async function downloadGeneratedPdf(page, savePath) {
   // unrelated "Download Document" button elsewhere on the page (e.g. the
   // "What Will Print" facsimile panel), which made an unscoped locator here
   // ambiguous.
-  await page.locator('.pdfReadyPanel button', { hasText: 'Download Document' }).click();
+  await page.locator('.pdfReadyPanel button', { hasText: 'Download' }).click();
   const download = await downloadPromise;
   await download.saveAs(savePath);
   return {

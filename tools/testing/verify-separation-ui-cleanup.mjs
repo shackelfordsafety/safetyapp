@@ -105,9 +105,9 @@ async function main() {
     const completeField = page.locator('.field', { hasText: 'Is this document complete?' });
     await completeField.waitFor({ state: 'visible' });
     check(true, '"Is this document complete?" toggle is present');
-    check((await page.locator('.cardHeader', { hasText: 'Send to Someone Else to Finish' }).count()) === 0, 'Send to Someone Else to Finish no longer has its own card header');
-    const sendBtn = page.getByRole('button', { name: 'Send to Someone Else to Finish', exact: true });
-    check(await sendBtn.isVisible(), 'Send to Someone Else to Finish is now a compact secondary action');
+    check((await page.locator('.cardHeader', { hasText: 'Send draft to someone else' }).count()) === 0, 'Send draft to someone else no longer has its own card header');
+    const sendBtn = page.getByRole('button', { name: 'Send draft to someone else', exact: true });
+    check(await sendBtn.isVisible(), 'Send draft to someone else is now a compact secondary action');
     await page.screenshot({ path: path.join(outDir, '3-export-before-complete.png'), fullPage: true });
 
     await completeField.getByRole('button', { name: 'Yes', exact: true }).click();

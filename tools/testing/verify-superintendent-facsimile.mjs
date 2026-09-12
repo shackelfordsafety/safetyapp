@@ -46,7 +46,7 @@ function waitForServer(url, timeoutMs) {
 }
 
 async function goToReview(page) {
-  await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'Drafts' }).first().click();
+  await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'My Work' }).first().click();
   await page.locator('.listItem').first().getByRole('button', { name: 'Open' }).click();
   await page.getByRole('button', { name: 'Next', exact: true }).click().catch(() => {});
   await page.getByRole('button', { name: 'Go to Review' }).click().catch(() => {});
@@ -90,7 +90,7 @@ async function main() {
         await page.getByRole('button', { name: /Create Document/ }).click();
         await page.locator('.pdfReadyPanel').waitFor({ state: 'visible', timeout: 30000 });
         const downloadPromise = page.waitForEvent('download');
-        await page.locator('.pdfReadyPanel button:has-text("Download Document")').click();
+        await page.locator('.pdfReadyPanel button:has-text("Download")').click();
         const download = await downloadPromise;
         await download.saveAs(path.join(outDir, `${doc.key}-generated.pdf`));
         console.log(`    Saved -> ${doc.key}-generated.pdf`);

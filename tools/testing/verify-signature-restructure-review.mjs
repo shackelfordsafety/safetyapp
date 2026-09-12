@@ -117,7 +117,7 @@ async function main() {
       check(badge.toLowerCase() === 'completed', `Badge reads plain "Completed" (no paper-pending concept anymore) (got "${badge}")`);
       check(await page.locator('.card', { hasText: 'Waiting on a paper signature' }).count() === 0, 'No "Waiting on a paper signature" card (removed)');
 
-      await page.getByRole('button', { name: /Update Document/ }).click();
+      await page.getByRole('button', { name: /Update the printout/ }).click();
       await page.waitForSelector('.pdfReadyPanel', { timeout: 30000 });
       const { savedTo: finalPdf } = await downloadGeneratedPdf(page, path.join(dir, 'final.pdf'));
       console.log('  Final PDF ->', finalPdf);
@@ -180,7 +180,7 @@ async function main() {
       const badge = (await page.locator('.builderHeaderBadges .badge').innerText()).trim();
       check(badge.toLowerCase() === 'completed', `Badge reads plain "Completed" (got "${badge}")`);
 
-      await page.getByRole('button', { name: /Update Document/ }).click();
+      await page.getByRole('button', { name: /Update the printout/ }).click();
       await page.waitForSelector('.pdfReadyPanel', { timeout: 30000 });
       const { savedTo: finalPdf } = await downloadGeneratedPdf(page, path.join(dir, 'final.pdf'));
       console.log('  Final PDF ->', finalPdf);

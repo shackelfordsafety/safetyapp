@@ -133,7 +133,7 @@ export default function AccountButton() {
                 <p className="helperText">{session.email}</p>
                 <p className="helperText">
                   Signing out doesn&apos;t affect anything on this device. You can still build
-                  and finish documents — you just can&apos;t publish or reach the archive.
+                  and finish documents — you just can&apos;t publish or open Records.
                 </p>
                 <div className="dialogActions">
                   <button type="button" className="btn ghost" onClick={() => setOpen(false)}>Close</button>
@@ -146,7 +146,7 @@ export default function AccountButton() {
               <form onSubmit={signIn}>
                 <h3 style={{ margin: 0 }}>Sign in</h3>
                 <p className="helperText">
-                  Only needed to publish a JSA to your board or use the archive.
+                  Only needed to publish a JSA to your board or open Records.
                   Building documents never asks for this.
                 </p>
                 <label className="field">

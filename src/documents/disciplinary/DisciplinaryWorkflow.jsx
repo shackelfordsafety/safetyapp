@@ -124,7 +124,7 @@ function witnessStatementFor(model) {
 function StepSignatures({ model, upd, prev, next }) {
   const verbal = isVerbalWarning(model);
   return (
-    <StepPanel title="Signatures" intro="Everyone signs here now — manager, employee, and a witness who was in the room. Nothing has to be printed to be signed.">
+    <StepPanel title="Signatures" intro="Everyone signs here — manager, employee, and a witness who was in the room. Nothing has to be printed to be signed.">
       {verbal && (
         <p className="helperText">A verbal warning is a coaching conversation, not a signed notice — the employee doesn&apos;t sign this at all. Document what was said in Notice Details; only the manager signs below.</p>
       )}

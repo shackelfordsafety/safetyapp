@@ -66,7 +66,7 @@ export default function UploadDocument({ onDone, onCancel }) {
           <p>For write-ups, separations and reports finished before this app existed. The file itself is the record — fill in enough to find it again later.</p>
         </div>
         <div className="arcAccount">
-          <button type="button" className="btn ghost sm" onClick={onDone}>Back to the archive</button>
+          <button type="button" className="btn ghost sm" onClick={onDone}>Back to Records</button>
         </div>
       </div>
 

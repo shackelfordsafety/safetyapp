@@ -96,7 +96,7 @@ async function gotoReview(page) {
      button that actually makes the PDF as well as the panel classes. */
   const done = async () => (
     await page.locator('.pdfReadyPanel, .pdfStaleWarning, .reviewPrimaryAction').count()
-    + await page.locator('button', { hasText: /^(Create Document|Update Document|Want a paper copy first\?)$/ }).count()
+    + await page.locator('button', { hasText: /^(Create Document|Update the printout|Want a paper copy first\?)$/ }).count()
   );
   if (await done() > 0) return true;
 
@@ -129,7 +129,7 @@ async function generate(page) {
      went in -- for any document type that files to the archive it now
      reads "Want a paper copy first?", because paper is the secondary path.
      Either label means the same thing here: make the PDF. */
-  await page.locator('button', { hasText: /^(Create Document|Update Document|Want a paper copy first\?)$/ }).first().click();
+  await page.locator('button', { hasText: /^(Create Document|Update the printout|Want a paper copy first\?)$/ }).first().click();
   await page.waitForSelector('.pdfReadyPanel', { timeout: 90000 });
   return {
     filename: (await page.locator('.pdfReadyFilename').innerText()).trim(),
@@ -139,7 +139,7 @@ async function generate(page) {
 
 async function saveDownload(page, label) {
   const p = page.waitForEvent('download');
-  await page.locator('button', { hasText: 'Download Document' }).click();
+  await page.locator('button', { hasText: 'Download' }).click();
   const d = await p;
   const file = path.join(outDir, `${label}.pdf`);
   await d.saveAs(file);

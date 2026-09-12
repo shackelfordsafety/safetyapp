@@ -70,7 +70,7 @@ async function shoot(page, name) {
 // Walk forward through a workflow until the Review step is on screen.
 async function gotoReview(page) {
   for (let i = 0; i < 12; i += 1) {
-    const create = page.getByRole('button', { name: /Create Document|Update Document/ });
+    const create = page.getByRole('button', { name: /Create Document|Update the printout/ });
     if (await create.count() > 0 && await create.first().isVisible().catch(() => false)) return true;
     const review = page.getByRole('button', { name: 'Go to Review' });
     if (await review.count() > 0 && await review.first().isVisible().catch(() => false)) {
@@ -93,7 +93,7 @@ async function openDraft(page) {
 }
 
 async function startBlank(page, title) {
-  await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'Documents' }).first().click();
+  await page.getByRole('button', { name: 'Documents', exact: false }).first().click();
   await page.waitForTimeout(300);
   const row = page.locator('.listItem', { hasText: title }).first();
   await row.getByRole('button', { name: /Start|Open/ }).first().click();
@@ -102,7 +102,7 @@ async function startBlank(page, title) {
 
 async function download(page, label) {
   const p = page.waitForEvent('download');
-  await page.locator('button', { hasText: 'Download Document' }).click();
+  await page.locator('button', { hasText: 'Download' }).click();
   const d = await p;
   const file = path.join(outDir, `${label}.pdf`);
   await d.saveAs(file);
@@ -146,7 +146,7 @@ async function run(browser, vp) {
     await shoot(page, `${tag}-05-completed-locked`);
 
     // PDF is now stale (status changed) -> Update Document -> final, unwatermarked.
-    const update = page.getByRole('button', { name: /Update Document/ });
+    const update = page.getByRole('button', { name: /Update the printout/ });
     if (await update.count() > 0 && await update.first().isVisible().catch(() => false)) {
       await update.first().click();
       await page.waitForSelector('.pdfReadyPanel', { timeout: 60000 });

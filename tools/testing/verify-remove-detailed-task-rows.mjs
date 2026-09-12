@@ -120,7 +120,7 @@ async function main() {
       await page.locator('.reviewPrimaryAction button').click();
       await page.locator('.pdfReadyPanel').waitFor({ state: 'visible', timeout: 30000 });
       const downloadPromise = page.waitForEvent('download');
-      await page.locator('.pdfReadyPanel button:has-text("Download Document")').click();
+      await page.locator('.pdfReadyPanel button:has-text("Download")').click();
       const download = await downloadPromise;
       await download.saveAs(path.join(outDir, 'jsa-legacy-taskrows-generated.pdf'));
       console.log('    Saved -> jsa-legacy-taskrows-generated.pdf');

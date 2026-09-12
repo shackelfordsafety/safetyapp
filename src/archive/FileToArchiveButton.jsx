@@ -62,7 +62,7 @@ export default function FileToArchiveButton({ docType, model, pdfBlob, disabled 
   if (phase === 'filed') {
     return (
       <div className="archiveFiled">
-        <strong>Filed to the archive</strong>
+        <strong>Filed to Records</strong>
         <span>Safety and HR can find this now. It can&apos;t be changed or deleted from here.</span>
       </div>
     );
@@ -95,7 +95,7 @@ export default function FileToArchiveButton({ docType, model, pdfBlob, disabled 
         onClick={file}
         disabled={disabled || phase === 'working'}
       >
-        {phase === 'working' ? 'Filing…' : 'File to the archive'}
+        {phase === 'working' ? 'Filing…' : 'File to Records'}
       </button>
       {phase === 'error' && <p className="archiveError">{message}</p>}
       <p className="helperText">

@@ -32,10 +32,10 @@ const ROLE_WORDS = {
 
 const ROLE_MEANS = {
   owner: 'You can see every document, and sign off on any of them.',
-  safety: 'You can see every document in the archive.',
-  hr: 'You can see every document in the archive.',
-  pm: 'You can see every document in the archive.',
-  clerk: 'You can see every document in the archive.',
+  safety: 'You can see every document in Records.',
+  hr: 'You can see every document in Records.',
+  pm: 'You can see every document in Records.',
+  clerk: 'You can see every document in Records.',
   superintendent: 'You can see your own documents, plus every disciplinary form.',
   foreman: 'You can see your own documents, plus every disciplinary form.',
   field: 'You can see the documents you filed yourself. Ask Fonzo to set your role.',

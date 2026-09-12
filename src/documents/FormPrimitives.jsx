@@ -293,7 +293,7 @@ export function BuilderHeader({ kicker, title, statusBadgeLabel, statusBadgeClas
         <div className="builderHeaderBadges">
           <span className={`badge ${statusBadgeClass}`}>{statusBadgeLabel}</span>
           <span className={`builderHeaderSaved${saveStatusState === 'error' ? ' error' : ''}`}>{saveStatus}</span>
-          <button type="button" className="btn ghost sm" onClick={onSaveNow} disabled={saveStatusState === 'saving'}>Save Now</button>
+          <button type="button" className="btn ghost sm" onClick={onSaveNow} disabled={saveStatusState === 'saving'}>Save now</button>
         </div>
       </div>
     </div>
@@ -327,7 +327,7 @@ export function ReadinessChecklist({ checks, onJump }) {
 /* Review & Export step body — generic across all four new documents.
    `status` is 'draft' | 'ready' | 'completed' (both 'ready' and 'completed'
    are the finished/locked state -- see isXPrintFinal in each model file).
-   One primary action only (Download Document) -- no competing Share/Print
+   One primary action only (Download) -- no competing Share/Print
    choice, and user-facing copy avoids PDF/publication jargon (see the
    app-wide download/print UX simplification mission). Internal PDF
    terminology (pdfExportState, onGeneratePdf, etc.) is left as-is; only
@@ -341,8 +341,8 @@ export function ReviewExportPanel({
   title, checks, checklistComplete, status,
   draftExplainText, markReadyHintText, onMarkReady, onMarkIncomplete,
   pdfExportState, isPdfStale, onGeneratePdf, onDownload,
-  generatingLabel = 'Creating…', generateLabel = 'Create Document', regenerateLabel = 'Update Document',
-  downloadLabel = 'Download Document',
+  generatingLabel = 'Creating…', generateLabel = 'Create Document', regenerateLabel = 'Update the printout',
+  downloadLabel = 'Download',
   onStartNew, startNewLabel = 'Start a new report',
   onExportDraft,
   onBack, onJumpCheck,
@@ -432,7 +432,7 @@ export function ReviewExportPanel({
 
         {onExportDraft && (
           <div className="reviewSecondaryActions">
-            <button type="button" className="btn ghost sm" onClick={onExportDraft}>Send to Someone Else to Finish</button>
+            <button type="button" className="btn ghost sm" onClick={onExportDraft}>Send draft to someone else</button>
             <span className="reviewAutosaveNote">Saves a file to text, email, or AirDrop — they pick up right where you left off, no need to finish the checklist first.</span>
           </div>
         )}

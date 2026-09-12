@@ -88,7 +88,7 @@ async function assertNoClipping(a, page) {
 }
 
 async function generatePdf(page) {
-  await page.locator('button:has-text("Create Document"), button:has-text("Update Document")').first().click();
+  await page.locator('button:has-text("Create Document"), button:has-text("Update the printout")').first().click();
   await page.locator('.pdfReadyPanel').waitFor({ state: 'visible', timeout: 30000 });
 }
 
@@ -158,7 +158,7 @@ async function main() {
     await page.getByRole('tab', { name: /^Photos/ }).click();
     await page.locator('h3:has-text("Incident Photos")').waitFor({ state: 'visible' });
     const addBtnBox = await page.locator('.incPhotoAddBtn').boundingBox();
-    a.check(Boolean(addBtnBox && addBtnBox.height >= 44), `expected the Add Photo button to be a real touch target (>=44px tall), got ${addBtnBox?.height}px`);
+    a.check(Boolean(addBtnBox && addBtnBox.height >= 44), `expected the Add photo button to be a real touch target (>=44px tall), got ${addBtnBox?.height}px`);
 
     const fileInput = page.locator('.incPhotoFileInput');
     await fileInput.setInputFiles([portraitPath, landscapePath, thirdPath]);
@@ -307,7 +307,7 @@ async function main() {
 
     await page.getByRole('tab', { name: /^Review & Export/ }).click();
     page.once('dialog', (dialog) => dialog.accept());
-    await page.getByRole('button', { name: 'Start New Incident Report' }).click();
+    await page.getByRole('button', { name: 'Start new Incident Report' }).click();
     await page.waitForTimeout(500);
 
     const afterCount = await page.evaluate((incidentId) => new Promise((resolve, reject) => {
