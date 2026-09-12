@@ -1736,6 +1736,21 @@ function App() {
 
      Storage only, no setState: by the time this runs the screen is already
      going away, and a state update then does nothing but warn. */
+  /* Everything a draft needs to have done to it before it is thrown away.
+     Not just "stop the timer": the timer's closure and the pending ref
+     BOTH still hold the full document, and either one of them writing
+     afterwards brings a handed-off JSA back from the dead. */
+  function stopJsaAutosave() {
+    clearTimeout(autoSaveTimer.current);
+    jsaPendingSave.current = null;
+    lastAutoSaveSnapshot.current = '';
+  }
+  function stopIncidentAutosave() {
+    clearTimeout(incidentAutoSaveTimer.current);
+    incidentPendingSave.current = null;
+    lastIncidentAutoSaveSnapshot.current = '';
+  }
+
   /* Returns what it wrote, keyed by document, so a caller still on screen
      can keep the "in progress" badge honest. Callers on the way out ignore
      it -- setting state then does nothing. */
@@ -1964,10 +1979,10 @@ function App() {
   // the new report.
   function resetIncidentToBlank() {
     const discardedId = incident.id;
+    // Before the delete, never after: a timer already armed still holds the
+    // whole report in its closure and would write it straight back.
+    stopIncidentAutosave();
     clearIncidentDraft();
-    // Drop whatever autosave was still holding, or leaving the screen would
-    // write the just-discarded report straight back.
-    incidentPendingSave.current = null;
     setSavedIncidentDraft(null);
     setIncident(emptyIncident());
     setIncidentPdfExportState(null);
@@ -2167,9 +2182,9 @@ function App() {
   }
   function clearDraft() {
     if (!confirm('Clear this JSA draft? Custom templates will not be affected.')) return;
+    stopJsaAutosave(); // before the delete, or it writes the draft back
     setJsa(emptyJsa());
     localStorage.removeItem(KEYS.draft);
-    jsaPendingSave.current = null; // see resetIncidentToBlank
     setSavedDraft(null);
     setTemplateId('blank-jsa');
     goJsaStart();
@@ -2232,6 +2247,14 @@ function App() {
      Storage AND state, in that order -- leaving the React state alone
      would let the 900ms autosave write the draft straight back. */
   function handOffJsaAfterPublish() {
+    /* Cancel the autosave BEFORE removing the draft, or it undoes this.
+       A timer armed by the last keystroke still holds the whole JSA in its
+       closure; 900ms after publishing it fires and writes it straight back
+       to the key handOffDraft just deleted. That is exactly what Fonzo
+       found on his phone on 2026-09-12 -- a JSA published at 6:14am still
+       sitting on Home as unfinished, stamped "saved 6:14 AM", which is the
+       moment it resurrected itself. */
+    stopJsaAutosave();
     handOffDraft('jsa', jsa);
     setJsa(emptyJsa());
     setSavedDraft(null);
@@ -2664,7 +2687,7 @@ function App() {
       draftTitle: savedDraft?.jobSite || savedDraft?.templateName || 'JSA Draft',
       metaLine: `Next: ${savedDraft ? nextStepHint(savedDraft) : ''} · ${savedDraft?.lastSavedAt ? `Last saved ${nowNice(new Date(savedDraft.lastSavedAt))}` : 'Saved on this device'}`,
       onOpen: loadSavedDraft,
-      onDelete: () => { if (!savedDraft) return; if (!confirm('Delete this draft?')) return; setJsa(emptyJsa()); localStorage.removeItem(KEYS.draft); jsaPendingSave.current = null; setSavedDraft(null); showToast('Draft deleted.'); },
+      onDelete: () => { if (!savedDraft) return; if (!confirm('Delete this draft?')) return; stopJsaAutosave(); setJsa(emptyJsa()); localStorage.removeItem(KEYS.draft); setSavedDraft(null); showToast('Draft deleted.'); },
     },
     {
       id: 'incident',

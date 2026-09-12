@@ -188,9 +188,21 @@ export function useDraftDocument({ storageKey, emptyModel, hasMeaningfulContent,
     return false;
   }
 
+  /* Stopping autosave has to happen BEFORE the draft is deleted. A timer
+     armed by the last keystroke still holds the whole document in its
+     closure, and 900ms later it writes it straight back to the key that
+     was just removed -- so the document reappears as though the discard
+     never happened. Found on a real phone 2026-09-12 on the JSA's
+     equivalent path; see stopJsaAutosave in main.jsx. */
+  function stopAutosave() {
+    clearTimeout(autoSaveTimer.current);
+    pending.current = null;
+    lastSnapshot.current = '';
+  }
+
   function resetToBlank() {
+    stopAutosave();
     clearDraft(storageKey);
-    pending.current = null; // nothing held may outlive the draft it came from
     setSavedDraft(null);
     setModelRaw(emptyModel());
     lastSnapshot.current = '';
@@ -228,8 +240,8 @@ export function useDraftDocument({ storageKey, emptyModel, hasMeaningfulContent,
   }
 
   function discard() {
+    stopAutosave();
     clearDraft(storageKey);
-    pending.current = null;
     setSavedDraft(null);
   }
 
