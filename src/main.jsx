@@ -1338,6 +1338,38 @@ function useFocusTrapDialog(onCancel) {
   return dialogRef;
 }
 
+/* "Same info as last time?" — the 6am question.
+
+   Two real answers, not Cancel/Continue. A superintendent starting the
+   day's JSA is nearly always doing the same work on the same job as
+   yesterday, and retyping all of it is the single biggest waste of his
+   morning. But it must never be automatic: the day a job DOES change is
+   exactly the day a silently copied JSA becomes a lie on a signed record.
+
+   Names the job it would copy from, so the answer is an informed one
+   rather than a guess about what "last time" means. */
+function SameAsLastDialog({ lastJsa, onSame, onBlank, onCancel }) {
+  const dialogRef = useFocusTrapDialog(onCancel);
+  const site = (lastJsa?.jobSite || lastJsa?.location || '').trim();
+  const task = (lastJsa?.overallWorkTask || '').trim();
+  return (
+    <div className="dialogOverlay" onMouseDown={e => { if (e.target === e.currentTarget) onCancel(); }}>
+      <div className="dialogPanel" role="alertdialog" aria-modal="true" aria-labelledby="sameAsLastTitle" aria-describedby="sameAsLastBody" ref={dialogRef}>
+        <h3 id="sameAsLastTitle">Same info as last time?</h3>
+        <p id="sameAsLastBody">
+          {site || task
+            ? <>Your last JSA was <strong>{[task, site].filter(Boolean).join(' — ')}</strong>. Bring its job info, tasks, hazards and controls into today&rsquo;s? The date, times, tailgate topic and signatures all start fresh.</>
+            : <>Bring the job info, tasks, hazards and controls from your last JSA into today&rsquo;s? The date, times, tailgate topic and signatures all start fresh.</>}
+        </p>
+        <div className="dialogActions">
+          <button className="btn ghost" onClick={onBlank}>No, start blank</button>
+          <button className="btn primary" onClick={onSame}>Yes, same info</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ConfirmReplaceDialog({ templateName, isImport, isRepeat, onCancel, onContinue }) {
   const dialogRef = useFocusTrapDialog(onCancel);
   return (
@@ -1610,6 +1642,9 @@ function App() {
   const [toast, setToast] = useState('');
   const [saveStatus, setSaveStatus] = useState('idle'); // 'idle' | 'saving' | 'saved' | 'error'
   const [confirmReplace, setConfirmReplace] = useState(null); // null | { action: 'blank' } | { action: 'template', templateId }
+  // "Same info as last time?" — asked when starting a JSA with nothing in
+  // progress but a finished one behind you. See requestStartBlank.
+  const [askSameAsLast, setAskSameAsLast] = useState(false);
   const autoSaveTimer = useRef(null);
   const lastAutoSaveSnapshot = useRef('');
   /* What autosave is holding but has not written yet -- see flushPendingAutosaves
@@ -2216,6 +2251,18 @@ function App() {
   }
   function requestStartBlank() {
     if (hasMeaningfulJsaContent(jsa)) { setConfirmReplace({ action: 'blank' }); return; }
+    /* Nothing in progress, but there IS a JSA from last time -- so ask
+       rather than handing him an empty form.
+
+       Fonzo, 2026-09-12: "i want to go to the JSA tab and it should just
+       ask me if i wanna pull all relevant info from the previous one".
+       The offer already existed, but only on the JSA start screen, and
+       Home's tile goes straight to a blank form on purpose (it is the
+       most-used document and a picker step would slow it down). So on the
+       one route a superintendent actually uses at 6am, the offer was
+       unreachable. This is the question, on that route, with no extra
+       screen in the way. */
+    if (lastJsaForRepeat) { setAskSameAsLast(true); return; }
     startBlank();
   }
   function requestLoadTemplate(id) {
@@ -2984,6 +3031,15 @@ function App() {
           isRepeat={confirmReplace.action === 'repeat'}
           onCancel={confirmReplaceCancel}
           onContinue={confirmReplaceContinue}
+        />
+      )}
+
+      {askSameAsLast && (
+        <SameAsLastDialog
+          lastJsa={lastJsaForRepeat}
+          onSame={() => { setAskSameAsLast(false); repeatLastJsa(); }}
+          onBlank={() => { setAskSameAsLast(false); startBlank(); }}
+          onCancel={() => setAskSameAsLast(false)}
         />
       )}
 
