@@ -1,0 +1,271 @@
+{
+  "jsa": {
+    "status": "draft",
+    "templateName": "",
+    "location": "Ridgeland, MS",
+    "jobSite": "Entergy TAPS",
+    "jobNumber": "480-02",
+    "date": "2026-08-06",
+    "timeIssued": "06:30",
+    "timeExpired": "19:00",
+    "superintendentForeman": "Gaines Newell, Jake Lytle, Kris Taute",
+    "emergencyPhone": "911",
+    "client": "Entergy",
+    "nearestMedicalFacility": "UMMC / AFCU",
+    "siteContactPhone": "",
+    "musterPoint": "Laydown Yard",
+    "assignedMentorSse": "N/A",
+    "acknowledgement": "I have reviewed and understand the conditions of this JSA and its attached plans and will comply. I will report hazardous conditions or acts identified on this job site to my supervisor and/or Shackelford representative so they can be corrected if necessary. I will conduct a last minute risk assessment before each task and will exercise stop work authority for any unsafe act, condition, or hazard.",
+    "tailgateTopic": "Housekeeping",
+    "previousDaySafety": "None reported.",
+    "overallWorkTask": "MASS GRADING",
+    "dailyTasks": "Build lift elevation on east gen pad\nMix/move lime\nCut/fill area A\nMove material\nInstall rip rap in barrel culverts on west rd/crossover\nMaintain north haul road\nControl dust with water trucks\nService equipment",
+    "hazardsSummary": "Line of fire\nStruck by exposure\nCaught between exposure\nPinch points\nEquipment blind spots\nWorkers on foot near equipment\nBacking equipment\nMoving equipment\nEquipment traffic\nEquipment failure\nRollover/runover potential\nSlips, trips, and falls\nUneven ground\nMuddy or slippery ground\nSoft or unstable ground\nHeat stress\nDust/lime exposure\nWildlife/insects\nEye/skin irritation",
+    "controlsSummary": "Maintain eye contact with operator\nUse radios or hand signals\nConfirm communication before movement\nMaintain communication with operators and supervision\nMaintain safe distance from equipment\nStay clear of swing radius and blind spots\nInspect tools and equipment\nOperate at safe speed\nWear seat belt\nPark on level ground before servicing\nWear required PPE\nUse respiratory protection when required\nMaintain power line clearance\nEstablish traffic control\nUse designated haul routes\nHydrate regularly\nTake heat breaks as needed\nProvide shade/rest area\nMonitor for heat stress\nApply water for dust control\nCorrect housekeeping issues",
+    "taskRows": [],
+    "suggestionBundles": [],
+    "signatureLineCount": 80,
+    "notes": ""
+  },
+  "incident": {
+    "schemaVersion": 1,
+    "status": "draft",
+    "createdAt": "2026-08-01T08:00:00.000Z",
+    "reportNumber": "",
+    "workplaceLocation": "Ridgeland, MS — Entergy TAPS Yard",
+    "incidentDate": "2026-08-05",
+    "incidentTime": "13:45",
+    "writtenReportDateTime": "2026-08-05T15:30",
+    "reportedToSupervisorDateTime": "2026-08-05T13:55",
+    "investigatorName": "Gaines Newell",
+    "investigatorTitle": "Site Superintendent",
+    "investigatorPhone": "601-555-0142",
+    "investigatorEmail": "gnewell@shackelfordch.com",
+    "incidentSpecificLocation": "East gen pad, near the lime mixing station",
+    "detailedIncidentDescription": "While repositioning a water pull hose near the lime mixing station, the injured party stepped backward onto an uneven section of graded fill and rolled his right ankle. He was able to bear weight briefly before reporting pain and swelling. Two coworkers assisted him to the site trailer, where first aid was administered and the ankle was wrapped and elevated. Work in the immediate area was paused for approximately twenty minutes while the ground was inspected and marked. No other workers were in the immediate vicinity at the time of the incident.",
+    "injuryOccurred": "yes",
+    "injuredPartyName": "Marcus Doyle",
+    "injuredPartyTitle": "Equipment Operator",
+    "injuredPartyYearsWithCompany": "3",
+    "injuredPartyCurrentTrade": "Heavy Equipment",
+    "injuredPartyPhone": "601-555-0198",
+    "injuredPartyEmail": "mdoyle@example.com",
+    "injuryNature": [
+      "Sprain/strain",
+      "Bruising"
+    ],
+    "injuryNatureOther": "",
+    "bodyPartsAffectedText": "Right ankle and lower leg",
+    "treatmentLevel": "firstAid",
+    "treatingPhysicianOrClinic": "N/A — treated on site",
+    "injuryRemarks": "Ice and wrap applied. Employee was advised to see UMMC/AFCU if swelling does not improve by next shift.",
+    "bodyDiagramMarks": [
+      {
+        "xPct": 27,
+        "yPct": 78
+      },
+      {
+        "xPct": 50,
+        "yPct": 80
+      }
+    ],
+    "witnesses": [
+      {
+        "name": "Kris Taute",
+        "company": "Shackelford Construction and Hauling",
+        "supervisor": "Jake Lytle",
+        "phone": "601-555-0111",
+        "email": "ktaute@example.com",
+        "statement": "I was operating the water truck about 40 feet away and saw Marcus step back and go down onto one knee. I turned off the truck and went to check on him right away.",
+        "signatureDate": "2026-08-05"
+      },
+      {
+        "name": "Jake Lytle",
+        "company": "Shackelford Construction and Hauling",
+        "supervisor": "Gaines Newell",
+        "phone": "601-555-0122",
+        "email": "jlytle@example.com",
+        "statement": "I helped walk Marcus to the trailer and got the first aid kit. The ground in that area had a hidden dip that wasn't obvious until you were right on top of it.",
+        "signatureData": null,
+        "signatureDate": "2026-08-05"
+      },
+      {
+        "name": "Delores Fenwick",
+        "company": "Entergy",
+        "supervisor": "N/A",
+        "phone": "601-555-0133",
+        "email": "dfenwick@example.com",
+        "statement": "I was in the area for a site walk and saw the crew respond quickly and professionally.",
+        "signatureData": null,
+        "signatureDate": "2026-08-05"
+      }
+    ],
+    "propertyDamageOccurred": "yes",
+    "propertyOrMaterialDamaged": "Water pull hose coupling",
+    "natureOfDamage": "Coupling cracked when dropped during the incident",
+    "objectMachineToolOrSubstance": "2-inch camlock hose coupling",
+    "approximateDamageCost": "$85",
+    "selectedCauses": [
+      "unsafeConditions::Slippery conditions",
+      "unsafeConditions::Insufficient lighting",
+      "managementDeficiencies::Inadequate workplace inspection",
+      "unsafeActs::Unnecessary haste/rush"
+    ],
+    "primaryCause": "unsafeConditions::Slippery conditions",
+    "unsafeActsOther": "",
+    "unsafeConditionsOther": "",
+    "managementDeficienciesOther": "",
+    "supervisorNotes": "Area has been flagged and will be re-graded before work resumes. Toolbox talk held with crew on inspecting footing before backing/repositioning hoses and equipment near graded fill.",
+    "safetyConsultantNotes": "Recommend adding a daily ground-condition check to the JSA for lime mixing operations and marking soft/uneven fill areas with cones until regraded.",
+    "investigationTeam": [
+      {
+        "name": "Riley Ashworth",
+        "title": "Safety Coordinator",
+        "date": "2026-08-05"
+      },
+      {
+        "name": "Gaines Newell",
+        "title": "Site Superintendent",
+        "signatureData": null,
+        "date": "2026-08-05"
+      }
+    ],
+    "notes": ""
+  },
+  "disciplinary": {
+    "schemaVersion": 1,
+    "status": "draft",
+    "createdAt": "2026-08-06T12:00:00.000Z",
+    "employeeName": "Marcus Doyle",
+    "supervisor": "Ray Ferris",
+    "position": "Equipment Operator",
+    "noticeDate": "2026-08-06",
+    "warningLevel": "written",
+    "whatOccurred": "Employee operated the excavator without a spotter present near an active utility trench, in violation of the site traffic control plan.",
+    "earlierWarnings": "Verbal warning given on 2026-06-14 for a similar spotter-related concern.",
+    "companyPolicyStates": "All heavy equipment operation near excavations must use a dedicated spotter per the Shackelford Safety Manual, Section on Heavy Equipment.",
+    "employeeStatement": "Employee stated the spotter had stepped away briefly and he did not stop work to wait for them to return.",
+    "correctiveActionRequired": "Employee must stop and wait for a spotter to be present before resuming excavation-adjacent equipment work, every time, no exceptions.",
+    "companyWill": "The company will retrain the employee on spotter requirements and monitor compliance for the next 30 days.",
+    "ifNotCorrected": "Continued violations will result in further disciplinary action up to and including termination.",
+    "employeeSignatureDate": "2026-08-06",
+    "managerSignatureDate": "2026-08-06",
+    "notes": ""
+  },
+  "separation": {
+    "schemaVersion": 2,
+    "status": "draft",
+    "createdAt": "2026-08-06T15:00:00.000Z",
+    "employeeName": "Marcus Doyle",
+    "employeeId": "EMP-4471",
+    "position": "Equipment Operator",
+    "projectLocation": "Ridgeland MS - Entergy TAPS Yard",
+    "supervisor": "Ray Ferris",
+    "lastDayWorked": "2026-08-05",
+    "effectiveSeparationDate": "2026-08-06",
+    "dateSubmitted": "2026-08-06",
+    "separationType": "involuntary",
+    "separationReason": "Safety Violation",
+    "separationReasonOther": "",
+    "detailedExplanation": "Third documented safety violation within a 90-day period (operating equipment without a spotter near an excavation), following the progressive discipline steps already on file (verbal warning, written warning).",
+    "warningNoticesGiven": "yes",
+    "warningNoticesCount": "2",
+    "documentationAttached": "yes",
+    "eligibleForRehire": "no",
+    "rehireReasonIfNo": "Repeated safety-critical violations after progressive discipline.",
+    "propertyReturned": [
+      "Badge / Keys",
+      "Tools / PPE",
+      "Other"
+    ],
+    "propertyReturnedOther": "Company laptop",
+    "accessRemoved": [
+      "Email",
+      "Gate / Site Access"
+    ],
+    "accessRemovedOther": "",
+    "finalTimesheetSubmitted": true,
+    "expensesResolved": true,
+    "outstandingPropertyNotes": "",
+    "employeeRefusedToSign": true,
+    "employeeSignatureData": null,
+    "employeeSignatureDate": "",
+    "supervisorSignatureDate": "2026-08-06",
+    "hrName": "Dana Pruitt",
+    "hrSignatureDate": "2026-08-06",
+    "notes": ""
+  },
+  "medicalEvent": {
+    "schemaVersion": 1,
+    "status": "draft",
+    "createdAt": "2026-08-05T14:00:00.000Z",
+    "employeeName": "Regina Poe",
+    "supervisor": "Casey Renn",
+    "position": "Equipment Operator",
+    "projectLocation": "Brandon, MS — Rankin Co. Yard",
+    "eventDate": "2026-08-05",
+    "timeReported": "14:10",
+    "reportedSymptoms": "Employee reported eye irritation and burning after a hydraulic fluid line sprayed near her face while working on the excavator.",
+    "symptomsOnset": "duringWork",
+    "specificWorkEventReported": "yes",
+    "workEventDescription": "A hydraulic hose fitting failed while employee was inspecting the excavator boom, spraying fluid toward her face and upper body.",
+    "responseActions": [
+      "First Aid",
+      "Medical Evaluation Recommended",
+      "Transport Provided"
+    ],
+    "responseActionsOther": "",
+    "safetyObservations": "Eyes flushed at the on-site eyewash station for 15 minutes per SDS guidance. Employee transported to urgent care for evaluation as a precaution.",
+    "medicalEvaluationType": "emsER",
+    "medicalEvaluationOther": "",
+    "clinicProvider": "Baptist Urgent Care - Flowood",
+    "workStatus": "restrictedDuty",
+    "offWorkUntilDate": "",
+    "providerNoteAttached": true,
+    "initialClassification": "pendingReview",
+    "employeeSignatureData": null,
+    "employeeSignatureDate": "",
+    "supervisorSignatureDate": "2026-08-05",
+    "notes": ""
+  },
+  "uncontrolledEvent": {
+    "schemaVersion": 1,
+    "status": "draft",
+    "createdAt": "2026-08-05T09:00:00.000Z",
+    "workplaceLocation": "Brandon, MS — Rankin Co. Yard",
+    "eventDate": "2026-08-05",
+    "weatherConditions": "Light rain",
+    "reportWrittenDateTime": "2026-08-05T09:35",
+    "reportedToSupervisorDateTime": "2026-08-05T09:05",
+    "eventClassifications": [
+      "Equipment / Mechanical Failure (not misuse)",
+      "Site Condition Change (ground, erosion, collapse)"
+    ],
+    "eventClassificationOther": "",
+    "eventOutcomes": [
+      "Environmental Release / Spill",
+      "Property Damage"
+    ],
+    "eventOutcomeOther": "",
+    "estimatedCost": "Approximately $850 in absorbent materials and disposal",
+    "whatHappened": "A hydraulic hose on the excavator ruptured during operation, releasing an estimated three gallons of hydraulic fluid onto gravel yard surface. Spill was contained within the yard, away from any drainage.",
+    "immediateActionsTaken": "Equipment shut down immediately. Spill kit deployed, absorbent applied, contaminated gravel bagged for disposal. Environmental notified per site plan.",
+    "notifications": [
+      "Supervisor",
+      "Safety",
+      "Environmental"
+    ],
+    "attachments": [
+      "Photos",
+      "Maintenance Records"
+    ],
+    "attachmentOther": "",
+    "witnesses": "",
+    "reportedByName": "Casey Renn",
+    "reportedByTitle": "Equipment Operator",
+    "reportedBySignatureDate": "2026-08-05",
+    "supervisorReviewName": "Ray Ferris",
+    "supervisorSignatureDate": "2026-08-05",
+    "notes": ""
+  }
+}

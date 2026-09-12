@@ -14,6 +14,7 @@ import useWaitingCount from './open/useWaitingCount';
 
 /* Lazy, like everything that reaches the cloud. */
 const ViewAsPicker = lazy(() => loadModule(() => import('./open/ViewAsPicker')));
+const SimPanel = lazy(() => loadModule(() => import('./sim/SimPanel')));
 import { SITE_TYPES, packFor, withSitePack } from './jsa/sitePacks';
 import { emptyIncident, hasMeaningfulIncidentContent, incidentStepProgress, incidentNextStepHint, isIncidentReady, isIncidentPrintFinal, migrateIncidentShape } from './incident/incidentModel';
 import { loadIncidentDraft, saveIncidentDraft, clearIncidentDraft, upsertIncidentRecord } from './incident/incidentStorage';
@@ -30,6 +31,7 @@ import DemoBanner from './shared/DemoBanner';
 import { useUserSync } from './sync/useUserSync';
 import { recordTemplateDeletion, markSettingsChanged } from './sync/syncMeta';
 import { readStoredSession } from './shared/session';
+import { SIM_ON } from './sim/simMode';
 import { formatPhone } from './shared/phone';
 import AccountButton from './account/AccountButton';
 import { DOCUMENT_STORAGE_KEYS } from './documents/storage';
@@ -4529,6 +4531,15 @@ function SettingsView({ settings, setSettings }) {
             middle of stays put. */}
         <p>Templates and settings follow your account. Paperwork you are part-way through stays on this device until you send it.</p>
       </div>
+
+      {/* Only ever there when the simulator is switched on -- the testing
+          site, or ?sim=1. Lazy, so neither the panel nor its seed documents
+          reach a device that never asks for them. */}
+      {SIM_ON && (
+        <Suspense fallback={null}>
+          <SimPanel />
+        </Suspense>
+      )}
 
       {/* Only ever rendered for an admin account -- see ViewAsPicker. For
           everybody else it is absent, not disabled. */}

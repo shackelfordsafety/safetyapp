@@ -1,0 +1,60 @@
+/* The simulator panel. Deliberately looks like a tool and not like the
+   rest of the app -- a dashed edge and a plain background, so nobody ever
+   mistakes it for a real part of somebody's paperwork. */
+
+.simPanel {
+  border-style: dashed;
+  border-width: 2px;
+}
+
+.simState {
+  margin: 0 0 14px;
+  padding: 10px 13px;
+  border-radius: 4px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  border-left: 3px solid var(--line);
+  background: var(--panel, #f3f3f1);
+}
+.simStateSafe { border-left-color: var(--good, #1F7A4D); }
+.simStateLive { border-left-color: var(--brand, #C51F3A); }
+
+.simGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px;
+}
+
+.simFill {
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  text-align: left;
+  padding: 11px 13px;
+  height: auto;
+}
+.simFill strong { font-size: 15px; line-height: 1.25; }
+.simFill span { font-size: 13px; color: var(--text-2, var(--muted)); }
+
+.simNote {
+  margin: 14px 0 0;
+  padding: 10px 13px;
+  border-radius: 4px;
+  background: var(--panel, #f3f3f1);
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+
+.simFooterRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.simFine {
+  margin: 14px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-3, var(--muted));
+}
