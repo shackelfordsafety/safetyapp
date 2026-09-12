@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { loadModule } from '../shared/loadModule';
 import './account.css';
+import { readStoredSession, onSessionChanged, notifySessionChanged } from '../shared/session';
 
 /* ── Who you are, top right, always visible ──────────────────────────────
    Fonzo's model: "sign in once and forget about it. logging in unlocks
@@ -20,21 +21,11 @@ import './account.css';
    The library is only ever loaded when somebody actually taps to sign in
    or out. */
 
-// supabase-js v2 stores its session under sb-<project ref>-auth-token.
-// Matched by shape rather than hardcoding the ref, so changing projects
-// (e.g. handing this to Shackelford) doesn't silently break the chip.
-function readStoredSession() {
-  try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (!key || !/^sb-.*-auth-token$/.test(key)) continue;
-      const parsed = JSON.parse(localStorage.getItem(key) || 'null');
-      const user = parsed?.user || parsed?.currentSession?.user;
-      if (user?.email) return { email: user.email };
-    }
-  } catch { /* private mode, or a shape we don't recognise -- treat as guest */ }
-  return null;
-}
+/* readStoredSession is imported rather than kept here. A private copy sat
+   in this file until 2026-09-12, even though shared/session.js says in its
+   own header that it exists so "the two can never disagree about whether
+   somebody is signed in" -- which was not true while there were two of
+   them. One copy now, and the header is honest. */
 
 export default function AccountButton() {
   const [session, setSession] = useState(readStoredSession);
@@ -46,16 +37,17 @@ export default function AccountButton() {
 
   const refresh = useCallback(() => setSession(readStoredSession()), []);
 
-  // Signing in from somewhere else (the Archive screen, or the publish
-  // button's own inline form) should update this without a reload.
-  useEffect(() => {
-    window.addEventListener('focus', refresh);
-    window.addEventListener('storage', refresh);
-    return () => {
-      window.removeEventListener('focus', refresh);
-      window.removeEventListener('storage', refresh);
-    };
-  }, [refresh]);
+  /* Signing in from somewhere else -- the Records screen, or the publish
+     button's own inline form -- updates this without a reload.
+
+     It used to listen for 'storage' and 'focus' only, and neither ever
+     fires for that: a storage event reaches every tab EXCEPT the one that
+     made the change, and focus does not move when you sign in on a screen
+     you are already looking at. So this chip sat reading "Guest — Sign in"
+     at somebody who was signed in and reading their own records.
+     onSessionChanged keeps both of those and adds the one signal that
+     actually fires. */
+  useEffect(() => onSessionChanged(refresh), [refresh]);
 
   async function signIn(e) {
     e.preventDefault();
@@ -65,6 +57,7 @@ export default function AccountButton() {
       const { db } = await loadModule(() => import('../archive/archiveClient'));
       const { error: err } = await db.auth.signInWithPassword({ email: email.trim(), password });
       if (err) { setError(err.message); return; }
+      notifySessionChanged();
       refresh();
       setOpen(false);
       setPassword('');
@@ -100,6 +93,7 @@ export default function AccountButton() {
     try {
       const { db } = await loadModule(() => import('../archive/archiveClient'));
       await db.auth.signOut();
+      notifySessionChanged();
     } catch { /* clearing the local session below is what actually matters */ }
     clearWorkFromThisDevice();
     refresh();

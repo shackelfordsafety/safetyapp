@@ -1,6 +1,7 @@
 import { db } from './archiveClient';
 import { blockInDemo } from '../shared/demoMode';
 import { ARCHIVE_FILING_ENABLED } from './filingEnabled';
+import { notifySessionChanged } from '../shared/session';
 
 /* ── Filing a finished document to the company archive ───────────────────
    Everything here runs only when somebody actually taps "File to archive".
@@ -86,6 +87,7 @@ export async function getArchiveUser() {
 
 export async function signInToArchive(email, password) {
   const { error } = await db.auth.signInWithPassword({ email: email.trim(), password });
+  if (!error) notifySessionChanged();
   if (error) throw new Error(error.message);
   return getArchiveUser();
 }

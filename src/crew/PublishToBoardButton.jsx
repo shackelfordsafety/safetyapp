@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { loadModule } from '../shared/loadModule';
+import { notifySessionChanged } from '../shared/session';
 
 /* ── "Publish to my board" ────────────────────────────────────────────────
    Like FileToArchiveButton, this deliberately imports NO cloud code up
@@ -86,6 +87,7 @@ export default function PublishToBoardButton({ jsa, pdfBlob, pdfPending, disable
     try {
       const { db } = await loadModule(() => import('../archive/archiveClient'));
       const { error } = await db.auth.signInWithPassword({ email: email.trim(), password });
+      if (!error) notifySessionChanged();
       if (error) throw new Error(error.message);
       await publish();
     } catch (err) {

@@ -51,3 +51,39 @@ export function deviceName() {
     return 'this device';
   }
 }
+
+/* ── Telling the rest of the app that who-you-are just changed ────────────
+   The account chip in the corner showed "Guest — Sign in" to somebody who
+   had just signed in on the Records screen and was looking at role-gated
+   data. It listened for `storage` and `focus`, and neither ever fires for
+   this: a `storage` event only reaches OTHER tabs, never the one that made
+   the change, and focus does not move when you sign in on a screen you are
+   already looking at. So the chip sat there calling a signed-in
+   superintendent a guest until something else happened to wake it.
+
+   Found while screenshotting the review flow, 2026-09-12.
+
+   A plain event rather than a Supabase subscription, deliberately:
+   anything that changes the session can announce it without importing the
+   auth library, which is what keeps that library out of the bundle a
+   superintendent downloads. */
+const SESSION_EVENT = 'sdc:session-changed';
+
+export function notifySessionChanged() {
+  try { window.dispatchEvent(new Event(SESSION_EVENT)); } catch { /* no window */ }
+}
+
+/* Returns its own cleanup, so a caller can hand it straight to useEffect. */
+export function onSessionChanged(handler) {
+  window.addEventListener(SESSION_EVENT, handler);
+  /* Kept alongside the new event: `storage` is still the right signal for a
+     second tab, and focus still catches a sign-in that happened elsewhere
+     entirely. */
+  window.addEventListener('storage', handler);
+  window.addEventListener('focus', handler);
+  return () => {
+    window.removeEventListener(SESSION_EVENT, handler);
+    window.removeEventListener('storage', handler);
+    window.removeEventListener('focus', handler);
+  };
+}

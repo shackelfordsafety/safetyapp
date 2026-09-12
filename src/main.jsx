@@ -3264,7 +3264,10 @@ function HomeView({ customTemplates, setTab, docEntries }) {
           </button>
           <button className="accessRow" onClick={() => setTab('today')}>
             <IconDrafts className="accessRowIcon" />
-            <span className="accessRowText"><strong>Today</strong><small>What you started and finished today</small></span>
+            {/* Called "Today" here and "My Work" in the nav until
+                2026-09-12 -- the same two-names-for-one-place problem the
+                archive had. The nav name wins. */}
+            <span className="accessRowText"><strong>My Work</strong><small>What you started and finished today</small></span>
             <IconChevronRight className="accessRowChevron" />
           </button>
           <button className="accessRow" onClick={() => setTab('templates')}>

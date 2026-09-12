@@ -3,6 +3,7 @@ import { db } from './archiveClient';
 import UploadDocument from './UploadDocument';
 import './archive.css';
 import HelpButton from '../shared/HelpButton';
+import { notifySessionChanged } from '../shared/session';
 
 /* ── Company document archive (office side) ──────────────────────────────
    The one part of this app that requires a login and a network. Everything
@@ -100,6 +101,9 @@ function SignIn({ onSignedIn }) {
     try {
       const { error } = await db.auth.signInWithPassword({ email: email.trim(), password });
       if (error) { setErr(error.message); return; }
+      /* Tell the rest of the app, or the account chip in the corner keeps
+         calling this person a guest while they read role-gated records. */
+      notifySessionChanged();
       await onSignedIn();
     } catch (ex) {
       // Never fail silently: an earlier standalone version of this screen
@@ -406,6 +410,7 @@ export default function ArchiveView() {
       if (!ok) return;
     }
     await db.auth.signOut();
+    notifySessionChanged();
     clearWorkFromThisDevice();
     setSession(null);
     setProfile(null);
