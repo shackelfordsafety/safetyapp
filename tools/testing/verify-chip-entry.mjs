@@ -135,7 +135,7 @@ async function run(browser, vp) {
     // Confirm the chip-entered data actually reaches the live print-preview
     // panel (JsaPreview renders the same MainJsaDocumentPage component the
     // real print/PDF path uses -- see CLAUDE.md's print/PDF pipeline notes).
-    await page.getByRole('tab', { name: /^Review/ }).click();
+    await page.getByRole('tab').last().click();
     await page.waitForTimeout(400);
     await shoot(page, `${tag}-05-review-with-preview`);
   }

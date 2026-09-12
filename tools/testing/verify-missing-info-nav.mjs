@@ -62,7 +62,7 @@ async function main() {
     await page.waitForSelector('.homeLayout');
     await page.getByRole('button', { name: 'Start JSA' }).click();
     await page.waitForTimeout(150);
-    await page.getByRole('tab', { name: /Review/ }).click();
+    await page.getByRole('tab').last().click();
     await page.waitForTimeout(150);
     const jsaPending = page.locator('.reviewCheck.missing').first();
     check(await jsaPending.count() > 0, 'JSA: at least one pending row on a blank draft');
@@ -77,7 +77,7 @@ async function main() {
     await page.waitForSelector('.homeLayout');
     await page.getByRole('button', { name: 'Start Incident Report' }).click();
     await page.waitForTimeout(150);
-    await page.getByRole('tab', { name: /Review/ }).click();
+    await page.getByRole('tab').last().click();
     await page.waitForTimeout(150);
     const incPending = page.locator('.incidentReadinessItem.pending').first();
     check(await incPending.count() > 0, 'Incident: at least one pending row on a blank draft');
@@ -101,7 +101,7 @@ async function main() {
       await page.waitForSelector(`text=${doc.title}`);
       await page.locator('.listItem', { hasText: doc.title }).getByRole('button', { name: 'Start' }).click();
       await page.waitForTimeout(150);
-      await page.getByRole('tab', { name: /Review/ }).click();
+      await page.getByRole('tab').last().click();
       await page.waitForTimeout(150);
       const pending = page.locator('.incidentReadinessItem.pending').first();
       check(await pending.count() > 0, `${doc.title}: at least one pending row on a blank draft`);
@@ -123,7 +123,7 @@ async function main() {
     await page.locator('label.field', { hasText: 'Employee Name' }).locator('input').fill('Test Employee');
     await page.getByRole('button', { name: 'Next' }).click();
     await page.waitForTimeout(150);
-    await page.getByRole('button', { name: 'Go to Review' }).click();
+    await page.getByRole('tab').last().first().click();
     await page.waitForTimeout(150);
     const okRow = page.locator('.incidentReadinessItem.ok').first();
     check(await okRow.count() > 0, 'At least one completed (ok) row exists after partial fill');

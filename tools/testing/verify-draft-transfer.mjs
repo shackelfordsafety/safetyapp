@@ -81,7 +81,7 @@ async function main() {
       await page.getByRole('textbox', { name: 'What happened?', exact: true }).fill('Repeated late arrival despite prior verbal warning.');
       await page.getByRole('button', { name: 'Next' }).click();
       await page.waitForSelector('text=Corrective Action');
-      await page.getByRole('button', { name: 'Go to Review' }).click();
+      await page.getByRole('tab').last().first().click();
       await page.waitForSelector('text=Send draft to someone else');
 
       await exportAndSave(page, disciplinaryFile);
@@ -139,7 +139,7 @@ async function main() {
       await page.getByRole('textbox', { name: 'Location / City', exact: true }).fill('Export Test Yard');
       await page.getByRole('textbox', { name: 'Job Site', exact: true }).fill('North Site 12');
 
-      await page.getByRole('tab', { name: /Review/ }).click();
+      await page.getByRole('tab').last().click();
       await page.waitForSelector('text=Send draft to someone else');
 
       await exportAndSave(page, jsaFile);
@@ -186,7 +186,7 @@ async function main() {
       if (await locField.count()) {
         await locField.fill('Export Test Site');
       }
-      const reviewTab = page.getByRole('tab', { name: /Review/ });
+      const reviewTab = page.getByRole('tab').last();
       if (await reviewTab.count()) await reviewTab.click();
       await page.waitForSelector('text=Send draft to someone else', { timeout: 8000 }).catch(() => {});
       const exportBtn = page.getByRole('button', { name: 'Export Draft File', exact: true });

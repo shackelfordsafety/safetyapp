@@ -132,7 +132,7 @@ async function run(browser, vp) {
     if (!await gotoReview(page)) throw new Error('could not reach Review with the disciplinary fixture');
     await shoot(page, `${tag}-02-review-ready`);
 
-    await page.getByRole('button', { name: /Create Document/ }).first().click();
+    await page.locator('.reviewPrimaryAction button').first().click();
     await page.waitForSelector('.pdfReadyPanel', { timeout: 60000 });
     await shoot(page, `${tag}-03-document-ready-draft`);
     await download(page, `${tag}-disciplinary-DRAFT`);

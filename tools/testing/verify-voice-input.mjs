@@ -119,7 +119,10 @@ async function main() {
       await page.getByRole('button', { name: 'Documents', exact: false }).first().click();
       await page.locator('.listItem', { hasText: 'Employee Disciplinary Notice' }).getByRole('button', { name: 'Start' }).click();
       await page.waitForSelector('text=Notice Details');
-      check(await page.getByRole('button', { name: 'Dictate this field' }).count() === 4, 'Disciplinary Notice Details: 4 mic buttons (sections 1-4)');
+      /* Three, not four. Section 4 (Employee Statement) was removed on
+         2026-08-29 -- the employee writes that by hand on the printed
+         copy, so there is no field here to dictate into. */
+      check(await page.getByRole('button', { name: 'Dictate this field' }).count() === 3, 'Disciplinary Notice Details: 3 mic buttons (sections 1-3)');
       check(await page.locator('label.field', { hasText: 'Employee Name' }).locator('.voiceBtn').count() === 0, 'Disciplinary: no mic on Employee Name (short field)');
 
       await context.close();

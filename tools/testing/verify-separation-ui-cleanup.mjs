@@ -97,7 +97,7 @@ async function main() {
     await page.getByRole('tab', { name: /^Separation Details/ }).click();
     await page.getByRole('textbox', { name: 'Effective Separation Date', exact: true }).fill('2026-08-31');
 
-    await page.getByRole('tab', { name: /^Finish & Export/ }).click();
+    await page.getByRole('tab').last().click();
     console.log('[5/6] Finish & Export step...');
     const pendingItems = await page.locator('.incidentReadinessItem.pending').count();
     check(pendingItems === 0, `Readiness checklist fully satisfied (${pendingItems} pending item(s))`);
@@ -118,7 +118,7 @@ async function main() {
     await page.screenshot({ path: path.join(outDir, '4-export-after-complete.png'), fullPage: true });
 
     console.log('[6/6] Generating the real PDF...');
-    await page.getByRole('button', { name: /Create Document/ }).click();
+    await page.locator('.reviewPrimaryAction button').first().click();
     await page.locator('.pdfReadyPanel').waitFor({ state: 'visible', timeout: 30000 });
     const { savedTo } = await downloadGeneratedPdf(page, path.join(outDir, 'separation-cleanup.pdf'));
     console.log('  Saved PDF ->', savedTo);

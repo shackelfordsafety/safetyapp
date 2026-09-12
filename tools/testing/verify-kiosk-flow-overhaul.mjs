@@ -78,7 +78,7 @@ async function main() {
       page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(`[blank] ${m.text()}`); });
       page.on('pageerror', (e) => pageErrors.push(`[blank] ${e.message}`));
       await page.goto(BASE_URL, { waitUntil: 'networkidle' });
-      await page.getByRole('button', { name: 'Documents', exact: true }).click();
+      await page.getByRole('button', { name: 'Documents', exact: false }).first().click();
       await page.locator('.listItem', { hasText: 'Job Safety Analysis' }).getByRole('button', { name: 'Start' }).click();
       await page.getByRole('button', { name: 'Start Blank', exact: false }).first().click();
       await page.waitForTimeout(300);
@@ -102,7 +102,7 @@ async function main() {
       page.on('pageerror', (e) => pageErrors.push(`[complete] ${e.message}`));
       await page.goto(BASE_URL, { waitUntil: 'networkidle' });
       await page.getByRole('button', { name: 'Continue JSA' }).click();
-      await page.getByRole('tab', { name: /^Review/ }).click();
+      await page.getByRole('tab').last().click();
       await page.waitForTimeout(300);
 
       check(await page.locator('.reviewAllGoodBanner').isVisible(), 'Complete draft shows the decluttered "all good" banner on Review');

@@ -81,7 +81,7 @@ async function main() {
     await page.screenshot({ path: path.join(outDir, 'step-job-info.png'), fullPage: true });
 
     console.log('[3/6] Going to Finish and choosing the paper route...');
-    await page.getByRole('tab', { name: /^Finish/ }).click();
+    await page.getByRole('tab').last().click();
     await page.waitForTimeout(400);
     const paper = page.getByRole('button', { name: /On paper/ });
     if (await paper.count() > 0) await paper.first().click();

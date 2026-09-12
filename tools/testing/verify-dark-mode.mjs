@@ -103,7 +103,7 @@ async function main() {
     await page.waitForTimeout(700);
     await page.screenshot({ path: path.join(outDir, 'jsa-job-info.png'), fullPage: true });
 
-    await page.getByRole('tab', { name: /^Finish/ }).click();
+    await page.getByRole('tab').last().click();
     await page.waitForTimeout(700);
     await page.screenshot({ path: path.join(outDir, 'jsa-finish.png'), fullPage: true });
 

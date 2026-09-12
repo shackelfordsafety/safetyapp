@@ -88,7 +88,7 @@ async function assertNoClipping(a, page) {
 }
 
 async function generatePdf(page) {
-  await page.locator('button:has-text("Create Document"), button:has-text("Update the printout")').first().click();
+  await page.locator('.reviewPrimaryAction button, button:has-text("Want a paper copy first?"), button:has-text("Update the printout")').first().click();
   await page.locator('.pdfReadyPanel').waitFor({ state: 'visible', timeout: 30000 });
 }
 
@@ -147,7 +147,7 @@ async function main() {
     console.log('\n=== 1. Empty state: no photos leaves the six-page report unchanged ===');
     await page.goto(BASE_URL, { waitUntil: 'networkidle' });
     await page.getByRole('button', { name: 'Continue Incident Report' }).click();
-    await page.getByRole('tab', { name: /^Review & Export/ }).click();
+    await page.getByRole('tab').last().click();
     await generatePdf(page);
     let pageCount = await page.locator('.incidentPdfExportRoot .incidentPage').count();
     a.check(pageCount === 6, `expected 6 pages with zero photos, got ${pageCount}`);
@@ -189,7 +189,7 @@ async function main() {
     a.check(await cards.count() === 3, `expected duplicate to be skipped on Dismiss (still 3 cards), got ${await cards.count()}`);
 
     console.log('\n=== 4. Generating PDF with 3 photos: appendix pagination (2/page) ===');
-    await page.getByRole('tab', { name: /^Review & Export/ }).click();
+    await page.getByRole('tab').last().click();
     await generatePdf(page);
     pageCount = await page.locator('.incidentPdfExportRoot .incidentPage').count();
     a.check(pageCount === 8, `expected 6 base pages + 2 appendix pages (3 photos, 2/page) = 8, got ${pageCount}`);
@@ -256,7 +256,7 @@ async function main() {
     await page.waitForFunction(() => document.querySelectorAll('.incPhotoCard').length === 2, { timeout: 10000 });
     a.check(await page.locator('.incPhotoCard').count() === 2, 'expected 2 photo cards remaining after removing one');
 
-    await page.getByRole('tab', { name: /^Review & Export/ }).click();
+    await page.getByRole('tab').last().click();
     await generatePdf(page);
     pageCount = await page.locator('.incidentPdfExportRoot .incidentPage').count();
     a.check(pageCount === 7, `expected 6 base pages + 1 appendix page (2 photos remaining) = 7, got ${pageCount}`);
@@ -305,7 +305,7 @@ async function main() {
     }), discardedIncidentId);
     a.check(beforeCount === 2, `expected 2 stored photo blobs for the current draft before discarding it, found ${beforeCount}`);
 
-    await page.getByRole('tab', { name: /^Review & Export/ }).click();
+    await page.getByRole('tab').last().click();
     page.once('dialog', (dialog) => dialog.accept());
     await page.getByRole('button', { name: 'Start new Incident Report' }).click();
     await page.waitForTimeout(500);

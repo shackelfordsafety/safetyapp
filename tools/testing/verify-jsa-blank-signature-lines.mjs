@@ -67,7 +67,7 @@ async function main() {
     console.log('[3/7] Loading fixture and opening Signatures step (default mode)...');
     await page.goto(BASE_URL, { waitUntil: 'networkidle' });
     await page.getByRole('button', { name: 'Continue JSA' }).click();
-    await page.getByRole('tab', { name: /^Signatures/ }).click();
+    await page.getByRole('tab').last().click();
 
     check((await page.locator('.sigRuleBox input[type="number"]').count()) === 0, 'No blank-line field shown by default (Kiosk is the default mode)');
     await page.getByRole('button', { name: 'Kiosk — Sign on This Device', exact: true }).click();
@@ -93,14 +93,14 @@ async function main() {
     check(persistedMode === 'printout', `signInMode persisted as "printout", got "${persistedMode}"`);
 
     console.log('[6/7] "Ready for Crew to Sign" must not open the kiosk in Print mode...');
-    await page.getByRole('tab', { name: /^Review/ }).click();
+    await page.getByRole('tab').last().click();
     page.once('dialog', d => d.accept());
     await page.getByRole('button', { name: 'Ready for Crew to Sign' }).click();
     await page.waitForTimeout(300);
     check((await page.locator('.crewKiosk').count()) === 0, 'Kiosk did not open — Print & Sign in Pen mode was respected');
 
     console.log('[7/7] Generating the real PDF with 12 blank lines, no kiosk signatures...');
-    await page.getByRole('tab', { name: /^Finish & Export/ }).click();
+    await page.getByRole('tab').last().click();
     await page.locator('.reviewPrimaryAction button, .btn.primary.lg').first().click();
     // exportPreflight() shows a native confirm() since crew sign-in reads as an incomplete review item -- accept it.
     page.once('dialog', d => d.accept());

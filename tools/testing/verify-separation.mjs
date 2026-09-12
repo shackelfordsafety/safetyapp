@@ -117,7 +117,7 @@ async function main() {
       await page.getByRole('textbox', { name: 'Explain what happened and anything management should know.', exact: true }).fill('Repeated safety policy violations after two prior documented warnings.');
 
       await page.getByRole('button', { name: 'Next', exact: true }).click();
-      await page.waitForSelector('text=Closeout & Signatures');
+      await page.waitForSelector('text=Closeout');
       await page.waitForSelector('text=If involuntary, were warning notices given?');
       check(true, 'Warning-notices field appears once Involuntary is selected');
       // Scoped to each field's own container (.field) — several fields on
@@ -144,7 +144,7 @@ async function main() {
       await page.locator('.signaturePad', { hasText: 'Supervisor Signature' }).getByRole('button', { name: 'Add signature' }).click();
       await drawSignature(page);
 
-      await page.getByRole('tab', { name: /Submit/i }).first().click();
+      await page.getByRole('tab').last().first().click();
       await page.waitForTimeout(400);
       await page.waitForSelector('text=Readiness');
       const pendingItems = await page.locator('.incidentReadinessItem.pending').count();
@@ -236,7 +236,7 @@ async function main() {
       // Old drafts must still be able to reach Review and generate a PDF
       // without crashing, even with the new separationType left unset.
       await page.getByRole('button', { name: 'Next', exact: true }).click().catch(() => {});
-      await page.getByRole('tab', { name: /Submit/i }).first().click().catch(() => {});
+      await page.getByRole('tab').last().first().click().catch(() => {});
       await page.waitForTimeout(400);
       await page.waitForSelector('text=Readiness', { timeout: 5000 }).catch(() => {});
       await page.locator('.reviewPrimaryAction button').first().click().catch(() => {});
@@ -287,7 +287,7 @@ async function main() {
       await page.waitForSelector('text=Separation Details').catch(() => {});
 
       await page.getByRole('button', { name: 'Next', exact: true }).click().catch(() => {});
-      await page.getByRole('tab', { name: /Submit/i }).first().click().catch(() => {});
+      await page.getByRole('tab').last().first().click().catch(() => {});
       await page.waitForTimeout(400);
       await page.waitForSelector('text=Readiness', { timeout: 5000 }).catch(() => {});
       await page.locator('.reviewPrimaryAction button').first().click();
@@ -354,7 +354,7 @@ async function main() {
       await page.getByRole('textbox', { name: 'Employee Name', exact: true }).fill('Touch Smoke Test');
       await page.getByRole('textbox', { name: 'Supervisor', exact: true }).fill('Casey Renn');
       await page.getByRole('button', { name: 'Next', exact: true }).click();
-      await page.waitForSelector('text=Closeout & Signatures');
+      await page.waitForSelector('text=Closeout');
       await page.locator('.signaturePad', { hasText: 'Supervisor Signature' }).getByRole('button', { name: 'Add signature' }).click();
       const canvas = page.locator('canvas.signatureCanvas').first();
       await canvas.scrollIntoViewIfNeeded();
@@ -395,7 +395,7 @@ async function main() {
       await page.getByRole('button', { name: 'Resignation', exact: true }).click();
       await page.getByRole('textbox', { name: 'Explain what happened and anything management should know.', exact: true }).fill('Test explanation.');
       await page.getByRole('button', { name: 'Next', exact: true }).click();
-      await page.waitForSelector('text=Closeout & Signatures');
+      await page.waitForSelector('text=Closeout');
       await page.locator('.field', { hasText: 'Eligible for rehire?' }).getByRole('button', { name: 'Yes', exact: true }).click();
       await page.locator('.signaturePad', { hasText: 'Supervisor Signature' }).getByRole('button', { name: 'Add signature' }).click();
       const canvas = page.locator('canvas.signatureCanvas').first();
@@ -406,7 +406,7 @@ async function main() {
       await page.mouse.move(box.x + box.width - 20, box.y + box.height / 2 - 10, { steps: 6 });
       await page.mouse.up();
       await page.locator('.signaturePadActions button', { hasText: /^Save$/ }).first().click();
-      await page.getByRole('tab', { name: /Submit/i }).first().click();
+      await page.getByRole('tab').last().first().click();
       await page.waitForTimeout(400);
       await page.waitForSelector('text=Readiness');
 

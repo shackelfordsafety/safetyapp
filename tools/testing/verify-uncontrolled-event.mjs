@@ -138,7 +138,7 @@ async function main() {
       const remainingAdd = await page.locator('.signaturePad button', { hasText: 'Add signature' }).count();
       check(remainingAdd === 0, `Both signatures captured (${remainingAdd} "Add signature" button(s) remain)`);
 
-      await page.getByRole('tab', { name: /Submit/i }).first().click();
+      await page.getByRole('tab').last().first().click();
       await page.waitForTimeout(400);
       await page.waitForSelector('text=Readiness');
       const pendingItems = await page.locator('.incidentReadinessItem.pending').count();
@@ -219,7 +219,7 @@ async function main() {
       await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'My Work' }).first().click();
       await page.locator('.listItem', { hasText: 'Brandon' }).getByRole('button', { name: 'Open' }).click();
       await page.getByRole('button', { name: 'Next' }).click().catch(() => {});
-      await page.getByRole('tab', { name: /Submit/i }).first().click().catch(() => {});
+      await page.getByRole('tab').last().first().click().catch(() => {});
       await page.waitForTimeout(400);
       await page.waitForSelector('text=Readiness', { timeout: 5000 }).catch(() => {});
       await page.locator('.reviewPrimaryAction button').first().click();
@@ -279,7 +279,7 @@ async function main() {
       await page.waitForSelector('text=Event Info & Classification').catch(() => {});
 
       await page.getByRole('button', { name: 'Next' }).click().catch(() => {});
-      await page.getByRole('tab', { name: /Submit/i }).first().click().catch(() => {});
+      await page.getByRole('tab').last().first().click().catch(() => {});
       await page.waitForTimeout(400);
       await page.waitForSelector('text=Readiness', { timeout: 5000 }).catch(() => {});
       await page.locator('.reviewPrimaryAction button').first().click();
@@ -391,7 +391,7 @@ async function main() {
       await page.mouse.move(box.x + box.width - 20, box.y + box.height / 2 - 10, { steps: 6 });
       await page.mouse.up();
       await page.locator('.signaturePadActions button', { hasText: /^Save$/ }).first().click();
-      await page.getByRole('tab', { name: /Submit/i }).first().click();
+      await page.getByRole('tab').last().first().click();
       await page.waitForTimeout(400);
       await page.waitForSelector('text=Readiness');
 

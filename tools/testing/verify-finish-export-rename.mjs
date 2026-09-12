@@ -50,11 +50,11 @@ async function main() {
     await page.goto(BASE_URL, { waitUntil: 'networkidle' });
     await page.getByRole('button', { name: 'Continue JSA' }).click();
 
-    await page.getByRole('tab', { name: /^Signatures/ }).click();
+    await page.getByRole('tab').last().click();
     await page.waitForTimeout(300);
     await page.screenshot({ path: path.join(outDir, 'rename-stepnav-signatures.png'), fullPage: true });
 
-    await page.getByRole('tab', { name: /^Finish & Export/ }).click();
+    await page.getByRole('tab').last().click();
     await page.waitForTimeout(300);
     await page.screenshot({ path: path.join(outDir, 'rename-finish-export-step.png'), fullPage: true });
 

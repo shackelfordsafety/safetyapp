@@ -89,7 +89,7 @@ async function main() {
     await author.goto(`http://localhost:${PORT}/`, { waitUntil: 'networkidle' });
     await author.waitForTimeout(900);
     await author.getByRole('button', { name: 'Continue Incident Report' }).click();
-    await author.getByRole('tab', { name: /^Review & Export/ }).click();
+    await author.getByRole('tab').last().click();
     await author.waitForTimeout(700);
 
     // Submit. Not signed in, so it should ask -- and then finish the job.
@@ -110,7 +110,7 @@ async function main() {
     await author.reload({ waitUntil: 'networkidle' });
     await author.waitForTimeout(1200);
     await author.getByRole('button', { name: 'Continue Incident Report' }).click();
-    await author.getByRole('tab', { name: /^Review & Export/ }).click();
+    await author.getByRole('tab').last().click();
     await author.waitForTimeout(700);
     const resubmit = author.getByRole('button', { name: /Submit for review/i }).first();
     if (await resubmit.count()) {

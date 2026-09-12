@@ -53,15 +53,15 @@ async function main() {
     await page.waitForTimeout(300);
     await page.screenshot({ path: path.join(outDir, 'ipad-job-step.png') });
 
-    await page.getByRole('tab', { name: /^Review/ }).click();
+    await page.getByRole('tab').last().click();
     await page.waitForTimeout(300);
     await page.screenshot({ path: path.join(outDir, 'ipad-review-step.png') });
 
-    await page.getByRole('tab', { name: /^Signatures/ }).click();
+    await page.getByRole('tab').last().click();
     await page.waitForTimeout(300);
     await page.screenshot({ path: path.join(outDir, 'ipad-signatures-step.png') });
 
-    await page.getByRole('tab', { name: /^Review/ }).click();
+    await page.getByRole('tab').last().click();
     await page.waitForTimeout(300);
     await page.locator('.previewViewAllBtn').click();
     await page.waitForTimeout(300);

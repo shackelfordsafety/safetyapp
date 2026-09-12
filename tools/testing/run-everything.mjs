@@ -19,6 +19,7 @@
    reason that has nothing to do with the app. */
 
 import { spawn } from 'node:child_process';
+import { killTree } from './lib/killTree.mjs';
 import { readdirSync, writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 
@@ -74,7 +75,14 @@ function runOne(file) {
       settled = true;
       clearTimeout(hard);
       clearTimeout(grace);
-      try { child.kill(); } catch { /* already gone */ }
+      /* kill(), not killTree(), used to leave the preview server behind:
+         the spawn chain is cmd -> npx -> vite, and only the head gets the
+         signal. Every test that ended early stranded a server holding its
+         port, so the NEXT script using that port died instantly with
+         --strictPort and got called CRASHED. That is why the broken count
+         moved around between identical runs, and why fixing scripts did
+         not converge -- the measuring instrument was dirty. */
+      killTree(child);
       const seconds = Math.round((Date.now() - started) / 1000);
       /* Only real FAIL lines. An earlier version also flagged any line
          ending ": false" -- which caught "keeps its own copy: false", a
@@ -105,6 +113,8 @@ const results = [];
 for (const [i, file] of scripts.entries()) {
   process.stdout.write(`[${i + 1}/${scripts.length}] ${file} ... `);
   const r = await runOne(file);
+  /* Let the port actually come free before the next one claims it. */
+  await new Promise(done => setTimeout(done, 1500));
   results.push(r);
   writeFileSync(path.join(OUT, `${file}.log`), r.out);
   console.log(`${r.verdict} (${r.seconds}s)`);

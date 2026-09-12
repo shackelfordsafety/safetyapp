@@ -68,7 +68,7 @@ async function main() {
       page.on('pageerror', (e) => pageErrors.push(`[jsa-desktop] ${e.message}`));
       await page.goto(BASE_URL, { waitUntil: 'networkidle' });
       await page.getByRole('button', { name: 'Continue JSA' }).click();
-      await page.getByRole('tab', { name: /^Finish & Export/ }).click();
+      await page.getByRole('tab').last().click();
       await page.locator('.previewSheetCanvas').waitFor({ state: 'visible', timeout: 10000 });
       await page.waitForTimeout(300);
       await page.screenshot({ path: path.join(outDir, 'jsa-review-desktop-wide.png'), fullPage: true });
@@ -94,7 +94,7 @@ async function main() {
       page.on('pageerror', (e) => pageErrors.push(`[jsa-narrow] ${e.message}`));
       await page.goto(BASE_URL, { waitUntil: 'networkidle' });
       await page.getByRole('button', { name: 'Continue JSA' }).click();
-      await page.getByRole('tab', { name: /^Finish & Export/ }).click();
+      await page.getByRole('tab').last().click();
       await page.locator('.previewSheetCanvas').waitFor({ state: 'visible', timeout: 10000 });
       await page.waitForTimeout(300);
       await page.screenshot({ path: path.join(outDir, 'jsa-review-narrow-stacked.png'), fullPage: true });
@@ -111,7 +111,7 @@ async function main() {
       page.on('pageerror', (e) => pageErrors.push(`[incident-desktop] ${e.message}`));
       await page.goto(BASE_URL, { waitUntil: 'networkidle' });
       await page.getByRole('button', { name: 'Continue Incident Report' }).click();
-      await page.getByRole('tab', { name: /^Review & Export/ }).click();
+      await page.getByRole('tab').last().click();
       await page.locator('.previewSheetCanvas').waitFor({ state: 'visible', timeout: 10000 });
       await page.waitForTimeout(300);
       await page.screenshot({ path: path.join(outDir, 'incident-review-desktop-wide.png'), fullPage: true });
@@ -137,7 +137,7 @@ async function main() {
       page.on('pageerror', (e) => pageErrors.push(`[incident-narrow] ${e.message}`));
       await page.goto(BASE_URL, { waitUntil: 'networkidle' });
       await page.getByRole('button', { name: 'Continue Incident Report' }).click();
-      await page.getByRole('tab', { name: /^Review & Export/ }).click();
+      await page.getByRole('tab').last().click();
       await page.locator('.previewSheetCanvas').waitFor({ state: 'visible', timeout: 10000 });
       await page.waitForTimeout(300);
       await page.screenshot({ path: path.join(outDir, 'incident-review-narrow-stacked.png'), fullPage: true });

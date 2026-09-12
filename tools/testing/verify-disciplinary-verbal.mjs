@@ -83,6 +83,13 @@ async function main() {
 
     // The core behavior under test: no employee signature pad/toggle at all
     // for a Verbal Warning, just the explanatory note and the manager pad.
+    /* Signatures are their own step now -- standing on Corrective Action
+       and looking for a signature pad finds nothing, which is how this
+       script started reporting a missing note that was never missing. */
+    await page.getByRole('tab').last().click().catch(() => {});
+    await page.getByRole('tab', { name: /Signature/i }).first().click().catch(() => {});
+    await page.waitForTimeout(500);
+
     const employeeSigPad = page.locator('.signaturePad', { hasText: 'Employee Signature' });
     check(await employeeSigPad.count() === 0, 'No Employee Signature pad rendered for a Verbal Warning');
     const refusedToggle = page.locator('label.field', { hasText: 'Employee refused / unavailable to sign' });
@@ -99,7 +106,7 @@ async function main() {
     await page.mouse.up();
     await page.locator('.signaturePadActions button', { hasText: /^Save$/ }).first().click();
 
-    await page.getByRole('button', { name: 'Go to Review' }).click();
+    await page.getByRole('tab').last().first().click();
     await page.waitForSelector('text=Readiness');
     const pendingItems = await page.locator('.incidentReadinessItem.pending').count();
     check(pendingItems === 0, `Readiness checklist satisfied with only a manager signature (${pendingItems} pending item(s))`);
@@ -112,7 +119,7 @@ async function main() {
     await page.locator('.dialogPanel', { hasText: 'Mark this document complete?' }).getByRole('button', { name: 'Mark Complete', exact: true }).click();
     await page.waitForTimeout(300);
 
-    await page.getByRole('button', { name: /Create Document/ }).click();
+    await page.locator('.reviewPrimaryAction button').first().click();
     await page.waitForSelector('.pdfReadyPanel', { timeout: 30000 });
     const { pdf } = await downloadGeneratedPdf(page, path.join(outDir, 'verbal-warning.pdf'));
 

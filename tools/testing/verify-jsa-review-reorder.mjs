@@ -67,7 +67,7 @@ async function main() {
       page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(`[blank] ${m.text()}`); });
       page.on('pageerror', (e) => pageErrors.push(`[blank] ${e.message}`));
       await page.goto(BASE_URL, { waitUntil: 'networkidle' });
-      await page.getByRole('button', { name: 'Documents', exact: true }).click();
+      await page.getByRole('button', { name: 'Documents', exact: false }).first().click();
       await page.locator('.listItem', { hasText: 'Job Safety Analysis' }).getByRole('button', { name: 'Start' }).click();
       await page.getByRole('button', { name: 'Start Blank', exact: false }).first().click();
       await page.waitForTimeout(300);
@@ -90,7 +90,7 @@ async function main() {
       check(activeAfterSigJump === 'job info', `Jumping to Signatures on a blank draft redirects back to Job Info (landed on "${activeAfterSigJump}")`);
 
       // Try to jump straight to Finish & Export too.
-      await page.getByRole('tab', { name: /^Finish & Export/ }).click();
+      await page.getByRole('tab', { name: /Finish|Submit/i }).click();
       await page.waitForTimeout(300);
       const activeAfterExportJump = (await page.locator('.stepNavRow.current strong').innerText()).toLowerCase();
       check(activeAfterExportJump === 'job info', `Jumping to Finish & Export on a blank draft redirects back to Job Info (landed on "${activeAfterExportJump}")`);
@@ -138,7 +138,7 @@ async function main() {
       await page.locator('.crewKioskExitHold').click();
       await page.locator('.crewKiosk').waitFor({ state: 'hidden' });
 
-      await page.getByRole('tab', { name: /^Finish & Export/ }).click();
+      await page.getByRole('tab', { name: /Finish|Submit/i }).click();
       await page.waitForTimeout(300);
       const exportBodyText = await page.locator('.stepStack').innerText();
       check(!exportBodyText.includes('checks complete'), 'Finish & Export no longer shows the readiness checklist (moved to Review)');

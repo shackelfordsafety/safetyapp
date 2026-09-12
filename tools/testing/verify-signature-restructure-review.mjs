@@ -92,7 +92,7 @@ async function main() {
       await page.waitForSelector('text=Corrective Action');
       await page.getByRole('textbox', { name: 'What must the employee do to correct this?', exact: true }).fill('be on time or call 30 min ahead min');
 
-      await page.getByRole('button', { name: 'Go to Review' }).click();
+      await page.getByRole('tab').last().first().click();
       await page.waitForSelector('text=Readiness');
       await page.screenshot({ path: path.join(dir, '1-review-step.png'), fullPage: true });
 
@@ -105,7 +105,7 @@ async function main() {
 
       await page.getByRole('button', { name: 'Go to Finish & Export' }).click();
       await page.waitForSelector('text=Readiness');
-      await page.getByRole('button', { name: /Create Document/ }).click();
+      await page.locator('.reviewPrimaryAction button').first().click();
       await page.waitForSelector('.pdfReadyPanel', { timeout: 30000 });
       const { savedTo: draftPdf } = await downloadGeneratedPdf(page, path.join(dir, 'draft.pdf'));
       console.log('  Draft PDF ->', draftPdf);
@@ -154,7 +154,7 @@ async function main() {
       await page.waitForSelector('text=Rehire Status');
       await page.locator('.field', { hasText: 'Eligible for rehire?' }).getByRole('button', { name: 'Yes', exact: true }).click();
 
-      await page.getByRole('button', { name: 'Go to Review' }).click();
+      await page.getByRole('tab').last().first().click();
       await page.waitForSelector('text=Readiness');
       await page.screenshot({ path: path.join(dir, '1-review-step.png'), fullPage: true });
 
@@ -169,7 +169,7 @@ async function main() {
 
       await page.getByRole('button', { name: 'Go to Finish & Export' }).click();
       await page.waitForSelector('text=Readiness');
-      await page.getByRole('button', { name: /Create Document/ }).click();
+      await page.locator('.reviewPrimaryAction button').first().click();
       await page.waitForSelector('.pdfReadyPanel', { timeout: 30000 });
       const { savedTo: draftPdf } = await downloadGeneratedPdf(page, path.join(dir, 'draft.pdf'));
       console.log('  Draft PDF ->', draftPdf);
@@ -212,7 +212,7 @@ async function main() {
       await page.waitForSelector('text=Evaluation & Classification');
       await page.getByRole('button', { name: 'Non-Occupational Medical Event', exact: true }).click();
 
-      await page.getByRole('button', { name: 'Go to Review' }).click();
+      await page.getByRole('tab').last().first().click();
       await page.waitForSelector('text=Readiness');
       await page.screenshot({ path: path.join(dir, '1-review-step.png'), fullPage: true });
 
@@ -225,7 +225,7 @@ async function main() {
 
       await page.getByRole('button', { name: 'Go to Finish & Export' }).click();
       await page.waitForSelector('text=Readiness');
-      await page.getByRole('button', { name: /Create Document/ }).click();
+      await page.locator('.reviewPrimaryAction button').first().click();
       await page.waitForSelector('.pdfReadyPanel', { timeout: 30000 });
       const { savedTo: draftPdf } = await downloadGeneratedPdf(page, path.join(dir, 'draft.pdf'));
       console.log('  Draft PDF ->', draftPdf);
@@ -262,7 +262,7 @@ async function main() {
       await page.getByRole('textbox', { name: 'What Happened / Brief Summary / Timeline' }).fill('gust knocked over a stack of empty spools, nobody near it, no damage');
       await page.getByRole('textbox', { name: 'Reported By — Name', exact: true }).fill("Sha'quille Brennan-Yoon");
 
-      await page.getByRole('button', { name: 'Go to Review' }).click();
+      await page.getByRole('tab').last().first().click();
       await page.waitForSelector('text=Readiness');
       await page.screenshot({ path: path.join(dir, '1-review-step.png'), fullPage: true });
 
@@ -276,7 +276,7 @@ async function main() {
 
       await page.getByRole('button', { name: 'Go to Finish & Export' }).click();
       await page.waitForSelector('text=Readiness');
-      await page.getByRole('button', { name: /Create Document/ }).click();
+      await page.locator('.reviewPrimaryAction button').first().click();
       await page.waitForSelector('.pdfReadyPanel', { timeout: 30000 });
       const { savedTo: draftPdf } = await downloadGeneratedPdf(page, path.join(dir, 'draft.pdf'));
       console.log('  Draft PDF ->', draftPdf);

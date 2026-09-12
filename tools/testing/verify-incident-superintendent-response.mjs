@@ -88,7 +88,7 @@ async function assertNoClipping(a, page) {
 }
 
 async function generatePdf(page) {
-  await page.locator('button:has-text("Create Document"), button:has-text("Update the printout")').first().click();
+  await page.locator('.reviewPrimaryAction button, button:has-text("Want a paper copy first?"), button:has-text("Update the printout")').first().click();
   await page.locator('.pdfReadyPanel').waitFor({ state: 'visible', timeout: 30000 });
 }
 
@@ -216,7 +216,7 @@ async function testPdfCombiningAndPartialAnswers(browser) {
   console.log('  [1/5] Loading the fixture (both fields + distinct Safety Consultant Notes) and generating a PDF...');
   await page.goto(BASE_URL, { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: 'Continue Incident Report' }).click();
-  await page.getByRole('tab', { name: /^Review & Export/ }).click();
+  await page.getByRole('tab').last().click();
   await generatePdf(page);
 
   console.log('  [2/5] Section 3 -- both fields filled: checking Page 6 content...');
@@ -233,7 +233,7 @@ async function testPdfCombiningAndPartialAnswers(browser) {
   console.log('  [3/5] Section 4 -- clearing Corrective/Preventive, leaving only Immediate Actions...');
   await page.getByRole('tab', { name: /^Notes & Team/ }).click();
   await page.locator('label.field', { hasText: 'Corrective / Preventive Actions' }).locator('textarea').fill('');
-  await page.getByRole('tab', { name: /^Review & Export/ }).click();
+  await page.getByRole('tab').last().click();
   await generatePdf(page);
   page6Text = await page6Locator(page).innerText();
   a.check(page6Text.includes('IMMEDIATE ACTIONS TAKEN:'), 'only-Immediate case: heading for the filled field still appears');
@@ -243,7 +243,7 @@ async function testPdfCombiningAndPartialAnswers(browser) {
   await page.getByRole('tab', { name: /^Notes & Team/ }).click();
   await page.locator('label.field', { hasText: 'Immediate Actions Taken' }).locator('textarea').fill('');
   await page.locator('label.field', { hasText: 'Corrective / Preventive Actions' }).locator('textarea').fill(fixture.correctivePreventiveActions);
-  await page.getByRole('tab', { name: /^Review & Export/ }).click();
+  await page.getByRole('tab').last().click();
   await generatePdf(page);
   page6Text = await page6Locator(page).innerText();
   a.check(!page6Text.includes('IMMEDIATE ACTIONS TAKEN:'), 'only-Corrective case: no fabricated "IMMEDIATE ACTIONS TAKEN:" heading over blank content');
@@ -253,7 +253,7 @@ async function testPdfCombiningAndPartialAnswers(browser) {
   console.log('  [5/5] Section 6 -- both fields blank: no fabricated headings at all...');
   await page.getByRole('tab', { name: /^Notes & Team/ }).click();
   await page.locator('label.field', { hasText: 'Corrective / Preventive Actions' }).locator('textarea').fill('');
-  await page.getByRole('tab', { name: /^Review & Export/ }).click();
+  await page.getByRole('tab').last().click();
   await generatePdf(page);
   page6Text = await page6Locator(page).innerText();
   a.check(!page6Text.includes('IMMEDIATE ACTIONS TAKEN:') && !page6Text.includes('CORRECTIVE / PREVENTIVE ACTIONS:'), 'both-blank case: neither heading is fabricated when both fields are empty');
@@ -293,7 +293,7 @@ async function testLongContentContinuation(browser) {
   await page.locator('label.field', { hasText: 'Corrective / Preventive Actions' }).locator('textarea').fill(longCorrective);
 
   console.log('  [2/4] Generating the PDF...');
-  await page.getByRole('tab', { name: /^Review & Export/ }).click();
+  await page.getByRole('tab').last().click();
   await generatePdf(page);
 
   console.log('  [3/4] Verifying a continuation page was created and nothing clipped/overlapped...');
@@ -352,7 +352,7 @@ async function testPhotosStillWork(browser) {
   await page.waitForFunction(() => document.querySelectorAll('.incPhotoCard').length === 1, undefined, { timeout: 20000 });
 
   console.log('  [2/3] Generating the PDF and checking base-page count + appendix ordering...');
-  await page.getByRole('tab', { name: /^Review & Export/ }).click();
+  await page.getByRole('tab').last().click();
   await generatePdf(page);
   const allPages = await page.locator('.incidentPdfExportRoot .incidentPage').all();
   const appendixCount = await page.locator('.incPhotoAppendixPage').count();

@@ -68,7 +68,7 @@ async function main() {
       await page.locator('.mobileNavItem', { hasText: 'My Work' }).first().click();
       await page.locator('.listItem').first().getByRole('button', { name: 'Open' }).click();
       await page.getByRole('button', { name: 'Next', exact: true }).click().catch(() => {});
-      await page.getByRole('button', { name: 'Go to Review' }).click().catch(() => {});
+      await page.getByRole('tab', { name: /Review|Submit|Finish/i }).first().click().catch(() => {});
       await page.locator('.docFacsimile').waitFor({ state: 'visible', timeout: 10000 });
       await page.screenshot({ path: path.join(outDir, 'separation-review-top.png') });
       // Scroll roughly to where Fonzo's screenshots show the overlap (past
@@ -92,7 +92,7 @@ async function main() {
       page.on('pageerror', (e) => pageErrors.push(`[jsa] ${e.message}`));
       await page.goto(BASE_URL, { waitUntil: 'networkidle' });
       await page.getByRole('button', { name: 'Continue JSA' }).click();
-      await page.getByRole('tab', { name: /^Finish & Export/ }).click();
+      await page.getByRole('tab', { name: /Finish|Submit/i }).click();
       await page.locator('.previewSheetCanvas').waitFor({ state: 'visible', timeout: 10000 });
       await page.evaluate(() => window.scrollTo(0, 600));
       await page.waitForTimeout(200);

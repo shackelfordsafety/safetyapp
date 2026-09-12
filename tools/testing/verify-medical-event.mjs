@@ -139,7 +139,7 @@ async function main() {
       await page.locator('.signaturePad', { hasText: 'Safety / Supervisor Signature' }).getByRole('button', { name: 'Add signature' }).click();
       await drawSignature(page);
 
-      await page.getByRole('tab', { name: /Submit/i }).first().click();
+      await page.getByRole('tab').last().first().click();
       await page.waitForTimeout(400);
       await page.waitForSelector('text=Readiness');
       const pendingItems = await page.locator('.incidentReadinessItem.pending').count();
@@ -235,7 +235,7 @@ async function main() {
       await page.waitForSelector('text=Event & Response').catch(() => {});
 
       await page.getByRole('button', { name: 'Next' }).click().catch(() => {});
-      await page.getByRole('tab', { name: /Submit/i }).first().click().catch(() => {});
+      await page.getByRole('tab').last().first().click().catch(() => {});
       await page.waitForTimeout(400);
       await page.waitForSelector('text=Readiness', { timeout: 5000 }).catch(() => {});
       await page.locator('.reviewPrimaryAction button').first().click();
@@ -368,7 +368,7 @@ async function main() {
       await page.mouse.move(box.x + box.width - 20, box.y + box.height / 2 - 10, { steps: 6 });
       await page.mouse.up();
       await page.locator('.signaturePadActions button', { hasText: /^Save$/ }).first().click();
-      await page.getByRole('tab', { name: /Submit/i }).first().click();
+      await page.getByRole('tab').last().first().click();
       await page.waitForTimeout(400);
       await page.waitForSelector('text=Readiness');
 

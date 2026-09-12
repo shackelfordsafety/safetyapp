@@ -99,16 +99,16 @@ async function main() {
     // Signatures and added the guardedJump lock -- see CLAUDE.md). Pick
     // Print & Sign in Pen so no actual kiosk signing is needed, then hit
     // Review's "Ready for Crew to Sign" to unlock Finish & Export.
-    await page.getByRole('tab', { name: /^Signatures/ }).click();
+    await page.getByRole('tab').last().click();
     const printModeBtn = page.getByRole('button', { name: 'Print & Sign in Pen', exact: true });
     if (await printModeBtn.count() > 0) await printModeBtn.click();
-    await page.getByRole('tab', { name: /^Review/ }).click();
+    await page.getByRole('tab').last().click();
     await page.waitForTimeout(300);
     page.once('dialog', d => d.accept());
     const readyBtn = page.getByRole('button', { name: 'Ready for Crew to Sign' });
     if (await readyBtn.count() > 0) await readyBtn.click();
     await page.waitForTimeout(300);
-    await page.getByRole('tab', { name: /^Finish & Export/ }).click();
+    await page.getByRole('tab').last().click();
 
     // Read the JS-estimated page plan (pre-generation heuristic/measured plan)
     // shown in the Finish & Export step's own "What Will Print" panel, for

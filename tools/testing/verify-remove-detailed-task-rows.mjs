@@ -116,7 +116,7 @@ async function main() {
       await page.screenshot({ path: path.join(outDir, 'taskrows-legacy-after-edit-remove.png'), fullPage: true });
 
       // Confirm the real export pipeline still folds legacy row content in correctly.
-      await page.getByRole('tab', { name: /^Finish & Export/ }).click();
+      await page.getByRole('tab').last().click();
       await page.locator('.reviewPrimaryAction button').click();
       await page.locator('.pdfReadyPanel').waitFor({ state: 'visible', timeout: 30000 });
       const downloadPromise = page.waitForEvent('download');

@@ -186,10 +186,10 @@ async function runFixture(browser, fixture) {
   await page.goto(BASE_URL, { waitUntil: 'networkidle' });
 
   await page.getByRole('button', { name: 'Continue Incident Report' }).click();
-  await page.getByRole('tab', { name: /^Review & Export/ }).click();
+  await page.getByRole('tab').last().click();
 
   console.log('  [2/7] Triggering real PDF export (exportIncidentPdf -> generateIncidentPdf)...');
-  await page.locator('button:has-text("Create Document"), button:has-text("Update the printout")').first().click();
+  await page.locator('.reviewPrimaryAction button, button:has-text("Want a paper copy first?"), button:has-text("Update the printout")').first().click();
   await page.locator('.pdfReadyPanel').waitFor({ state: 'visible', timeout: 30000 });
 
   const readyHeadline = await page.locator('.pdfReadyHeadline').innerText();

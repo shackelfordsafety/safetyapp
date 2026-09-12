@@ -137,7 +137,7 @@ async function main() {
       /* Review (the checklist) and Submit (where it leaves your hands) are
          two different steps -- Submit is the one that used to be called
          Finish & Export. */
-      await page.getByRole('tab', { name: /Submit/i }).first().click();
+      await page.getByRole('tab').last().first().click();
       await page.waitForTimeout(400);
 
       /* Marking a document complete yourself is gone, 2026-09-11: taking
@@ -257,7 +257,7 @@ async function main() {
       await page.mouse.up();
       await page.locator('.signaturePadActions button', { hasText: /^Save$/ }).first().click();
 
-      await page.getByRole('tab', { name: /Submit/i }).first().click();
+      await page.getByRole('tab').last().first().click();
       await page.waitForTimeout(400);
       await page.waitForSelector('text=Readiness');
       const pendingItems = await page.locator('.incidentReadinessItem.pending').count();
@@ -365,7 +365,7 @@ async function main() {
       await page.waitForSelector('text=Notice Details').catch(() => {});
 
       // Submit is a step of its own, reached from the step nav.
-      await page.getByRole('tab', { name: /Submit/i }).first().click();
+      await page.getByRole('tab').last().first().click();
       await page.waitForTimeout(400);
       await page.locator('.reviewPrimaryAction button').first().click();
       await page.waitForSelector('.pdfReadyPanel', { timeout: 30000 });
@@ -493,7 +493,7 @@ async function main() {
         await page.mouse.up();
         await page.locator('.signaturePadActions button', { hasText: /^Save$/ }).first().click();
       }
-      await page.getByRole('tab', { name: /Submit/i }).first().click();
+      await page.getByRole('tab').last().first().click();
       await page.waitForTimeout(400);
 
       /* This section used to prove that Mark Complete locked the form.

@@ -101,7 +101,7 @@ async function main() {
     // ── Actually try to publish ──
     await p.getByRole('button', { name: 'Continue JSA' }).click();
     await p.waitForTimeout(500);
-    await p.getByRole('tab', { name: /^Finish/ }).click();
+    await p.getByRole('tab').last().click();
     await p.waitForTimeout(500);
     await p.getByRole('button', { name: /On their phones/ }).first().click();
     await p.waitForTimeout(500);

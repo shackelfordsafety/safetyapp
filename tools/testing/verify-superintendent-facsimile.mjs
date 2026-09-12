@@ -49,7 +49,7 @@ async function goToReview(page) {
   await page.locator('.sidebarNavItem, .mobileNavItem', { hasText: 'My Work' }).first().click();
   await page.locator('.listItem').first().getByRole('button', { name: 'Open' }).click();
   await page.getByRole('button', { name: 'Next', exact: true }).click().catch(() => {});
-  await page.getByRole('button', { name: 'Go to Review' }).click().catch(() => {});
+  await page.getByRole('tab').last().first().click().catch(() => {});
   await page.locator('.docFacsimile').waitFor({ state: 'visible', timeout: 10000 });
   await page.waitForTimeout(300);
 }
@@ -87,7 +87,7 @@ async function main() {
         console.log(`[3] ${doc.key} desktop-wide Review screenshot saved`);
 
         console.log(`[4] Generating real ${doc.key} PDF...`);
-        await page.getByRole('button', { name: /Create Document/ }).click();
+        await page.locator('.reviewPrimaryAction button').first().click();
         await page.locator('.pdfReadyPanel').waitFor({ state: 'visible', timeout: 30000 });
         const downloadPromise = page.waitForEvent('download');
         await page.locator('.pdfReadyPanel button:has-text("Download")').click();

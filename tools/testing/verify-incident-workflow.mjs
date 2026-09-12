@@ -228,7 +228,7 @@ async function testFinishDocumentLock(browser) {
   console.log('  [1/7] Loading the fully-complete draft and going to Review & Export...');
   await page.goto(BASE_URL, { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: 'Continue Incident Report' }).click();
-  await page.getByRole('tab', { name: /^Review & Export/ }).click();
+  await page.getByRole('tab').last().click();
 
   console.log('  [2/7] Clicking Mark Complete...');
   const finishBtn = page.getByRole('button', { name: 'Mark Complete', exact: true });
@@ -267,7 +267,7 @@ async function testFinishDocumentLock(browser) {
   a.check(badgeStillFinished.toLowerCase() === 'completed', `badge still reads "Completed", never silently reverted to Draft (got: "${badgeStillFinished}")`);
 
   console.log('  [7/7] Verifying Review & Export shows the locked message, not another Mark Complete prompt...');
-  await page.getByRole('tab', { name: /^Review & Export/ }).click();
+  await page.getByRole('tab').last().click();
   const finishBtnGone = await page.getByRole('button', { name: 'Mark Complete', exact: true }).count();
   a.check(finishBtnGone === 0, 'Mark Complete button is no longer offered once the report is finished');
   const lockedMessage = await page.locator('p', { hasText: 'marked complete and locked from editing' }).count();

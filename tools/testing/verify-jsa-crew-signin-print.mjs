@@ -77,7 +77,7 @@ async function main() {
     console.log('[3/5] Signing in 6 crew members via the real kiosk...');
     await page.goto(BASE_URL, { waitUntil: 'networkidle' });
     await page.getByRole('button', { name: 'Continue JSA' }).click();
-    await page.getByRole('tab', { name: /^Signatures/ }).click();
+    await page.getByRole('tab').last().click();
     await page.getByRole('button', { name: 'Start Crew Sign-In' }).click();
     await page.locator('.crewKiosk').waitFor({ state: 'visible' });
 
@@ -109,7 +109,7 @@ async function main() {
     const labelText = await page.locator('.sigSetup .field span').first().innerText();
     check(labelText.toLowerCase().includes('extra blank lines'), `Signature-lines label switches to "Extra Blank Lines" copy once crew has signed (got "${labelText}")`);
 
-    await page.getByRole('tab', { name: /^Finish & Export/ }).click();
+    await page.getByRole('tab').last().click();
     await page.locator('.reviewPrimaryAction button').click();
     await page.locator('.pdfReadyPanel').waitFor({ state: 'visible', timeout: 30000 });
     const headline = await page.locator('.pdfReadyHeadline').innerText();

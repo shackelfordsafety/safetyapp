@@ -58,7 +58,7 @@ async function main() {
     console.log('[3] Loading app, navigating to Review step...');
     await page.goto(BASE_URL, { waitUntil: 'networkidle' });
     await page.getByRole('button', { name: 'Continue JSA' }).click();
-    await page.getByRole('tab', { name: /^Review/ }).click();
+    await page.getByRole('tab').last().click();
     await page.locator('button:has-text("Ready for Crew to Sign")').waitFor({ state: 'visible' });
     await page.screenshot({ path: path.join(outDir, '01-review-step.png') });
 

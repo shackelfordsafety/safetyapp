@@ -63,7 +63,7 @@ async function main() {
     await page.locator('.listItem', { hasText: 'Job Safety Analysis' }).getByRole('button', { name: 'Start' }).click();
     await page.waitForSelector('text=Start a JSA');
 
-    const repeatBtn = page.getByRole('button', { name: /Repeat Last JSA/ });
+    const repeatBtn = page.locator('.launchChoice', { hasText: 'Same info as last time?' });
     check(await repeatBtn.isEnabled(), 'Repeat Last JSA is enabled when a saved draft exists');
     await repeatBtn.click();
     await page.waitForSelector('text=Job Information');

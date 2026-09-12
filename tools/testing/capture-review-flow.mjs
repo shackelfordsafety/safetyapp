@@ -92,7 +92,7 @@ async function main() {
     await author.waitForTimeout(600);
     await shot(author, '02-review', 'Review — the readiness checklist before anyone signs');
 
-    await author.getByRole('tab', { name: /Submit/i }).first().click();
+    await author.getByRole('tab').last().first().click();
     await author.waitForTimeout(800);
     await shot(author, '03-submit', 'Submit — one primary action, paper is secondary underneath');
 
@@ -124,7 +124,7 @@ async function main() {
     await hr.waitForTimeout(2500);
     await shot(hr, '07-hr-opened', 'HR has the real record open and can correct it');
 
-    await hr.getByRole('tab', { name: /Submit/i }).first().click();
+    await hr.getByRole('tab').last().first().click();
     await hr.waitForTimeout(1200);
     await shot(hr, '08-hr-approve', 'HR sees Approve & file where the author saw Submit — never both');
 

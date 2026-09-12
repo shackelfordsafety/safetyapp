@@ -294,8 +294,8 @@ async function runTouchGestureCheck(browser, fixtureJson) {
   a.check(Boolean(previewSrc && previewSrc.startsWith('data:image/png')), `expected the touch-drawn signature preview to be a PNG data URL, got "${previewSrc?.slice(0, 30)}..."`);
 
   console.log('  [7/7] Carrying the touch-drawn signature through full PDF export...');
-  await page.getByRole('tab', { name: /^Review & Export/ }).click();
-  await page.locator('button:has-text("Create Document"), button:has-text("Update the printout")').first().click();
+  await page.getByRole('tab').last().click();
+  await page.locator('.reviewPrimaryAction button, button:has-text("Want a paper copy first?"), button:has-text("Update the printout")').first().click();
   await page.locator('.pdfReadyPanel').waitFor({ state: 'visible', timeout: 30000 });
   const page3 = page.locator('.incidentPdfExportRoot .incidentPage').nth(2);
   const sigImages = page3.locator('.incSignatureImage');
@@ -393,8 +393,8 @@ async function runViewport(browser, fixtureJson, viewport) {
   let exportInfo = null;
   if (viewport.runExport) {
     console.log('  [6/6] Carrying the drawn signature through full PDF export...');
-    await page.getByRole('tab', { name: /^Review & Export/ }).click();
-    await page.locator('button:has-text("Create Document"), button:has-text("Update the printout")').first().click();
+    await page.getByRole('tab').last().click();
+    await page.locator('.reviewPrimaryAction button, button:has-text("Want a paper copy first?"), button:has-text("Update the printout")').first().click();
     await page.locator('.pdfReadyPanel').waitFor({ state: 'visible', timeout: 30000 });
 
     const page3 = page.locator('.incidentPdfExportRoot .incidentPage').nth(2);

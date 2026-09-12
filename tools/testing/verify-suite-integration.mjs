@@ -49,7 +49,9 @@ const ALL_SIX_TITLES = [
 // "Unplanned Event" was removed from PLANNED_DOCUMENT_TYPES (main.jsx) once
 // the live Uncontrolled Event Report shipped and took over that functional
 // category -- these five are what should remain.
-const PLANNED_TITLES = ['BBS Observation', 'Sign-In Sheet', 'Toolbox Talk', 'SOP', 'Inspection'];
+/* The coming-soon list this named is gone -- all six document types were
+   built, so there is nothing left to promise. Kept as a note rather than a
+   constant nothing reads. */
 
 async function main() {
   console.log('[1/4] Starting vite preview server...');
@@ -84,13 +86,18 @@ async function main() {
       check(fieldSafetyGroup >= 1, 'Field Safety category heading present');
       check(employeeActionGroup >= 1, 'Employee Action category heading present');
 
-      // Planned Document Library: exactly the five intended future types,
-      // "Unplanned Event" gone now that Uncontrolled Event Report is live.
-      const plannedRows = page.locator('.libraryRow');
-      check(await plannedRows.count() === PLANNED_TITLES.length, `Exactly ${PLANNED_TITLES.length} planned document rows shown, got ${await plannedRows.count()}`);
-      check(await page.locator('.libraryRow', { hasText: 'Unplanned Event' }).count() === 0, '"Unplanned Event" is absent from the planned list');
-      for (const title of PLANNED_TITLES) {
-        check(await page.locator('.libraryRow', { hasText: title }).count() === 1, `Planned document "${title}" present exactly once`);
+      /* There is no "planned documents" coming-soon list any more, and no
+         .libraryRow in the app at all -- all six types got built, which is
+         why it went. These checks used to assert that five of them were
+         still only promised.
+
+         What is worth protecting now is the opposite: that every one of
+         the six is actually offered and can be started. */
+      const startable = ['JSA', 'Incident Report', 'Uncontrolled Event',
+        'Medical Event', 'Disciplinary Notice', 'Employee Separation'];
+      for (const title of startable) {
+        const row = page.locator('.listItem', { hasText: title });
+        check(await row.count() >= 1, `"${title}" is offered on the Documents screen`);
       }
       // Uncontrolled Event Report is live and startable, not just listed.
       const uncontrolledRow = page.locator('.listItem', { hasText: 'Uncontrolled Event Report' });

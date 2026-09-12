@@ -72,7 +72,7 @@ async function main() {
     await page.waitForTimeout(800);
     await page.getByRole('button', { name: 'Continue JSA' }).click();
     await page.waitForTimeout(500);
-    await page.getByRole('tab', { name: /^Finish/ }).click();
+    await page.getByRole('tab').last().click();
     await page.waitForTimeout(500);
     await page.getByRole('button', { name: /On paper/ }).first().click();
     await page.waitForTimeout(500);

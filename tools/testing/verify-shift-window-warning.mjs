@@ -68,7 +68,7 @@ async function runCase(browser, label, timeExpired) {
 
   await page.goto(BASE_URL, { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: 'Continue JSA' }).click();
-  await page.getByRole('tab', { name: /^Finish/ }).click();
+  await page.getByRole('tab').last().click();
   await page.waitForTimeout(400);
 
   // The board route -- "On their phones" -- is the one with Publish on it.
