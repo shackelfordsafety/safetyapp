@@ -133,19 +133,19 @@ export const incidentCopy = {
   },
   review: {
     title: 'Submit',
-    readinessTitle: 'Before you export',
-    markReady: 'Mark Complete',
-    /* Said what Mark Complete would do. That button was removed on
-       2026-09-11 -- the man writing a report does not get to decide it is
-       finished -- so this promised a control that is not on the screen and
-       a lock that never happens. */
+    readinessTitle: 'Before you send it',
+    /* Mark Complete, its hint, the DRAFT-watermark explanation and the
+       'a completed report is locked' warning all lived here until
+       2026-09-12. Every one of them described something the app stopped
+       doing: the button was removed on 2026-09-11 (the person writing a
+       report does not get to decide it is finished), and the DRAFT
+       watermark was dropped on 2026-09-09. Nothing referenced them any
+       more, so they sat here waiting to be wired back into a screen and
+       tell somebody something untrue. */
     markReadyHint: 'Everything required is filled in. Send it for review below.',
-    readyHeadline: 'This report is marked complete and locked from editing.',
-    completedHeadline: 'This report is marked complete and locked from editing.',
+    readyHeadline: 'This report is locked. Unlock it below to keep editing.',
+    completedHeadline: 'This report is locked. Unlock it below to keep editing.',
     draftHeadline: 'This report is still in progress.',
-    draftExplain: 'You can create a document copy at any time -- it will be watermarked "DRAFT" until the report is marked complete.',
-    editedAfterReady: 'A completed report is locked. Choose Mark Incomplete to keep editing.',
-    generatePdf: 'Create Document',
     generating: 'Creating…',
     regeneratePdf: 'Update Document',
     download: 'Download Document',

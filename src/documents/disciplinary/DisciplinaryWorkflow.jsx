@@ -224,7 +224,7 @@ export default function DisciplinaryWorkflow({
       <div className="previewPanelHeader">
         <div>
           <strong>What Will Print</strong>
-          <span>A facsimile of the printed notice — not the exact page layout</span>
+          <span>A preview of the printed notice — not the exact page layout</span>
         </div>
       </div>
       <DocFacsimile formTitle="Employee Disciplinary Notice Form" draft={!locked} blocks={disciplinaryFacsimileBlocks(model)} />

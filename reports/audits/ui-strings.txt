@@ -1,0 +1,1720 @@
+859 distinct user-facing strings
+
+— finished and filed.
+    [text] src\today\TodayView.jsx:139
+— for anyone without a phone on them.
+    [text] src\crew\MyBoard.jsx:259
+— on your board, waiting on the crew.
+    [text] src\today\TodayView.jsx:138
+— only while nobody has signed it yet.
+    [text] src\crew\MyBoard.jsx:261
+— see who has signed.
+    [text] src\crew\MyBoard.jsx:260
+— started and not done. Tap one to pick up where you left off.
+    [text] src\today\TodayView.jsx:137
+‹ Prev
+    [text] src\main.jsx:4868
++ Add Photo
+    [copy] src\incident\incidentCopy.js:122
+✓ Included
+    [text] src\main.jsx:4973
+0 2px 14px rgba(0,0,0,.06)
+    [copy] src\shared\ErrorBoundary.jsx:66
+A PDF or a photo of the paperwork. Both work.
+    [text] src\archive\UploadDocument.jsx:88
+a PM or an owner
+    [copy] src\open\SendForReviewButton.jsx:33, src\open\SendForReviewButton.jsx:34, src\open\SendForReviewButton.jsx:35 (+1 more)
+A preview of the printed form — not the exact page layout
+    [text] src\documents\medicalEvent\MedicalEventWorkflow.jsx:200, src\documents\separation\SeparationWorkflow.jsx:300
+A preview of the printed notice — not the exact page layout
+    [text] src\documents\disciplinary\DisciplinaryWorkflow.jsx:227
+A preview of the printed report — not the exact page layout
+    [text] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:178
+A specific work event/exposure was reported.
+    [text] src\documents\medicalEvent\MedicalEventWorkflow.jsx:56
+A template captures job info, hazards, and controls so you don't retype them every day. Day-specific details — the date, times, tailgate topic, and signatures — reset automatically so each new JSA starts fresh. Save a template anytime from the Finish step of a JSA you've filled in.
+    [text] src\main.jsx:4472
+About
+    [text] src\main.jsx:4606
+Access removed (check all that apply)
+    [label] src\documents\separation\SeparationWorkflow.jsx:117
+Account
+    [aria-label] src\account\AccountButton.jsx:129
+Acknowledgement:
+    [text] src\main.jsx:5823
+Actions
+    [aria-label] src\archive\ArchiveView.jsx:605
+Actions taken (check all that apply)
+    [label] src\documents\medicalEvent\MedicalEventWorkflow.jsx:65
+Add an old document
+    [text] src\archive\ArchiveView.jsx:521, src\archive\UploadDocument.jsx:65
+Add company- or site-specific language. You must choose whether it is a task, hazard, or control so it stays in the correct lane.
+    [text] src\main.jsx:4560
+Add Custom Item
+    [text] src\main.jsx:4576
+Add photos of the scene, equipment, damage, or injury. Photos are optional.
+    [copy] src\incident\incidentCopy.js:121
+Add related suggestions?
+    [text] src\main.jsx:1456
+Add Selected Suggestions
+    [text] src\main.jsx:1488
+Add signature
+    [text] src\incident\SignaturePad.jsx:289
+Add Task Only
+    [text] src\main.jsx:1487
+Add team member
+    [copy] src\incident\incidentCopy.js:110
+Add up to 3 witnesses. Witnesses are optional.
+    [copy] src\incident\incidentCopy.js:70
+Add witness
+    [copy] src\incident\incidentCopy.js:71
+Add your name
+    [text] src\main.jsx:2906
+Additional task rows continue on the attached JSA continuation sheet.
+    [text] src\main.jsx:5198
+Alfonso Hernandez Jr.
+    [placeholder] src\account\ProfileCard.jsx:119
+All data is stored locally in your browser. Clearing browser data will remove saved drafts, templates, and custom items.
+    [text] src\main.jsx:4600
+An Incident Report may also be required for an injury/illness — this form does not replace it. Complete the Incident Reporting and Investigation Form separately if applicable.
+    [text] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:52
+Any company property or paperwork still outstanding?
+    [label] src\documents\separation\SeparationWorkflow.jsx:133
+Any earlier verbal or written warnings, or discussions, on this same issue. Leave blank if this is the first occurrence.
+    [help] src\documents\disciplinary\DisciplinaryWorkflow.jsx:45
+Any time
+    [text] src\archive\ArchiveView.jsx:658
+any-pointer: coarse
+    [text] src\main.jsx:1284
+Anything they should know? (optional)
+    [text] src\open\SendForReviewButton.jsx:150
+Anything worth knowing about this one
+    [placeholder] src\archive\UploadDocument.jsx:116
+App Settings
+    [text] src\main.jsx:4522
+Appearance
+    [text] src\main.jsx:4543
+Approved and filed
+    [text] src\open\ApproveAndFileButton.jsx:104
+Approximate cost of damage
+    [copy] src\incident\incidentCopy.js:91
+Area
+    [label] src\crew\JsaContents.jsx:86
+Area this JSA covers
+    [label] src\main.jsx:3763
+Assigned Mentor / SSE Number
+    [label] src\main.jsx:3801
+At least one task row is too large to fit cleanly on a continuation page. Shorten that row or divide it into smaller task rows.
+    [copy] src\main.jsx:736
+Attached to this report (check all that apply)
+    [label] src\documents\medicalEvent\MedicalEventWorkflow.jsx:105
+Attachments
+    [text] src\documents\medicalEvent\MedicalEventWorkflow.jsx:104
+Attachments (check all that apply)
+    [label] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:70
+Available
+    [copy] src\incident\incidentCopy.js:161, src\main.jsx:3335
+Back
+    [copy] src\incident\incidentCopy.js:22, src\main.jsx:3442, src\main.jsx:4406
+Back to the archive
+    [text] src\archive\UploadDocument.jsx:69
+Basic facts about the employee and what occurred. Enter only what happened — do not decide the outcome here.
+    [intro] src\documents\disciplinary\DisciplinaryWorkflow.jsx:24
+Basic facts about where and when this happened.
+    [copy] src\incident\incidentCopy.js:33
+Before you send it
+    [copy] src\incident\incidentCopy.js:136
+Blank JSA
+    [copy] src\main.jsx:837, src\main.jsx:4433
+Body part(s) affected
+    [copy] src\incident\incidentCopy.js:57
+Body parts affected
+    [copy] src\open\documentDiff.js:35
+border (t/r/b/l)
+    [text] src\main.jsx:4683
+break-before / after
+    [text] src\main.jsx:4676
+Briefly describe this photo
+    [copy] src\incident\incidentCopy.js:127
+Cancel
+    [text] src\account\AccountButton.jsx:162, src\account\ChangePassword.jsx:107, src\incident\SignaturePad.jsx:323 (+5 more)
+Caption (optional)
+    [copy] src\incident\incidentCopy.js:126
+Carried over from before this JSA used the single Tasks / Hazards / Controls list above. Edit or remove them below — new entries only go in the fields above now.
+    [text] src\main.jsx:4131
+Category
+    [text] src\main.jsx:4949
+Category (optional)
+    [copy] src\incident\incidentCopy.js:124
+Cause Analysis
+    [copy] src\incident\incidentCopy.js:94
+Check again
+    [text] src\crew\CrewSignIn.jsx:254
+Check it over, then say how the crew signs it.
+    [text] src\main.jsx:4230
+Check the times
+    [aria-label] src\crew\PublishToBoardButton.jsx:148
+checkboxGrid
+    [copy] src\documents\disciplinary\disciplinaryPdfDraw.js:123, src\documents\medicalEvent\medicalEventPdfDraw.js:183, src\documents\separation\separationPdfDraw.js:147 (+2 more)
+Chemical:
+    [text] src\main.jsx:5191
+Choose how you want to begin. Templates and drafts are selected here, before the builder opens.
+    [text] src\main.jsx:3353
+Choose one…
+    [text] src\archive\UploadDocument.jsx:94
+Choose Template
+    [text] src\main.jsx:3396
+Chris
+    [placeholder] src\open\OpenDocsView.jsx:343
+Clear
+    [text] src\archive\ArchiveView.jsx:666, src\incident\SignaturePad.jsx:320, src\jsa\CrewSignInKiosk.jsx:348
+Clear all body marks?
+    [toast/confirm] src\incident\BodyDiagram.jsx:53
+Clear all marks
+    [text] src\incident\BodyDiagram.jsx:74, src\incident\incidentCopy.js:66
+Clear Draft
+    [text] src\main.jsx:1433
+Clear this JSA draft? Custom templates will not be affected.
+    [toast/confirm] src\main.jsx:2219
+Clerk
+    [copy] src\account\ProfileCard.jsx:27
+Client
+    [label] src\main.jsx:3775
+client / scroll H
+    [text] src\main.jsx:4680
+client / scroll W
+    [text] src\main.jsx:4679
+Client and Schedule
+    [text] src\main.jsx:3772
+Client:
+    [text] src\main.jsx:5159
+Clinic / Provider
+    [label] src\documents\medicalEvent\MedicalEventWorkflow.jsx:87
+Close
+    [text] src\account\AccountButton.jsx:139, src\archive\ArchiveView.jsx:240, src\crew\MyBoard.jsx:39 (+4 more)
+Close preview
+    [aria-label] src\main.jsx:4836
+Close suggestions
+    [aria-label] src\main.jsx:3825
+Close this tab and open the app again.
+    [text] src\shared\ErrorBoundary.jsx:171
+Closed
+    [text] src\today\TodayView.jsx:257
+Closeout
+    [title] src\documents\separation\SeparationWorkflow.jsx:84
+column widths
+    [text] src\main.jsx:4686
+Company
+    [copy] src\incident\incidentCopy.js:74
+Company Closeout
+    [text] src\documents\separation\SeparationWorkflow.jsx:112
+Company Policy States
+    [title] src\documents\disciplinary\DisciplinaryWorkflow.jsx:49
+Complete all required fields before finishing.
+    [toast/confirm] src\main.jsx:2097
+Complete the Incident Reporting and Investigation Form when a specific work event or exposure is reported. This Medical Event form does not replace it, and this app will not create that report automatically or assume it is required — confirm with Safety/Supervision.
+    [text] src\documents\medicalEvent\MedicalEventWorkflow.jsx:57
+Completed
+    [copy] src\incident\incidentCopy.js:10
+Contact email
+    [copy] src\incident\incidentCopy.js:77
+Contact info (email)
+    [copy] src\incident\incidentCopy.js:54
+Contact info (phone)
+    [copy] src\incident\incidentCopy.js:53
+Contact number
+    [copy] src\incident\incidentCopy.js:42
+Contact phone
+    [copy] src\incident\incidentCopy.js:76
+content box
+    [text] src\main.jsx:4651
+Content needs review
+    [copy] src\main.jsx:735
+Continuation
+    [text] src\main.jsx:4731
+continuation capacity
+    [text] src\main.jsx:4640
+Continuation of the task, hazard, and control table from the main JSA. Review with the crew as part of the same JSA.
+    [text] src\main.jsx:5785
+continuation pages
+    [text] src\main.jsx:4641
+Continuation sheet required
+    [copy] src\main.jsx:742
+Continue
+    [text] src\main.jsx:1390
+Continue Draft
+    [text] src\main.jsx:3382
+Continue Incident Report
+    [copy] src\incident\incidentCopy.js:160
+Continue Signing
+    [text] src\jsa\CrewSignInKiosk.jsx:302
+Continued Section:
+    [text] src\incident\IncidentPdf.jsx:473
+Control — preventive action or requirement
+    [text] src\main.jsx:4569
+Controls
+    [title] src\crew\JsaContents.jsx:101, src\main.jsx:1510
+Controls and Mitigations
+    [label] src\main.jsx:4093
+Corrective / Preventive Actions
+    [copy] src\incident\incidentCopy.js:106
+Corrective Action
+    [title] src\documents\disciplinary\DisciplinaryWorkflow.jsx:66
+Corrective Action Required of Employee
+    [title] src\documents\disciplinary\DisciplinaryWorkflow.jsx:67
+Corrective actions
+    [copy] src\open\documentDiff.js:38
+Could not read that file.
+    [toast/confirm] src\main.jsx:2390, src\main.jsx:2456
+Create a new JSA or begin from a saved template.
+    [copy] src\documents\registry.js:29
+Create Document
+    [generateLabel] src\documents\FormPrimitives.jsx:344
+Creating…
+    [generatingLabel] src\documents\FormPrimitives.jsx:344, src\incident\incidentCopy.js:149
+Crew sign-in
+    [aria-label] src\jsa\CrewSignInKiosk.jsx:285
+Crew Sign-In
+    [text] src\jsa\CrewSignInKiosk.jsx:311
+Current password
+    [text] src\account\ChangePassword.jsx:90
+Current trade
+    [label] src\incident\IncidentWorkflow.jsx:231
+Custom Quick Adds
+    [text] src\main.jsx:4559
+Custom saved JSA template
+    [copy] src\main.jsx:850
+Custom wording
+    [text] src\main.jsx:4573
+Daily Safety Meeting
+    [text] src\main.jsx:3868
+Date
+    [label] src\documents\disciplinary\DisciplinaryWorkflow.jsx:31, src\documents\FormPrimitives.jsx:637, src\documents\medicalEvent\MedicalEventWorkflow.jsx:36 (+5 more)
+Date of event
+    [copy] src\open\documentDiff.js:43
+Date of Event
+    [label] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:30
+Date of incident
+    [copy] src\incident\incidentCopy.js:35, src\open\documentDiff.js:29
+Date of notice
+    [copy] src\open\documentDiff.js:44
+Date on the document
+    [text] src\archive\UploadDocument.jsx:110
+Date Submitted
+    [label] src\documents\separation\SeparationWorkflow.jsx:41
+Date:
+    [text] src\main.jsx:5157, src\main.jsx:5781, src\main.jsx:5819
+Date/time incident reported to supervisor
+    [copy] src\incident\incidentCopy.js:38
+Date/time of written report
+    [copy] src\incident\incidentCopy.js:37
+Date/Time Report Written
+    [label] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:34
+Date/Time Reported to Supervisor
+    [label] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:35
+Declared print geometry (single-sheet model)
+    [text] src\main.jsx:4646
+Delete
+    [text] src\main.jsx:4459, src\today\TodayView.jsx:182
+Delete template
+    [toast/confirm] src\main.jsx:2428
+Delete this draft?
+    [toast/confirm] src\main.jsx:2742, src\main.jsx:2750, src\main.jsx:2758 (+3 more)
+Describe the overall scope of work today.
+    [placeholder] src\main.jsx:3890
+Describe the work event / exposure reported
+    [label] src\documents\medicalEvent\MedicalEventWorkflow.jsx:54
+Detailed description of the incident
+    [copy] src\incident\incidentCopy.js:45
+Details
+    [text] src\archive\ArchiveView.jsx:635
+Details (for Fonzo)
+    [text] src\shared\ErrorBoundary.jsx:216
+devicePixelRatio
+    [text] src\main.jsx:1289
+Discard the current incident draft? This cannot be undone.
+    [copy] src\incident\incidentCopy.js:16
+Disciplinary
+    [copy] src\archive\ArchiveView.jsx:31, src\today\TodayView.jsx:45
+disciplinary notice
+    [copy] src\open\ChangeNotices.jsx:32
+Disciplinary Notice
+    [copy] src\documents\registry.js:68, src\open\OpenDocsView.jsx:22
+Discipline / Rehire Status
+    [text] src\documents\separation\SeparationWorkflow.jsx:86
+Discipline and rehire status, and company closeout.
+    [intro] src\documents\separation\SeparationWorkflow.jsx:84
+Document a verbal, written, or final warning discussion with an employee.
+    [copy] src\documents\registry.js:69
+Document an employee-reported medical condition or event and the response taken.
+    [copy] src\documents\registry.js:59
+Document and investigate a workplace incident, step by step.
+    [copy] src\documents\registry.js:39
+Document Archive
+    [text] src\archive\ArchiveView.jsx:117
+Document date
+    [text] src\archive\ArchiveView.jsx:210, src\archive\ArchiveView.jsx:605
+Document Options
+    [text] src\main.jsx:1410, src\main.jsx:4347
+Document Ready
+    [text] src\documents\FormPrimitives.jsx:449
+Document the reason and details of an employee separation.
+    [copy] src\documents\registry.js:79
+Document type
+    [text] src\archive\ArchiveView.jsx:203, src\archive\ArchiveView.jsx:649
+Documents
+    [text] src\main.jsx:3262, src\main.jsx:3307, src\main.jsx:3308
+Documents land here as they are submitted from the field. Older paperwork can go in too — use “Add an old document” up top.
+    [text] src\archive\ArchiveView.jsx:591
+Done
+    [text] src\archive\ArchiveView.jsx:667
+Done adding
+    [text] src\archive\UploadDocument.jsx:131
+Done Signing
+    [text] src\jsa\CrewSignInKiosk.jsx:303
+Done signing?
+    [aria-label] src\jsa\CrewSignInKiosk.jsx:297
+Done Signing?
+    [text] src\jsa\CrewSignInKiosk.jsx:299
+Done today
+    [text] src\today\TodayView.jsx:139, src\today\TodayView.jsx:222
+Download
+    [text] src\main.jsx:4342
+Download Document
+    [downloadLabel] src\documents\FormPrimitives.jsx:345, src\incident\incidentCopy.js:151
+Download it, then open it to print. Submitting does not need this.
+    [text] src\incident\IncidentWorkflow.jsx:558
+Download the details
+    [text] src\archive\ArchiveView.jsx:239
+Download the document, then open it to print.
+    [text] src\documents\FormPrimitives.jsx:455
+Draft
+    [copy] src\incident\incidentCopy.js:9
+Draft deleted.
+    [toast/confirm] src\main.jsx:2742, src\main.jsx:2750, src\main.jsx:2758 (+3 more)
+Draft saved on this device.
+    [toast/confirm] src\main.jsx:2199
+Drafts already autosave automatically — this is optional.
+    [text] src\main.jsx:1417
+Drafts autosave automatically.
+    [text] src\main.jsx:4348
+Drawing the code…
+    [text] src\crew\BoardQr.jsx:85
+Earlier Warnings / Discussions
+    [title] src\documents\disciplinary\DisciplinaryWorkflow.jsx:45
+Editable drafts, reusable templates, favorites, recent quick adds, custom quick adds, and settings. One active JSA draft is supported in this pilot build.
+    [text] src\main.jsx:4598
+effective margin (t/r/b/l)
+    [text] src\main.jsx:4678
+Effective Separation Date
+    [label] src\documents\separation\SeparationWorkflow.jsx:38
+Electrical:
+    [text] src\main.jsx:5188
+Eligible for rehire?
+    [label] src\documents\separation\SeparationWorkflow.jsx:101
+Email
+    [text] src\account\AccountButton.jsx:153, src\archive\ArchiveView.jsx:120, src\archive\FileToArchiveButton.jsx:77 (+2 more)
+Email address
+    [copy] src\incident\incidentCopy.js:43
+Emergency
+    [label] src\crew\JsaContents.jsx:94
+Emergency / Rescue Phone #
+    [label] src\main.jsx:3789
+Emergency/Rescue Phone #:
+    [text] src\main.jsx:5159
+Employee
+    [text] src\archive\ArchiveView.jsx:204, src\archive\ArchiveView.jsx:605, src\open\documentDiff.js:40
+Employee Action
+    [copy] src\documents\registry.js:21
+Employee Disciplinary Notice
+    [copy] src\documents\registry.js:67
+Employee Information
+    [text] src\documents\medicalEvent\MedicalEventWorkflow.jsx:27, src\documents\separation\SeparationWorkflow.jsx:26
+Employee information, the type and reason for separation, and a brief explanation.
+    [intro] src\documents\separation\SeparationWorkflow.jsx:24
+Employee Medical Event
+    [copy] src\documents\registry.js:57
+Employee name
+    [text] src\archive\UploadDocument.jsx:100
+Employee Name
+    [label] src\documents\disciplinary\DisciplinaryWorkflow.jsx:26, src\documents\medicalEvent\MedicalEventWorkflow.jsx:29, src\documents\separation\SeparationWorkflow.jsx:29
+Employee Name (printed)
+    [label] src\documents\medicalEvent\MedicalEventWorkflow.jsx:151
+Employee Separation
+    [copy] src\documents\registry.js:77, src\documents\registry.js:78, src\open\OpenDocsView.jsx:23
+Employee Signature
+    [copy] src\documents\disciplinary\disciplinaryPdfDraw.js:80, src\documents\disciplinary\disciplinaryPdfDraw.js:138, src\documents\disciplinary\DisciplinaryWorkflow.jsx:153 (+3 more)
+Employee Signature (if able)
+    [copy] src\documents\medicalEvent\medicalEventPdfDraw.js:110, src\documents\medicalEvent\medicalEventPdfDraw.js:194
+Employee Signature Date
+    [label] src\documents\disciplinary\DisciplinaryWorkflow.jsx:157, src\documents\separation\SeparationWorkflow.jsx:218
+Employee-Reported Condition
+    [text] src\documents\medicalEvent\MedicalEventWorkflow.jsx:43
+employeeAction
+    [copy] src\documents\registry.js:70, src\documents\registry.js:80
+End sign-in
+    [aria-label] src\jsa\CrewSignInKiosk.jsx:290, src\jsa\CrewSignInKiosk.jsx:291
+End Sign-In
+    [text] src\jsa\CrewSignInKiosk.jsx:293
+Enter a name for the template first.
+    [toast/confirm] src\main.jsx:2410
+Enter previous day safety status.
+    [placeholder] src\main.jsx:3882
+Entire site, or a specific area
+    [placeholder] src\main.jsx:3766
+Estimated Cost (if known)
+    [label] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:55
+Evaluation & Classification
+    [title] src\documents\medicalEvent\MedicalEventWorkflow.jsx:80
+Event & Response
+    [title] src\documents\medicalEvent\MedicalEventWorkflow.jsx:25
+Event Classification (check all that apply)
+    [label] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:40
+Event Info & Classification
+    [title] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:24
+Event Information
+    [text] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:26
+Every document type, with details
+    [text] src\main.jsx:3262
+Every safety and employee document, filed from the app or added from older paperwork.
+    [text] src\archive\ArchiveView.jsx:511
+Every type
+    [text] src\archive\ArchiveView.jsx:651
+Everyone signs here now — manager, employee, and a witness who was in the room. Nothing has to be printed to be signed.
+    [intro] src\documents\disciplinary\DisciplinaryWorkflow.jsx:127
+Everyone signs here now — supervisor, employee, a witness who was in the room, and HR. Nothing has to be printed to be signed.
+    [intro] src\documents\separation\SeparationWorkflow.jsx:182
+Everything required is filled in. Send it for review below.
+    [copy] src\incident\incidentCopy.js:145
+Exact Letter-page preview with standard default-margin space.
+    [text] src\incident\IncidentWorkflow.jsx:86, src\main.jsx:4737
+Exact location
+    [copy] src\open\documentDiff.js:31
+Example: Entergy JSA
+    [placeholder] src\main.jsx:4355
+Expenses / receipts resolved
+    [label] src\documents\separation\SeparationWorkflow.jsx:128
+Explain what happened and anything management should know.
+    [label] src\documents\separation\SeparationWorkflow.jsx:71
+Export Draft File
+    [text] src\incident\IncidentWorkflow.jsx:570
+Field Safety
+    [copy] src\documents\registry.js:20
+fieldSafety
+    [copy] src\documents\registry.js:30, src\documents\registry.js:40, src\documents\registry.js:50 (+1 more)
+Filed
+    [text] src\archive\ArchiveView.jsx:211, src\archive\ArchiveView.jsx:605
+Filed by
+    [text] src\archive\ArchiveView.jsx:212, src\archive\ArchiveView.jsx:605
+Filed document
+    [aria-label] src\archive\ArchiveView.jsx:195
+Filed to the archive
+    [text] src\archive\FileToArchiveButton.jsx:65
+Fill out the day's paperwork and send it where it needs to go.
+    [text] src\main.jsx:3159
+Filters
+    [text] src\archive\ArchiveView.jsx:501, src\archive\ArchiveView.jsx:646, src\archive\ArchiveView.jsx:647
+Final PDFs should be saved to your device, OneDrive, iCloud, or a project folder after export.
+    [text] src\main.jsx:4599
+Final timesheet submitted
+    [label] src\documents\separation\SeparationWorkflow.jsx:122
+Finding something:
+    [text] src\archive\ArchiveView.jsx:498
+Finish
+    [text] src\main.jsx:4229
+Finish a JSA and hit “Publish to my board” on the last step. It shows up here and the crew can scan for it.
+    [text] src\crew\MyBoard.jsx:281
+Finish the list above before sending it up.
+    [text] src\open\SubmitArea.jsx:83
+Finished today
+    [text] src\crew\MyBoard.jsx:325
+First aid
+    [copy] src\incident\incidentCopy.js:59
+First and last
+    [placeholder] src\crew\CrewSignIn.jsx:176
+floor + (totalExtra
+    [text] src\incident\incidentPdfGenerate.jsx:70
+footer top / bottom
+    [text] src\main.jsx:4691
+For write-ups, separations and reports finished before this app existed. The file itself is the record — fill in enough to find it again later.
+    [text] src\archive\UploadDocument.jsx:66
+Foreman
+    [copy] src\account\ProfileCard.jsx:29
+form outer size
+    [text] src\main.jsx:4677
+Full Duty On
+    [label] src\documents\medicalEvent\MedicalEventWorkflow.jsx:90
+Full name
+    [text] src\account\ProfileCard.jsx:115
+Go to Review
+    [nextLabel] src\documents\disciplinary\DisciplinaryWorkflow.jsx:79, src\documents\medicalEvent\MedicalEventWorkflow.jsx:117, src\documents\separation\SeparationWorkflow.jsx:136 (+2 more)
+Go to Signatures
+    [nextLabel] src\documents\disciplinary\DisciplinaryWorkflow.jsx:100, src\documents\medicalEvent\MedicalEventWorkflow.jsx:138, src\documents\separation\SeparationWorkflow.jsx:157 (+1 more)
+Go to Submit
+    [nextLabel] src\documents\disciplinary\DisciplinaryWorkflow.jsx:184, src\documents\medicalEvent\MedicalEventWorkflow.jsx:159, src\documents\separation\SeparationWorkflow.jsx:258 (+1 more)
+Good from
+    [label] src\crew\JsaContents.jsx:92
+Gravity:
+    [text] src\main.jsx:5185
+Guest —
+    [text] src\account\AccountButton.jsx:124
+Hand it over
+    [aria-label] src\open\OpenDocsView.jsx:323, src\open\OpenDocsView.jsx:324
+Has this employee been warned or talked to about this before?
+    [label] src\documents\disciplinary\DisciplinaryWorkflow.jsx:46
+Hazard — exposure or harmful condition
+    [text] src\main.jsx:4568
+Hazards
+    [title] src\crew\JsaContents.jsx:100, src\main.jsx:1504, src\main.jsx:5138
+Hazards in Work Area
+    [label] src\main.jsx:4081
+Home
+    [text] src\main.jsx:2879, src\main.jsx:3085
+How is this getting signed?
+    [text] src\main.jsx:4276
+How many warning notices?
+    [label] src\documents\separation\SeparationWorkflow.jsx:96
+How Templates Work
+    [text] src\main.jsx:4470
+HR / Management Name
+    [label] src\documents\separation\SeparationWorkflow.jsx:187
+HR / Management Signature
+    [label] src\documents\separation\SeparationWorkflow.jsx:251
+HR or an owner
+    [copy] src\open\SendForReviewButton.jsx:36, src\open\SendForReviewButton.jsx:37
+HR Signature Date
+    [label] src\documents\separation\SeparationWorkflow.jsx:255
+I have reviewed and understand the conditions of this JSA and its attached plans and will comply. I will report hazardous conditions or acts identified on this job site to my supervisor and/or Shackelford representative so they can be corrected if necessary. I will conduct a last minute risk assessment before each task and will exercise stop work authority for any unsafe act, condition, or hazard.
+    [copy] src\main.jsx:799
+I have reviewed and understand the JSA and tailgate meeting information and will exercise stop work authority for unsafe acts, conditions, or hazards.
+    [text] src\main.jsx:5823
+If Behavior Is Not Corrected / Performance Does Not Improve
+    [title] src\documents\disciplinary\DisciplinaryWorkflow.jsx:75
+If involuntary, were warning notices given?
+    [label] src\documents\separation\SeparationWorkflow.jsx:90
+image/jpeg
+    [copy] src\incident\incidentModel.js:175
+Immediate Actions Taken
+    [copy] src\incident\incidentCopy.js:104
+Import a Draft
+    [text] src\main.jsx:3315
+Import a Template
+    [text] src\main.jsx:4442
+Import Draft
+    [text] src\main.jsx:3320
+Import Template
+    [text] src\main.jsx:4447
+Important:
+    [text] src\main.jsx:4600
+Imported JSA template
+    [copy] src\main.jsx:2467
+Importing this draft will replace the current incident report on this device. Continue?
+    [toast/confirm] src\main.jsx:2075
+Incident
+    [copy] src\archive\ArchiveView.jsx:30, src\today\TodayView.jsx:44
+Incident Date:
+    [text] src\incident\IncidentPdf.jsx:472
+Incident Details
+    [copy] src\incident\incidentCopy.js:32
+Incident Photos
+    [copy] src\incident\incidentCopy.js:120
+incident report
+    [copy] src\open\ChangeNotices.jsx:31
+Incident Report
+    [copy] src\documents\registry.js:37, src\documents\registry.js:38, src\incident\incidentCopy.js:8 (+1 more)
+Incident report draft imported. Review each step and finish when ready.
+    [toast/confirm] src\main.jsx:2070
+Individual Task Steps
+    [text] src\main.jsx:5138
+Initial Classification
+    [text] src\documents\medicalEvent\MedicalEventWorkflow.jsx:112, src\documents\medicalEvent\MedicalEventWorkflow.jsx:114
+Injured party
+    [copy] src\open\documentDiff.js:33
+Injured Party
+    [copy] src\incident\incidentCopy.js:51
+Injury
+    [copy] src\incident\incidentCopy.js:48
+Injury/Illness selected.
+    [text] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:51
+innerWidth × innerHeight
+    [text] src\main.jsx:1286
+Inside the app:
+    [text] src\main.jsx:4598
+Internal Notes / Special Instructions
+    [label] src\main.jsx:4233
+internal padding
+    [text] src\main.jsx:4650
+Investigation Team
+    [copy] src\incident\incidentCopy.js:109
+Is the employee signing the printed copy?
+    [label] src\documents\separation\SeparationWorkflow.jsx:196
+Is the employee signing this?
+    [label] src\documents\disciplinary\DisciplinaryWorkflow.jsx:141
+Its Address
+    [label] src\main.jsx:3795
+Its suggested items were already present or have since been edited, so only the task will be removed either way.
+    [text] src\main.jsx:1515
+Job #
+    [text] src\archive\ArchiveView.jsx:208, src\archive\ArchiveView.jsx:605, src\crew\JsaContents.jsx:89 (+1 more)
+Job #:
+    [text] src\main.jsx:5158, src\main.jsx:5781, src\main.jsx:5819
+job info pair mode
+    [text] src\main.jsx:1294
+Job Information
+    [text] src\main.jsx:3741
+Job Safety Analysis
+    [text] src\crew\BoardQr.jsx:103, src\crew\CrewSignIn.jsx:237, src\documents\registry.js:27 (+3 more)
+Job site
+    [text] src\archive\ArchiveView.jsx:209, src\archive\UploadDocument.jsx:105, src\crew\JsaContents.jsx:87 (+1 more)
+Job Site
+    [label] src\main.jsx:3751
+Job Site:
+    [text] src\main.jsx:5158, src\main.jsx:5781, src\main.jsx:5820
+JSA & Tailgate Meeting Form
+    [subtitle] src\main.jsx:5154
+JSA Continuation Sheet
+    [title] src\main.jsx:5778
+JSA draft cleared.
+    [toast/confirm] src\main.jsx:2226
+JSA draft imported. Review each step and finish when ready.
+    [toast/confirm] src\main.jsx:2364
+JSA Sign-In Sheet
+    [title] src\main.jsx:5816
+Last 3 months
+    [text] src\archive\ArchiveView.jsx:660
+Last 30 days
+    [text] src\archive\ArchiveView.jsx:659
+last 5 row heights
+    [text] src\main.jsx:4689
+Last day worked
+    [copy] src\open\documentDiff.js:45
+Last Day Worked
+    [label] src\documents\separation\SeparationWorkflow.jsx:37
+Last year
+    [text] src\archive\ArchiveView.jsx:662
+Layout Debug (?debug=layout)
+    [text] src\main.jsx:1281
+Leave it up
+    [text] src\crew\MyBoard.jsx:396
+Light mode uses a navy-and-off-white workspace and is the primary experience. Dark mode uses layered navy surfaces with the same red accent.
+    [text] src\main.jsx:4548
+List Overall Work Task or Activity:
+    [text] src\main.jsx:5179
+List property/material damaged
+    [copy] src\incident\incidentCopy.js:88
+Listening… tap Stop when finished.
+    [text] src\voice\SpeakButton.jsx:90
+Live
+    [text] src\today\TodayView.jsx:209
+Live on your board
+    [text] src\crew\PublishToBoardButton.jsx:100
+live preview mode
+    [text] src\main.jsx:1292
+Load
+    [text] src\main.jsx:4457
+Load a custom template first, or use Save Custom Template.
+    [toast/confirm] src\main.jsx:2418
+Load a Template
+    [text] src\main.jsx:3390
+Load Template
+    [text] src\main.jsx:3401
+Loading a template starts a fresh JSA for today and never carries over signatures or daily work details.
+    [text] src\main.jsx:4361
+Loading photo…
+    [copy] src\incident\incidentCopy.js:131
+Loading the archive…
+    [text] src\archive\ArchiveView.jsx:455, src\main.jsx:3020
+Loading today…
+    [text] src\main.jsx:3009
+Loading your board…
+    [text] src\main.jsx:3015
+Loading…
+    [text] src\account\ProfileCard.jsx:104, src\crew\CrewSignIn.jsx:241, src\crew\MyBoard.jsx:63 (+4 more)
+Location
+    [label] src\crew\JsaContents.jsx:88
+Location / City
+    [label] src\main.jsx:3750
+Location:
+    [text] src\main.jsx:5157, src\main.jsx:5782, src\main.jsx:5819
+logical pages
+    [text] src\main.jsx:4637
+Looks good — ready for the crew to sign.
+    [text] src\main.jsx:4239
+main available height
+    [text] src\main.jsx:4657
+main capacity / used
+    [text] src\main.jsx:4638
+Main JSA
+    [text] src\main.jsx:4730
+main populated / filler rows
+    [text] src\main.jsx:4639
+main used height
+    [text] src\main.jsx:4658
+Make sure everything is right before anyone signs. Tap any item below to fix it.
+    [intro] src\documents\disciplinary\DisciplinaryWorkflow.jsx:90, src\documents\medicalEvent\MedicalEventWorkflow.jsx:128, src\documents\separation\SeparationWorkflow.jsx:147 (+1 more)
+Management System Deficiencies
+    [copy] src\incident\incidentModel.js:93
+managementDeficiencies
+    [copy] src\incident\incidentModel.js:92
+managementDeficienciesOther
+    [copy] src\incident\incidentModel.js:94
+Manager Signature
+    [copy] src\documents\disciplinary\disciplinaryPdfDraw.js:85, src\documents\disciplinary\disciplinaryPdfDraw.js:145, src\documents\disciplinary\DisciplinaryWorkflow.jsx:132
+Manager Signature Date
+    [label] src\documents\disciplinary\DisciplinaryWorkflow.jsx:133
+Mark Ready
+    [text] src\main.jsx:1420
+Marked complete and locked from editing.
+    [toast/confirm] src\main.jsx:1936, src\main.jsx:1955, src\main.jsx:1974 (+2 more)
+Marked complete. Editing is locked while it's marked this way — creating or updating the PDF does not change this.
+    [text] src\documents\FormPrimitives.jsx:378
+Marked ready.
+    [toast/confirm] src\main.jsx:2212
+Marks it ready. Nothing is sent anywhere.
+    [text] src\main.jsx:1421
+Maximum of 3 witnesses reached.
+    [copy] src\incident\incidentCopy.js:82
+Maximum of 4 team members reached.
+    [copy] src\incident\incidentCopy.js:117
+maxTouchPoints
+    [text] src\main.jsx:1285
+Mechanical:
+    [text] src\main.jsx:5187
+Medical
+    [copy] src\archive\ArchiveView.jsx:33, src\today\TodayView.jsx:47
+Medical Evaluation
+    [label] src\documents\medicalEvent\MedicalEventWorkflow.jsx:83
+Medical Evaluation / Work Status
+    [text] src\documents\medicalEvent\MedicalEventWorkflow.jsx:82
+Medical evaluation, current work status, and the initial classification. This app never decides work-relatedness or OSHA recordability — select what applies based on the facts.
+    [intro] src\documents\medicalEvent\MedicalEventWorkflow.jsx:80
+Medical Event
+    [copy] src\documents\registry.js:58, src\open\OpenDocsView.jsx:24
+medical event form
+    [copy] src\open\ChangeNotices.jsx:34
+Medical Facility Address:
+    [text] src\main.jsx:5168
+medicalEvent
+    [copy] src\documents\registry.js:56, src\main.jsx:2769
+min row height (last 5)
+    [text] src\main.jsx:4690
+Most recent
+    [text] src\archive\ArchiveView.jsx:561
+Motion:
+    [text] src\main.jsx:5186
+multiSignatureRow
+    [copy] src\documents\separation\separationPdfDraw.js:203
+Muster point
+    [label] src\crew\JsaContents.jsx:96
+Muster Point
+    [label] src\main.jsx:3776
+Muster Point:
+    [text] src\main.jsx:5160
+My Work
+    [text] src\main.jsx:2882, src\main.jsx:3100, src\open\ApproveAndFileButton.jsx:77 (+2 more)
+Name
+    [copy] src\incident\incidentCopy.js:40, src\incident\incidentCopy.js:73, src\incident\incidentCopy.js:112 (+1 more)
+Name & address of treating physician/clinic
+    [copy] src\incident\incidentCopy.js:61
+Name, title, years in company & current trade
+    [copy] src\incident\incidentCopy.js:52
+Names of any witnesses, one per line. Leave blank if none.
+    [help] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:74
+Narrative & Notifications
+    [title] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:65
+Nature of damage
+    [copy] src\incident\incidentCopy.js:89
+Nature of injury
+    [copy] src\open\documentDiff.js:34
+Nature of injury (select all that apply)
+    [copy] src\incident\incidentCopy.js:55
+Near Miss, Incidents, Injuries Previous Day:
+    [text] src\main.jsx:5178
+Nearest medical
+    [label] src\crew\JsaContents.jsx:95
+Nearest Medical Facility
+    [label] src\main.jsx:3793
+Nearest Medical Facility:
+    [text] src\main.jsx:5160
+Need the witness statement before I can sign this
+    [placeholder] src\open\OpenDocsView.jsx:380
+New password
+    [text] src\account\ChangePassword.jsx:94
+New password again
+    [text] src\account\ChangePassword.jsx:98
+Next
+    [copy] src\incident\incidentCopy.js:23, src\main.jsx:4409
+Next ›
+    [text] src\main.jsx:4872
+No category
+    [copy] src\incident\incidentCopy.js:125
+No causes selected yet.
+    [copy] src\incident\incidentCopy.js:100
+No custom templates yet. Save one from the Finish step after filling in recurring job information.
+    [text] src\main.jsx:4464
+No documents match what you searched for. Try clearing the filters.
+    [text] src\archive\ArchiveView.jsx:596
+No fields recorded.
+    [text] src\archive\ArchiveView.jsx:223
+No investigation team members added yet.
+    [copy] src\incident\incidentCopy.js:116
+No items match that search.
+    [text] src\main.jsx:4978
+No matches
+    [text] src\main.jsx:3194
+No photos added yet.
+    [copy] src\incident\incidentCopy.js:123
+No saved draft found on this device.
+    [toast/confirm] src\main.jsx:1912, src\main.jsx:2239
+No saved incident report found on this device.
+    [toast/confirm] src\main.jsx:2045
+No signature
+    [text] src\incident\SignaturePad.jsx:287
+No witnesses added yet.
+    [copy] src\incident\incidentCopy.js:81
+No, start blank
+    [text] src\main.jsx:1365
+Nobody in particular
+    [text] src\open\OpenDocsView.jsx:332
+Nobody yet.
+    [text] src\crew\MyBoard.jsx:64
+Not answered
+    [copy] src\incident\incidentCopy.js:27
+Not applicable
+    [text] src\incident\SignaturePad.jsx:267
+Not assigned yet
+    [copy] src\account\ProfileCard.jsx:30
+Not recorded
+    [text] src\archive\ArchiveView.jsx:628
+Note (optional)
+    [text] src\archive\UploadDocument.jsx:115
+Notes & Investigation Team
+    [copy] src\incident\incidentCopy.js:103
+Nothing filed yet
+    [text] src\archive\ArchiveView.jsx:590
+Nothing finished yet today.
+    [text] src\today\TodayView.jsx:229
+Nothing in here can be changed or deleted, by anybody.
+    [text] src\archive\ArchiveView.jsx:494
+Nothing live on your board right now.
+    [text] src\today\TodayView.jsx:201
+Nothing matches
+    [text] src\archive\ArchiveView.jsx:595
+Nothing open
+    [text] src\open\OpenDocsView.jsx:250
+Nothing open on this device.
+    [text] src\today\TodayView.jsx:189
+Nothing published today
+    [text] src\crew\MyBoard.jsx:280
+Nothing published yet
+    [text] src\crew\CrewSignIn.jsx:252
+Nothing to finish
+    [text] src\main.jsx:3187
+Notice Details
+    [title] src\documents\disciplinary\DisciplinaryWorkflow.jsx:24
+Notifications (check all that apply)
+    [label] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:69
+Object(s)/machine(s)/tool(s)/substance(s) inflicting damage
+    [copy] src\incident\incidentCopy.js:90
+Off Work Until
+    [label] src\documents\medicalEvent\MedicalEventWorkflow.jsx:93
+Older Detailed Task Rows
+    [text] src\main.jsx:4130
+On paper
+    [text] src\main.jsx:4295
+On their phones
+    [text] src\main.jsx:4285
+One task row is too large to print cleanly. Divide or shorten it before exporting.
+    [toast/confirm] src\main.jsx:2493
+Only if the normal printout will not come out right on this device.
+    [text] src\main.jsx:1428
+Only needed to file it. Filling out documents never asks for a login.
+    [text] src\archive\FileToArchiveButton.jsx:75
+Only needed to publish. Building a JSA never asks for a login.
+    [text] src\crew\PublishToBoardButton.jsx:111
+Only needed to send it. Filling out documents never asks for a login.
+    [text] src\open\SendForReviewButton.jsx:132
+Open
+    [text] src\open\OpenDocsView.jsx:238, src\today\TodayView.jsx:181
+Open a clean JSA form. Good for new jobs or when you want to build a fresh template from scratch.
+    [text] src\main.jsx:3361
+Open full print preview
+    [aria-label] src\main.jsx:4749
+Optional notes visible in the draft only, not on the printed JSA.
+    [placeholder] src\main.jsx:4233
+Or send the link
+    [text] src\crew\MyBoard.jsx:346
+Other (specify)
+    [copy] src\incident\incidentCopy.js:56, src\incident\incidentCopy.js:99
+Other access — specify
+    [label] src\documents\separation\SeparationWorkflow.jsx:119
+Other action — specify
+    [label] src\documents\medicalEvent\MedicalEventWorkflow.jsx:67
+Other attachment — specify
+    [label] src\documents\medicalEvent\MedicalEventWorkflow.jsx:107, src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:72
+Other classification — specify
+    [label] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:42
+Other evaluation — specify
+    [label] src\documents\medicalEvent\MedicalEventWorkflow.jsx:85
+Other outcome — specify
+    [label] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:47
+Other property — specify
+    [label] src\documents\separation\SeparationWorkflow.jsx:115
+Other reason — specify
+    [label] src\documents\separation\SeparationWorkflow.jsx:69
+Out for signing
+    [text] src\today\TodayView.jsx:138, src\today\TodayView.jsx:195
+Outcome / Impact (check all that apply)
+    [label] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:45
+Outside the app:
+    [text] src\main.jsx:4599
+Overall task
+    [label] src\crew\JsaContents.jsx:91
+Overall Task:
+    [text] src\main.jsx:5782, src\main.jsx:5820
+Overall Work Task or Activity
+    [label] src\main.jsx:3889
+overflow X / Y
+    [text] src\main.jsx:4681
+oversized row detected
+    [text] src\main.jsx:4643
+Owner
+    [copy] src\account\ProfileCard.jsx:23
+padding (t/r/b/l)
+    [text] src\main.jsx:4682
+Page 1
+    [text] src\incident\IncidentWorkflow.jsx:82
+page6
+    [copy] src\incident\incidentPdfGenerate.jsx:205
+pages generated
+    [copy] src\incident\incidentCopy.js:155
+paper / .printPage
+    [text] src\main.jsx:4648
+Part of body affected (mark all areas that apply)
+    [copy] src\incident\incidentCopy.js:63
+Password
+    [text] src\account\AccountButton.jsx:157, src\account\ChangePassword.jsx:73, src\archive\ArchiveView.jsx:124 (+3 more)
+Permanently deletes this draft from this device. This cannot be undone.
+    [text] src\main.jsx:1434
+Photo unavailable
+    [copy] src\incident\incidentCopy.js:132
+photoAppendix
+    [copy] src\incident\incidentPdfGenerate.jsx:233
+plan source
+    [text] src\main.jsx:4656
+Position
+    [label] src\documents\disciplinary\DisciplinaryWorkflow.jsx:29, src\documents\medicalEvent\MedicalEventWorkflow.jsx:32, src\documents\separation\SeparationWorkflow.jsx:30
+Potential Sources of Energy / Hazards to Consider
+    [text] src\main.jsx:5183
+Pressure:
+    [text] src\main.jsx:5189
+Previous Day Injury / Near Miss
+    [label] src\main.jsx:3881
+Primary
+    [copy] src\incident\incidentCopy.js:98, src\main.jsx:3083
+Primary, root cause
+    [copy] src\incident\incidentCopy.js:96
+Print
+    [copy] src\incident\incidentCopy.js:152
+Print Debug (?debug=print)
+    [text] src\main.jsx:4635
+Print it
+    [text] src\crew\MyBoard.jsx:258
+Print it and sign in pen. Nothing is captured on a screen.
+    [text] src\main.jsx:4296
+Print preview
+    [aria-label] src\main.jsx:4833
+Print the old way
+    [text] src\main.jsx:1427
+Printout ready
+    [text] src\incident\IncidentWorkflow.jsx:552
+Processing photo…
+    [copy] src\incident\incidentCopy.js:130
+Project / Location
+    [label] src\documents\medicalEvent\MedicalEventWorkflow.jsx:34, src\documents\separation\SeparationWorkflow.jsx:33
+Project location
+    [copy] src\open\documentDiff.js:42
+Project Manager
+    [copy] src\account\ProfileCard.jsx:26
+Property Damage
+    [copy] src\incident\incidentCopy.js:85
+Property damaged
+    [copy] src\open\documentDiff.js:37
+Property returned (check all that apply)
+    [label] src\documents\separation\SeparationWorkflow.jsx:113
+Provider Note Attached
+    [label] src\documents\medicalEvent\MedicalEventWorkflow.jsx:96
+Published JSA
+    [aria-label] src\crew\MyBoard.jsx:31, src\crew\MyBoard.jsx:37, src\today\TodayView.jsx:272 (+1 more)
+Published. It is on your board now — start a new JSA when you need one.
+    [toast/confirm] src\main.jsx:2316
+QuickPanel mode
+    [text] src\main.jsx:1295
+Readiness
+    [text] src\documents\disciplinary\DisciplinaryWorkflow.jsx:92, src\documents\FormPrimitives.jsx:364, src\documents\medicalEvent\MedicalEventWorkflow.jsx:130 (+2 more)
+Ready to print
+    [text] src\main.jsx:4339
+Reason not eligible for rehire
+    [label] src\documents\separation\SeparationWorkflow.jsx:107
+Received a draft file from someone in the field? Import it here to keep working on it — no need to retype anything.
+    [text] src\main.jsx:3316
+Received a template file someone shared with you? Import it here to add it to your own list.
+    [text] src\main.jsx:4443
+Record
+    [text] src\archive\ArchiveView.jsx:201
+Record a near miss, weather event, equipment failure, or other uncontrolled event.
+    [copy] src\documents\registry.js:49
+Records
+    [text] src\archive\ArchiveView.jsx:487, src\archive\ArchiveView.jsx:488, src\main.jsx:2889 (+2 more)
+Refresh
+    [text] src\archive\ArchiveView.jsx:522, src\crew\MyBoard.jsx:271, src\open\OpenDocsView.jsx:241
+Refused / Unavailable to Sign
+    [text] src\documents\separation\SeparationWorkflow.jsx:205
+Remarks/comments
+    [copy] src\incident\incidentCopy.js:62
+Remarks/Comments
+    [title] src\incident\IncidentPdf.jsx:209
+Remove
+    [text] src\incident\SignaturePad.jsx:282, src\main.jsx:4139, src\main.jsx:4585
+Remove member
+    [copy] src\incident\incidentCopy.js:111
+Remove photo
+    [copy] src\incident\incidentCopy.js:128
+Remove Task and Added Suggestions
+    [text] src\main.jsx:1521
+Remove Task Only
+    [text] src\main.jsx:1520
+Remove this investigation team member?
+    [copy] src\incident\incidentCopy.js:20
+Remove this photo? This cannot be undone.
+    [copy] src\incident\incidentCopy.js:129
+Remove this signature?
+    [copy] src\incident\incidentCopy.js:18
+Remove this witness and their statement?
+    [copy] src\incident\incidentCopy.js:19
+Remove witness
+    [copy] src\incident\incidentCopy.js:72
+Replace
+    [text] src\incident\SignaturePad.jsx:281
+Replace current draft?
+    [text] src\main.jsx:1378
+Reported By
+    [text] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:77, src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:122
+Reported By — Name
+    [label] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:79
+Reported By — Title
+    [label] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:80
+Reported By and Supervisor Review sign here.
+    [intro] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:120
+Reported By Signature
+    [copy] src\documents\uncontrolledEvent\uncontrolledEventPdfDraw.js:84, src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:124
+Reported By Signature Date
+    [label] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:125
+Reporting Supervisor / Investigator
+    [copy] src\incident\incidentCopy.js:39
+Response / Actions Taken
+    [text] src\documents\medicalEvent\MedicalEventWorkflow.jsx:64
+Reusable Templates
+    [text] src\main.jsx:4427
+Review
+    [title] src\documents\disciplinary\DisciplinaryWorkflow.jsx:90, src\documents\medicalEvent\MedicalEventWorkflow.jsx:128, src\documents\separation\SeparationWorkflow.jsx:147 (+1 more)
+Root cause
+    [copy] src\open\documentDiff.js:39
+Row-height measurement (PaginationMeasureRig)
+    [text] src\main.jsx:4654
+Safety
+    [copy] src\account\ProfileCard.jsx:24
+Safety / Supervisor Name (printed)
+    [label] src\documents\medicalEvent\MedicalEventWorkflow.jsx:157
+Safety / Supervisor Observations and Actions
+    [copy] src\documents\medicalEvent\medicalEventPdfDraw.js:63
+Safety / Supervisor Signature
+    [copy] src\documents\medicalEvent\medicalEventPdfDraw.js:116, src\documents\medicalEvent\medicalEventPdfDraw.js:201, src\documents\medicalEvent\MedicalEventWorkflow.jsx:154
+Safety consultant notes & summary
+    [copy] src\incident\incidentCopy.js:108
+Safety Documentation Center
+    [text] src\main.jsx:3155
+Safety/Supervisor signs here. Leave a name blank to print the employee/supervisor named on Event & Response.
+    [intro] src\documents\medicalEvent\MedicalEventWorkflow.jsx:150
+Same info as last time?
+    [text] src\main.jsx:1358, src\main.jsx:3378
+Save
+    [text] src\incident\SignaturePad.jsx:324
+Save a file you can text, email, or AirDrop to someone else. They can open it in this app and pick up right where you left off — the checklist above doesn't need to be done first.
+    [text] src\incident\IncidentWorkflow.jsx:569
+Save as Template
+    [text] src\main.jsx:4352
+Save failed \u2014 try Save Now
+    [copy] src\incident\incidentCopy.js:13
+Save failed. Check available storage on this device.
+    [toast/confirm] src\main.jsx:1941, src\main.jsx:1960, src\main.jsx:1979 (+5 more)
+Save Now
+    [text] src\documents\FormPrimitives.jsx:296, src\incident\incidentCopy.js:15, src\main.jsx:1416
+Save Template
+    [text] src\main.jsx:4358
+Saved
+    [copy] src\incident\incidentCopy.js:12
+Saved draft loaded.
+    [toast/confirm] src\main.jsx:1914, src\main.jsx:2245
+Saved incident report loaded.
+    [toast/confirm] src\main.jsx:2051
+Saves a file to text, email, or AirDrop — they pick up right where you left off, no need to finish the checklist first.
+    [text] src\documents\FormPrimitives.jsx:436
+Saving…
+    [copy] src\incident\incidentCopy.js:11
+Scan to sign in
+    [text] src\crew\BoardQr.jsx:102
+sdc.discipline.draft.v1
+    [copy] src\documents\storage.js:26, src\open\pickUp.js:38, src\shared\handOff.js:41
+sdc.discipline.lastFinished.v1
+    [copy] src\shared\handOff.js:32
+sdc.incident.draft.v1
+    [copy] src\incident\incidentStorage.js:8, src\open\pickUp.js:37, src\shared\handOff.js:40
+sdc.incident.lastFinished.v1
+    [copy] src\shared\handOff.js:31
+sdc.incident.records.v1
+    [copy] src\incident\incidentStorage.js:9
+sdc.jsa.draft.v4
+    [copy] src\main.jsx:88, src\open\pickUp.js:36, src\shared\handOff.js:39
+sdc.jsa.lastFinished.v1
+    [copy] src\shared\handOff.js:30
+sdc.jsa.templates.v1
+    [copy] src\main.jsx:89
+sdc.medical.draft.v1
+    [copy] src\documents\storage.js:28, src\open\pickUp.js:40, src\shared\handOff.js:43
+sdc.medical.lastFinished.v1
+    [copy] src\shared\handOff.js:34
+sdc.separation.draft.v1
+    [copy] src\documents\storage.js:29, src\open\pickUp.js:41, src\shared\handOff.js:44
+sdc.separation.lastFinished.v1
+    [copy] src\shared\handOff.js:35
+sdc.settings.v2
+    [copy] src\main.jsx:90
+sdc.uncontrolled.draft.v1
+    [copy] src\documents\storage.js:27, src\open\pickUp.js:39, src\shared\handOff.js:42
+sdc.uncontrolled.lastFinished.v1
+    [copy] src\shared\handOff.js:33
+Search an employee or job site
+    [placeholder] src\archive\ArchiveView.jsx:541
+Search in-progress documents by job site or person
+    [aria-label] src\main.jsx:3169
+Search job site or person
+    [placeholder] src\main.jsx:3166
+Section 4 (Employee Statement) prints as blank ruled space below Section 3 — the employee writes it by hand on the printed copy.
+    [text] src\documents\disciplinary\DisciplinaryWorkflow.jsx:54
+Select every cause that applies, then mark the single best primary, root cause if possible.
+    [copy] src\incident\incidentCopy.js:95
+Select…
+    [placeholder] src\documents\FormPrimitives.jsx:38
+Selected based on the facts above — this app does not determine or suggest a classification.
+    [text] src\documents\medicalEvent\MedicalEventWorkflow.jsx:113
+Send it back
+    [aria-label] src\open\OpenDocsView.jsx:369, src\open\OpenDocsView.jsx:370
+Send to Someone Else to Finish
+    [text] src\documents\FormPrimitives.jsx:435, src\incident\IncidentWorkflow.jsx:568
+Sent for review
+    [text] src\open\SendForReviewButton.jsx:118
+Sent for review. It has left this device — check My Work to see where it got to.
+    [toast/confirm] src\main.jsx:2336
+Separate from what the employee reported above.
+    [help] src\documents\medicalEvent\MedicalEventWorkflow.jsx:69
+Separation
+    [copy] src\archive\ArchiveView.jsx:32, src\today\TodayView.jsx:46
+Separation Details
+    [title] src\documents\separation\SeparationWorkflow.jsx:24, src\documents\separation\SeparationWorkflow.jsx:47
+separation form
+    [copy] src\open\ChangeNotices.jsx:33
+Separation Type
+    [label] src\documents\separation\SeparationWorkflow.jsx:49
+Services beyond first aid
+    [copy] src\incident\incidentCopy.js:60
+Set as primary cause
+    [copy] src\incident\incidentCopy.js:97
+Set aside. Open it again.
+    [text] src\shared\ErrorBoundary.jsx:166
+Settings
+    [text] src\main.jsx:2895, src\main.jsx:3110, src\main.jsx:4521
+Shackelford Construction and Hauling, LLC · Attached Sign-In Sheet
+    [text] src\main.jsx:5837
+Shackelford Construction and Hauling, LLC · JSA Continuation
+    [text] src\main.jsx:5787
+Shackelford Construction and Hauling, LLC · Safety First · Main JSA
+    [text] src\main.jsx:5199
+Share
+    [copy] src\incident\incidentCopy.js:153, src\main.jsx:4458
+sheet size
+    [text] src\main.jsx:4675
+Sign in
+    [text] src\account\AccountButton.jsx:124, src\account\AccountButton.jsx:147
+Sign in and file
+    [text] src\archive\FileToArchiveButton.jsx:85
+Sign in and publish
+    [text] src\crew\PublishToBoardButton.jsx:121
+Sign in and send
+    [text] src\open\SendForReviewButton.jsx:142
+Sign in to file this
+    [text] src\archive\FileToArchiveButton.jsx:74
+Sign in to look up filed safety and employee documents.
+    [text] src\archive\ArchiveView.jsx:118
+Sign in to publish this
+    [text] src\crew\PublishToBoardButton.jsx:110
+Sign in to see open documents
+    [text] src\open\OpenDocsView.jsx:220
+Sign in to see your board
+    [text] src\crew\MyBoard.jsx:231
+Sign in to send this for review
+    [text] src\open\SendForReviewButton.jsx:131
+Sign in up top to see what was finished and filed.
+    [text] src\today\TodayView.jsx:225
+Sign in up top to see what you put on your board today.
+    [text] src\today\TodayView.jsx:197
+Sign on this device
+    [text] src\crew\MyBoard.jsx:259
+Sign out
+    [text] src\archive\ArchiveView.jsx:467, src\archive\ArchiveView.jsx:523
+Sign-In
+    [text] src\crew\MyBoard.jsx:246, src\crew\MyBoard.jsx:247, src\main.jsx:2886 (+2 more)
+sign-in pages
+    [text] src\main.jsx:4642
+Sign-In:
+    [text] src\main.jsx:5173
+Signature
+    [title] src\documents\medicalEvent\MedicalEventWorkflow.jsx:150, src\incident\incidentCopy.js:79, src\incident\incidentCopy.js:114 (+2 more)
+Signature boxes to print
+    [text] src\main.jsx:4301
+signatureRow
+    [copy] src\documents\disciplinary\disciplinaryPdfDraw.js:137, src\documents\disciplinary\disciplinaryPdfDraw.js:144, src\documents\medicalEvent\medicalEventPdfDraw.js:193 (+1 more)
+Signatures
+    [title] src\documents\disciplinary\DisciplinaryWorkflow.jsx:127, src\documents\separation\SeparationWorkflow.jsx:182, src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:120
+Signed
+    [aria-label] src\jsa\CrewSignInKiosk.jsx:342
+Signed in
+    [text] src\account\AccountButton.jsx:132
+Signed in person
+    [text] src\crew\MyBoard.jsx:74
+Site Details
+    [text] src\main.jsx:3747
+Something went wrong
+    [text] src\shared\ErrorBoundary.jsx:186
+Sound/Radiation/Biological:
+    [text] src\main.jsx:5192
+Specific Work Event or Exposure Reported?
+    [label] src\documents\medicalEvent\MedicalEventWorkflow.jsx:47
+Start
+    [text] src\main.jsx:3336
+Start a document
+    [text] src\today\TodayView.jsx:190
+Start a Document
+    [text] src\main.jsx:3231
+Start a JSA
+    [text] src\main.jsx:3352, src\main.jsx:4465
+Start a new disciplinary notice
+    [startNewLabel] src\documents\disciplinary\DisciplinaryWorkflow.jsx:273
+Start a new disciplinary notice? The current one will be cleared from this device.
+    [toast/confirm] src\main.jsx:1944
+Start a new employee separation record? The current one will be cleared from this device.
+    [toast/confirm] src\main.jsx:2001
+Start a new incident report? The current one will be cleared from this device.
+    [toast/confirm] src\main.jsx:2054
+Start a new medical event report
+    [startNewLabel] src\documents\medicalEvent\MedicalEventWorkflow.jsx:246
+Start a new medical event report? The current one will be cleared from this device.
+    [toast/confirm] src\main.jsx:1982
+Start a new report
+    [startNewLabel] src\documents\FormPrimitives.jsx:346
+Start a new separation record
+    [startNewLabel] src\documents\separation\SeparationWorkflow.jsx:346
+Start a new uncontrolled event report
+    [startNewLabel] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:224
+Start a new uncontrolled event report? The current one will be cleared from this device.
+    [toast/confirm] src\main.jsx:1963
+Start Blank
+    [text] src\main.jsx:3360
+Start from a clean form and build a new template if needed.
+    [text] src\main.jsx:4434
+Start from a clean form. Save recurring information as your own custom template.
+    [copy] src\main.jsx:838
+Start Incident Report
+    [copy] src\incident\incidentCopy.js:159
+Start New Incident Report
+    [copy] src\incident\incidentCopy.js:156
+Start Options
+    [text] src\main.jsx:3356
+Start or open a document type.
+    [text] src\main.jsx:3309
+Started a new disciplinary notice.
+    [toast/confirm] src\main.jsx:1946
+Started a new employee separation record.
+    [toast/confirm] src\main.jsx:2003
+Started a new incident report.
+    [toast/confirm] src\main.jsx:2057
+Started a new JSA using the last one’s job info and tasks.
+    [toast/confirm] src\main.jsx:2346
+Started a new medical event report.
+    [toast/confirm] src\main.jsx:1984
+Started a new uncontrolled event report.
+    [toast/confirm] src\main.jsx:1965
+Started and not finished. Anything waiting on you is at the top.
+    [text] src\open\OpenDocsView.jsx:239
+Started by somebody and not finished. Nothing here is waiting on you.
+    [text] src\open\OpenDocsView.jsx:302
+Starting a new incident report will replace the current draft. Continue?
+    [copy] src\incident\incidentCopy.js:17
+Statement
+    [copy] src\incident\incidentCopy.js:78, src\incident\IncidentPdf.jsx:247
+stepper mode
+    [text] src\main.jsx:1293
+Still needed on this screen
+    [text] src\main.jsx:4390
+Still open
+    [text] src\today\TodayView.jsx:137, src\today\TodayView.jsx:166
+Still waiting on the witness statement
+    [placeholder] src\open\SendForReviewButton.jsx:155
+Storage Workflow
+    [text] src\main.jsx:4595
+Street, city — becomes a map link for the crew
+    [placeholder] src\main.jsx:3798
+Subcontractors/Employee(s) Acknowledgement:
+    [text] src\main.jsx:5172
+Submit
+    [title] src\documents\disciplinary\DisciplinaryWorkflow.jsx:258, src\documents\medicalEvent\MedicalEventWorkflow.jsx:231, src\documents\separation\SeparationWorkflow.jsx:331 (+2 more)
+Suggested controls
+    [text] src\main.jsx:1475
+Suggested hazards
+    [text] src\main.jsx:1464
+Superintendent
+    [copy] src\account\ProfileCard.jsx:28, src\crew\JsaContents.jsx:93
+Superintendent / Foreman
+    [label] src\main.jsx:3788
+Superintendent Phone #
+    [label] src\main.jsx:3792
+Superintendent Phone #:
+    [text] src\main.jsx:5160
+Superintendent/Foreman:
+    [text] src\main.jsx:5159, src\main.jsx:5782, src\main.jsx:5820
+Supervision and Emergency
+    [text] src\main.jsx:3785
+Supervisor
+    [label] src\crew\JsaContents.jsx:90, src\documents\disciplinary\DisciplinaryWorkflow.jsx:28, src\documents\medicalEvent\MedicalEventWorkflow.jsx:31 (+2 more)
+Supervisor Name
+    [label] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:86
+Supervisor notes
+    [copy] src\open\documentDiff.js:46
+Supervisor Review
+    [text] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:85, src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:130
+Supervisor Signature
+    [copy] src\documents\separation\separationPdfDraw.js:100, src\documents\separation\SeparationWorkflow.jsx:184, src\documents\uncontrolledEvent\uncontrolledEventPdfDraw.js:89 (+1 more)
+Supervisor Signature Date
+    [label] src\documents\medicalEvent\MedicalEventWorkflow.jsx:155, src\documents\separation\SeparationWorkflow.jsx:185, src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:133
+Tailgate Safety Topic
+    [label] src\main.jsx:3873
+Tailgate Safety Topic:
+    [text] src\main.jsx:5177
+Tailgate topic
+    [label] src\crew\JsaContents.jsx:97
+Take it down
+    [text] src\crew\MyBoard.jsx:261, src\crew\MyBoard.jsx:385, src\crew\MyBoard.jsx:397
+Take this off the board?
+    [text] src\crew\MyBoard.jsx:386
+Tap any row to open the actual document.
+    [text] src\archive\ArchiveView.jsx:502
+Tap or click on the diagram to mark an affected area. Tap a mark again to remove it.
+    [copy] src\incident\incidentCopy.js:64
+Tap the number
+    [text] src\crew\MyBoard.jsx:260
+Tap to edit
+    [title] src\main.jsx:5078
+Task
+    [text] src\main.jsx:1458
+Task — work being performed
+    [text] src\main.jsx:4567
+Task / Activity
+    [label] src\main.jsx:4142
+task rows (populated+filler)
+    [text] src\main.jsx:4688
+Task-Specific Controls
+    [label] src\main.jsx:4144
+Task-Specific Hazards
+    [label] src\main.jsx:4143
+Tasks describe the work. Hazards describe what could cause harm. Controls describe how the risk will be reduced.
+    [text] src\main.jsx:4063
+Tasks for Today
+    [label] src\main.jsx:4069
+Tasks, Hazards, and Controls
+    [text] src\main.jsx:4062
+Temperature:
+    [text] src\main.jsx:5190
+Template deleted.
+    [toast/confirm] src\main.jsx:2435
+Template name
+    [text] src\main.jsx:4354
+Templates
+    [text] src\main.jsx:3272, src\main.jsx:4426
+Templates and settings follow your account. Paperwork you are part-way through stays on this device until you send it.
+    [text] src\main.jsx:4527
+Templates save recurring job info, hazards, and controls. Daily fields reset automatically when loaded.
+    [text] src\main.jsx:3391
+Templates save recurring job information, hazards, controls, and setup language. They are not final documents. Save a custom template from the JSA builder.
+    [text] src\main.jsx:4428
+Testing site
+    [text] src\shared\DemoBanner.jsx:29
+The Company Will
+    [title] src\documents\disciplinary\DisciplinaryWorkflow.jsx:71
+The file
+    [text] src\archive\UploadDocument.jsx:81
+The JSA
+    [title] src\crew\JsaContents.jsx:79
+The name here goes on company records. Use the name the company has you under, not a nickname.
+    [text] src\account\ProfileCard.jsx:101
+The real printed page, scaled to fit
+    [text] src\incident\IncidentWorkflow.jsx:595
+The report has changed since this document was created. Update it to include the latest changes.
+    [copy] src\incident\incidentCopy.js:154
+The three lists:
+    [text] src\today\TodayView.jsx:135
+Theme
+    [text] src\main.jsx:4547
+They scan the QR on your trailer and sign. You watch the count.
+    [text] src\main.jsx:4286
+This app only supports importing JSA templates right now.
+    [toast/confirm] src\main.jsx:2461
+This device does not know how to open that kind of document.
+    [toast/confirm] src\main.jsx:1888
+This is the only part of the app that asks anybody to sign in. Filling out documents never does.
+    [text] src\archive\ArchiveView.jsx:129
+This report is locked. Unlock it below to keep editing.
+    [copy] src\incident\incidentCopy.js:146, src\incident\incidentCopy.js:147
+This report is still in progress.
+    [copy] src\incident\incidentCopy.js:148
+This task added:
+    [text] src\main.jsx:1501
+This year
+    [text] src\archive\ArchiveView.jsx:661
+Time Expired
+    [label] src\main.jsx:3780
+Time Expired:
+    [text] src\main.jsx:5158
+Time Issued
+    [label] src\main.jsx:3779
+Time Issued:
+    [text] src\main.jsx:5157
+Time of incident
+    [copy] src\incident\incidentCopy.js:36, src\open\documentDiff.js:30
+Time period
+    [text] src\archive\ArchiveView.jsx:656
+Time Reported
+    [label] src\documents\medicalEvent\MedicalEventWorkflow.jsx:37
+Tip: use your keyboard's dictation mic to fill this in by voice.
+    [text] src\voice\SpeakButton.jsx:61
+Title
+    [copy] src\incident\incidentCopy.js:113, src\incident\IncidentPdf.jsx:393, src\incident\IncidentWorkflow.jsx:228
+Title / position
+    [copy] src\incident\incidentCopy.js:41
+to narrow to a date range.
+    [text] src\archive\ArchiveView.jsx:501
+Today
+    [title] src\crew\JsaContents.jsx:99, src\main.jsx:3267
+Topic discussed at today
+    [placeholder] src\main.jsx:3874
+Total
+    [text] src\incident\IncidentWorkflow.jsx:83, src\main.jsx:4733
+Treatment
+    [copy] src\incident\incidentCopy.js:58
+Treatment level
+    [copy] src\open\documentDiff.js:36
+Try again
+    [text] src\account\ProfileCard.jsx:108, src\archive\ArchiveView.jsx:466, src\crew\CrewSignIn.jsx:246 (+1 more)
+twoCol
+    [copy] src\documents\medicalEvent\medicalEventPdfDraw.js:174
+Type
+    [text] src\archive\ArchiveView.jsx:605, src\main.jsx:4565
+Type a control, then press Enter to add it.
+    [placeholder] src\main.jsx:4094
+Type a hazard, then press Enter to add it.
+    [placeholder] src\main.jsx:4082
+Type a task, then press Enter to add it.
+    [placeholder] src\main.jsx:4070
+Uncontrolled
+    [copy] src\archive\ArchiveView.jsx:34, src\today\TodayView.jsx:48
+Uncontrolled Event
+    [copy] src\documents\registry.js:48, src\open\OpenDocsView.jsx:25
+uncontrolled event form
+    [copy] src\open\ChangeNotices.jsx:35
+Uncontrolled Event Report
+    [copy] src\documents\registry.js:47
+uncontrolledEvent
+    [copy] src\documents\registry.js:46, src\main.jsx:2761
+Undo last mark
+    [text] src\incident\BodyDiagram.jsx:73, src\incident\incidentCopy.js:65
+Unlock for editing
+    [text] src\documents\FormPrimitives.jsx:390, src\incident\IncidentWorkflow.jsx:508
+Unlocked for editing.
+    [toast/confirm] src\main.jsx:1940, src\main.jsx:1959, src\main.jsx:1978 (+2 more)
+Unrecognized document type in that file.
+    [toast/confirm] src\main.jsx:2405
+Unsafe Acts
+    [copy] src\incident\incidentModel.js:47
+Unsafe Conditions
+    [copy] src\incident\incidentModel.js:70
+unsafeActs
+    [copy] src\incident\incidentModel.js:46
+unsafeActsOther
+    [copy] src\incident\incidentModel.js:48
+unsafeConditions
+    [copy] src\incident\incidentModel.js:69
+unsafeConditionsOther
+    [copy] src\incident\incidentModel.js:71
+Update Document
+    [regenerateLabel] src\documents\FormPrimitives.jsx:344, src\incident\incidentCopy.js:150
+Update Loaded
+    [text] src\main.jsx:4359
+Uploaded
+    [text] src\archive\ArchiveView.jsx:618
+upper-section wrapped lines
+    [text] src\main.jsx:4644
+Use
+    [text] src\archive\ArchiveView.jsx:501
+Use Blank
+    [text] src\main.jsx:4437
+Use quick inserts as shortcuts, then adjust wording as needed.
+    [text] src\main.jsx:3869
+Use the button at the top right. Building a document never needs a login — this does.
+    [text] src\open\OpenDocsView.jsx:221
+Use the button at the top right. Building JSAs never needs a login — this does.
+    [text] src\crew\MyBoard.jsx:232
+View the app as somebody else
+    [text] src\open\ViewAsPicker.jsx:50
+visualViewport
+    [text] src\main.jsx:1287
+Waiting for sign-off
+    [text] src\open\OpenDocsView.jsx:65
+Waiting on you
+    [text] src\open\OpenDocsView.jsx:270
+Warning Level
+    [label] src\documents\disciplinary\DisciplinaryWorkflow.jsx:35
+Was any property or equipment damaged?
+    [copy] src\incident\incidentCopy.js:86
+Was anyone injured?
+    [copy] src\incident\incidentCopy.js:49, src\incident\incidentCopy.js:50
+Was there property damage?
+    [copy] src\incident\incidentCopy.js:87
+Weather / Conditions
+    [label] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:31
+What company rule or policy applies?
+    [label] src\documents\disciplinary\DisciplinaryWorkflow.jsx:50
+What did safety/supervision observe and do?
+    [label] src\documents\medicalEvent\MedicalEventWorkflow.jsx:69
+What did you do right after this happened?
+    [label] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:67
+What happened
+    [copy] src\open\documentDiff.js:32
+What Happened / Brief Summary / Timeline
+    [copy] src\documents\uncontrolledEvent\uncontrolledEventPdfDraw.js:52, src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:66
+What happened, what was done right away, and who was told.
+    [intro] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:65
+What happened?
+    [label] src\documents\disciplinary\DisciplinaryWorkflow.jsx:42
+What happens if this isn
+    [label] src\documents\disciplinary\DisciplinaryWorkflow.jsx:76
+What kind of document
+    [text] src\archive\UploadDocument.jsx:92
+What kind of site is this?
+    [text] src\main.jsx:3700, src\main.jsx:3701
+What must the employee do to correct this?
+    [label] src\documents\disciplinary\DisciplinaryWorkflow.jsx:68
+What needs doing
+    [text] src\open\OpenDocsView.jsx:376
+What Occurred
+    [title] src\documents\disciplinary\DisciplinaryWorkflow.jsx:41
+What symptoms or concerns did the employee report?
+    [label] src\documents\medicalEvent\MedicalEventWorkflow.jsx:44
+What the employee must do, what the company will do, and the consequence if this is not corrected.
+    [intro] src\documents\disciplinary\DisciplinaryWorkflow.jsx:66
+What the employee reported, and what was done right away. Keep this factual — record what was said and observed, not a diagnosis or cause.
+    [intro] src\documents\medicalEvent\MedicalEventWorkflow.jsx:25
+What this is
+    [text] src\shared\HelpButton.jsx:52
+What was corrected, assigned, or changed to help prevent recurrence?
+    [copy] src\incident\incidentCopy.js:107
+What was done immediately following the incident?
+    [copy] src\incident\incidentCopy.js:105
+What Will Print
+    [text] src\documents\disciplinary\DisciplinaryWorkflow.jsx:226, src\documents\medicalEvent\MedicalEventWorkflow.jsx:199, src\documents\separation\SeparationWorkflow.jsx:299 (+2 more)
+What will the company do?
+    [label] src\documents\disciplinary\DisciplinaryWorkflow.jsx:72
+What you are signing
+    [text] src\crew\JsaContents.jsx:105
+What you can do here:
+    [text] src\crew\MyBoard.jsx:256
+What you started and finished today
+    [text] src\main.jsx:3267
+What you started and what you finished. Older paperwork lives in Records.
+    [text] src\today\TodayView.jsx:147
+What your crew sees when they scan. Updates on its own.
+    [text] src\crew\MyBoard.jsx:269
+When Symptoms First Appeared
+    [label] src\documents\medicalEvent\MedicalEventWorkflow.jsx:45
+Where and when this happened, and what kind of event it was. Check every classification and outcome that applies.
+    [intro] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:24
+Where are you working?
+    [text] src\crew\CrewSignIn.jsx:238
+Where the incident occurred (specify)
+    [copy] src\incident\incidentCopy.js:44
+Where, if it matters
+    [placeholder] src\archive\UploadDocument.jsx:106
+Who
+    [text] src\open\OpenDocsView.jsx:330
+Who it
+    [placeholder] src\archive\UploadDocument.jsx:101
+Who signed
+    [aria-label] src\crew\MyBoard.jsx:60, src\crew\MyBoard.jsx:61
+width / height safety allowance
+    [text] src\main.jsx:4652
+Witness Name and Title
+    [label] src\documents\disciplinary\DisciplinaryWorkflow.jsx:178, src\documents\separation\SeparationWorkflow.jsx:243
+Witness Signature
+    [label] src\documents\disciplinary\DisciplinaryWorkflow.jsx:170, src\documents\separation\SeparationWorkflow.jsx:235
+Witnesses
+    [label] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:74, src\incident\incidentCopy.js:69
+Work Status
+    [label] src\documents\medicalEvent\MedicalEventWorkflow.jsx:88
+Workplace location
+    [copy] src\incident\incidentCopy.js:34, src\open\documentDiff.js:28
+Workplace Location / Project
+    [label] src\documents\uncontrolledEvent\UncontrolledEventWorkflow.jsx:28
+Workplace Location:
+    [text] src\incident\IncidentPdf.jsx:471
+Workspace
+    [text] src\main.jsx:3258
+workspace width
+    [text] src\main.jsx:1291
+Years with company
+    [label] src\incident\IncidentWorkflow.jsx:229
+Yes, same info
+    [text] src\main.jsx:1366
+You can see every document in the archive.
+    [copy] src\account\ProfileCard.jsx:35, src\account\ProfileCard.jsx:36, src\account\ProfileCard.jsx:37 (+1 more)
+You can see every document, and sign off on any of them.
+    [copy] src\account\ProfileCard.jsx:34
+You can see the documents you filed yourself. Ask Fonzo to set your role.
+    [copy] src\account\ProfileCard.jsx:41
+You can see your own documents, plus every disciplinary form.
+    [copy] src\account\ProfileCard.jsx:39, src\account\ProfileCard.jsx:40
+You changed the JSA — print it again.
+    [text] src\main.jsx:4324
+Your last JSA was
+    [text] src\main.jsx:1361
+Your name
+    [text] src\crew\CrewSignIn.jsx:172
+Your own work — what you started today and what you finished.
+    [text] src\today\TodayView.jsx:134
+Your Profile
+    [text] src\account\ProfileCard.jsx:100
+Your QR code
+    [text] src\crew\BoardQr.jsx:72
+Your signature
+    [label] src\crew\CrewSignIn.jsx:186
+Your work is saved on this device.
+    [text] src\shared\ErrorBoundary.jsx:190
+Yours to finish
+    [text] src\open\OpenDocsView.jsx:66

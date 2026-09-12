@@ -250,13 +250,13 @@ export default function MyBoard() {
               </p>
               <p>
                 Finish a JSA and choose <strong>&ldquo;On their phones&rdquo;</strong> and it shows up
-                here. The number next to it is how many men have signed. It counts up on its own —
+                here. The number next to it is how many people have signed. It counts up on its own —
                 you don&apos;t have to refresh it.
               </p>
               <p><strong>What you can do here:</strong></p>
               <ul>
                 <li><strong>Print it</strong> — the QR poster for your trailer. Print it once; it never changes.</li>
-                <li><strong>Sign on this device</strong> — for a man with no phone on him.</li>
+                <li><strong>Sign on this device</strong> — for anyone without a phone on them.</li>
                 <li><strong>Tap the number</strong> — see who has signed.</li>
                 <li><strong>Take it down</strong> — only while nobody has signed it yet.</li>
               </ul>
@@ -393,7 +393,7 @@ export default function MyBoard() {
               Your saved JSA on this device isn&apos;t touched — fix the times and publish it again.
             </p>
             <div className="dialogActions">
-              <button type="button" className="btn ghost" onClick={() => setTakingDown(null)}>Keep it up</button>
+              <button type="button" className="btn ghost" onClick={() => setTakingDown(null)}>Leave it up</button>
               <button type="button" className="btn primary" onClick={confirmTakeDown}>Take it down</button>
             </div>
           </div>
