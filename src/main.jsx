@@ -1418,14 +1418,14 @@ function DocumentOptionsSheet({ onClose, saveDraft, markReady, clearDraft, legac
             </button>
             <button type="button" className="actionSheetAction" onClick={() => { markReady(); onClose(); }} disabled={isGenerating}>
               <strong>Mark Ready</strong>
-              <span>Flags this JSA as ready to export.</span>
+              <span>Marks it ready. Nothing is sent anywhere.</span>
             </button>
           </div>
 
           <div className="actionSheetGroup">
             <button type="button" className="actionSheetAction" onClick={() => { legacyBrowserPrint(); onClose(); }} disabled={isGenerating}>
-              <strong>Legacy Browser Print</strong>
-              <span>Fallback only — can produce incorrect pagination on some devices. Prefer "Make the printout" above.</span>
+              <strong>Print the old way</strong>
+              <span>Only if the normal printout will not come out right on this device.</span>
             </button>
           </div>
 
@@ -2209,7 +2209,7 @@ function App() {
       setJsa(next);
       setSavedDraft(next);
       setSaveStatus('saved');
-      showToast('Marked ready to export. Save the PDF outside the app.');
+      showToast('Marked ready.');
     } catch {
       setSaveStatus('error');
       showToast('Save failed. Check available storage on this device.');
@@ -3153,7 +3153,10 @@ function HomeView({ customTemplates, setTab, docEntries }) {
       <header className="homeHeader">
         <div className="homeHeaderText">
           <h1>Safety Documentation Center</h1>
-          <p>Create, manage, review, and export field safety documents.</p>
+          {/* Was "Create, manage, review, and export field safety
+              documents" -- four verbs that say nothing, and "export" is a
+              word for the office, not the trailer. */}
+          <p>Fill out the day's paperwork and send it where it needs to go.</p>
         </div>
         <label className="homeSearch">
           <IconSearch className="homeSearchIcon" />
@@ -4517,7 +4520,11 @@ function SettingsView({ settings, setSettings }) {
       <div className="sectionTitle">
         <div className="eyebrow">Settings</div>
         <h2>App Settings</h2>
-        <p>Drafts, templates, favourites and custom quick adds are stored on this device.</p>
+        {/* It used to say all of this "is stored on this device", which
+            stopped being true: templates and settings follow your account
+            between devices now, and only the paperwork you are in the
+            middle of stays put. */}
+        <p>Templates and settings follow your account. Paperwork you are part-way through stays on this device until you send it.</p>
       </div>
 
       {/* Only ever rendered for an admin account -- see ViewAsPicker. For

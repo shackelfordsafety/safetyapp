@@ -233,7 +233,7 @@ export default function MedicalEventWorkflow({
                 checklistComplete={checklistComplete}
                 status={model.status}
                 draftExplainText="Complete the checklist below, then mark this document complete."
-                markReadyHintText="Everything required is filled in. Marking it complete locks the document from editing — you can unmark it any time from here."
+                markReadyHintText="Everything required is filled in. Send it for review below."
                 onMarkReady={onMarkReady}
                 onMarkIncomplete={onMarkIncomplete}
                 pdfExportState={pdfExportState}

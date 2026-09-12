@@ -135,7 +135,11 @@ export const incidentCopy = {
     title: 'Submit',
     readinessTitle: 'Before you export',
     markReady: 'Mark Complete',
-    markReadyHint: 'All required fields are complete. Marking it complete locks the report from editing — you can Mark Incomplete any time to keep working.',
+    /* Said what Mark Complete would do. That button was removed on
+       2026-09-11 -- the man writing a report does not get to decide it is
+       finished -- so this promised a control that is not on the screen and
+       a lock that never happens. */
+    markReadyHint: 'Everything required is filled in. Send it for review below.',
     readyHeadline: 'This report is marked complete and locked from editing.',
     completedHeadline: 'This report is marked complete and locked from editing.',
     draftHeadline: 'This report is still in progress.',
