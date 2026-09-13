@@ -3337,25 +3337,37 @@ function HomeView({ customTemplates, setTab, docEntries, waitingCount = 0 }) {
                   <span className="startDocTileNum">{docNumber(e.id)}</span>
                 </div>
                 <h2>{e.shortTitle}</h2>
-                {e.draft ? (
+                {/* A tile that is not started says nothing beyond its own
+                    name. The sentence of description under each one was
+                    read once and was noise every day after -- six of them
+                    made Home about 1,400px of scrolling on a phone. The
+                    descriptions still exist, on the Documents screen,
+                    which is the screen whose whole job is "every document
+                    type, with details". */}
+                {e.draft && (
                   <p className="startDocTileOpen">
                     <strong>{e.draft.title}</strong>
                     <span>{e.draft.nextStep} &middot; saved {e.draft.savedLabel}</span>
                   </p>
-                ) : (
-                  <p>{e.description}</p>
                 )}
                 {e.onBrowseTemplates && (
                   <button type="button" className="btn ghost sm startDocTileTemplates" onClick={e.onBrowseTemplates}>
                     Templates{customTemplates.length > 0 ? ` (${customTemplates.length})` : ''}
                   </button>
                 )}
+                {/* Visibly just "Start" / "Continue" -- the document's name
+                    is the line directly above it, and printing it twice in
+                    one small box is the kind of repetition that makes six
+                    of these feel like a wall. The full wording stays as the
+                    accessible name, so anything read aloud still says
+                    "Start Employee Separation". */}
                 <button
                   type="button"
                   className="startDocTileStart"
+                  aria-label={e.draft ? e.continueLabel : e.startLabel}
                   onClick={e.draft ? e.draft.onOpen : e.onStart}
                 >
-                  {e.draft ? e.continueLabel : e.startLabel}<span aria-hidden="true">&rsaquo;</span>
+                  {e.draft ? 'Continue' : 'Start'}<span aria-hidden="true">&rsaquo;</span>
                 </button>
               </section>
             );
