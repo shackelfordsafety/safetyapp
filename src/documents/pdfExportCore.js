@@ -1,5 +1,4 @@
-import { PDFDocument } from 'pdf-lib';
-import html2canvas from 'html2canvas';
+import { loadPdfLibs } from './pdfLibs';
 
 /* ── Generic client-side PDF capture/share/download ──
    Same approach JSA's generateJsaPdf and Incident's generateIncidentPdf
@@ -26,6 +25,9 @@ function dataUrlToUint8Array(dataUrl) {
 export async function capturePagesToPdf(pageRefsRef, onProgress) {
   const pages = pageRefsRef.current;
   if (!pages.length) throw new Error('No pages to export — the document plan is empty.');
+
+  /* Fetched on demand, not at the top of the file -- see ./pdfLibs.js. */
+  const { html2canvas, PDFDocument } = await loadPdfLibs();
 
   if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
     try { await document.fonts.ready; } catch { /* non-fatal */ }

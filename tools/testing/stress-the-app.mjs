@@ -191,12 +191,19 @@ async function main() {
     /* ── 6. The network dies mid-flow ────────────────────────────────
        Job sites lose signal constantly. Nothing should be lost. */
     {
+      /* Seeded by hand after the first load, NOT with addInitScript.
+         addInitScript runs again on every navigation, reload included --
+         so it put the original fixture back over the top of what had just
+         been typed, and this check failed for a reason that had nothing
+         to do with the app. The typing was never lost; my own test wiped
+         it. Anything here that reloads the page must seed this way. */
       const ctx = await browser.newContext({ viewport: { width: 1180, height: 900 } });
-      await ctx.addInitScript(j => window.localStorage.setItem('sdc.jsa.draft.v4', j), draftJson);
       const page = await ctx.newPage();
       const errors = [];
       page.on('pageerror', e => errors.push(String(e)));
       await page.goto(BASE_URL, { waitUntil: 'networkidle' });
+      await page.evaluate(([k, j]) => localStorage.setItem(k, j), [DRAFT, draftJson]);
+      await page.reload({ waitUntil: 'networkidle' });
       await page.getByRole('button', { name: 'Continue JSA' }).click();
       await page.waitForTimeout(400);
 

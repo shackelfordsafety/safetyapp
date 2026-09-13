@@ -1,8 +1,7 @@
 import React, { lazy, Suspense, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createPortal } from 'react-dom';
-import html2canvas from 'html2canvas';
-import { PDFDocument } from 'pdf-lib';
+import { loadPdfLibs } from './documents/pdfLibs';
 import './styles.css';
 import './incident/incident.css';
 import './voice/voice.css';
@@ -44,29 +43,25 @@ import {
   buildDisciplinaryExportName, warningLevelLabel,
   disciplinaryStepProgress, disciplinaryNextStepHint,
 } from './documents/disciplinary/disciplinaryModel';
-import DisciplinaryWorkflow from './documents/disciplinary/DisciplinaryWorkflow';
-import { drawDisciplinaryPdf } from './documents/disciplinary/disciplinaryPdfDraw';
-import { drawSeparationPdf } from './documents/separation/separationPdfDraw';
-import { drawMedicalEventPdf } from './documents/medicalEvent/medicalEventPdfDraw';
-import { drawUncontrolledEventPdf } from './documents/uncontrolledEvent/uncontrolledEventPdfDraw';
+const DisciplinaryWorkflow = lazy(() => loadModule(() => import('./documents/disciplinary/DisciplinaryWorkflow')));
 import {
   emptyUncontrolledEvent, hasMeaningfulUncontrolledEventContent, isUncontrolledEventReady, isUncontrolledEventPrintFinal,
   buildUncontrolledEventExportName, migrateUncontrolledEventShape,
   uncontrolledEventStepProgress, uncontrolledEventNextStepHint,
 } from './documents/uncontrolledEvent/uncontrolledEventModel';
-import UncontrolledEventWorkflow from './documents/uncontrolledEvent/UncontrolledEventWorkflow';
+const UncontrolledEventWorkflow = lazy(() => loadModule(() => import('./documents/uncontrolledEvent/UncontrolledEventWorkflow')));
 import {
   emptyMedicalEvent, hasMeaningfulMedicalEventContent, isMedicalEventReady, isMedicalEventPrintFinal,
   buildMedicalEventExportName,
   medicalEventStepProgress, medicalEventNextStepHint,
 } from './documents/medicalEvent/medicalEventModel';
-import MedicalEventWorkflow from './documents/medicalEvent/MedicalEventWorkflow';
+const MedicalEventWorkflow = lazy(() => loadModule(() => import('./documents/medicalEvent/MedicalEventWorkflow')));
 import {
   emptySeparation, hasMeaningfulSeparationContent, isSeparationReady, isSeparationPrintFinal,
   buildSeparationExportName, migrateSeparationShape,
   separationStepProgress, separationNextStepHint,
 } from './documents/separation/separationModel';
-import SeparationWorkflow from './documents/separation/SeparationWorkflow';
+const SeparationWorkflow = lazy(() => loadModule(() => import('./documents/separation/SeparationWorkflow')));
 import { workWasClearedForSignOut } from './shared/clearOnSignOut';
 
 /* The company document archive is the only part of this app that needs a
@@ -1589,7 +1584,7 @@ function App() {
     // Drawn directly into the PDF rather than screenshotted — see pdfDraw.js.
     // Disciplinary is the first document on this path; the other three still
     // use the capture pipeline until this one is proven.
-    renderPdf: onProgress => drawDisciplinaryPdf(disciplinary.model, onProgress),
+    renderPdf: onProgress => import('./documents/disciplinary/disciplinaryPdfDraw').then(m => m.drawDisciplinaryPdf(disciplinary.model, onProgress)),
   });
 
   // ── Uncontrolled Event Report state ──
@@ -1605,7 +1600,7 @@ function App() {
     buildFilename: () => `${buildUncontrolledEventExportName(uncontrolledEvent.model)}.pdf`,
     fingerprint: `${printedFingerprint(uncontrolledEvent.model)}|${isUncontrolledEventPrintFinal(uncontrolledEvent.model)}`,
     showToast: msg => showToast(msg),
-    renderPdf: onProgress => drawUncontrolledEventPdf(uncontrolledEvent.model, onProgress),
+    renderPdf: onProgress => import('./documents/uncontrolledEvent/uncontrolledEventPdfDraw').then(m => m.drawUncontrolledEventPdf(uncontrolledEvent.model, onProgress)),
   });
 
   // ── Employee Medical Event state ──
@@ -1620,7 +1615,7 @@ function App() {
     buildFilename: () => `${buildMedicalEventExportName(medicalEvent.model)}.pdf`,
     fingerprint: `${printedFingerprint(medicalEvent.model)}|${isMedicalEventPrintFinal(medicalEvent.model)}`,
     showToast: msg => showToast(msg),
-    renderPdf: onProgress => drawMedicalEventPdf(medicalEvent.model, onProgress),
+    renderPdf: onProgress => import('./documents/medicalEvent/medicalEventPdfDraw').then(m => m.drawMedicalEventPdf(medicalEvent.model, onProgress)),
   });
 
   // ── Employee Separation state ──
@@ -1636,7 +1631,7 @@ function App() {
     buildFilename: () => `${buildSeparationExportName(separation.model)}.pdf`,
     fingerprint: `${printedFingerprint(separation.model)}|${isSeparationPrintFinal(separation.model)}`,
     showToast: msg => showToast(msg),
-    renderPdf: onProgress => drawSeparationPdf(separation.model, onProgress),
+    renderPdf: onProgress => import('./documents/separation/separationPdfDraw').then(m => m.drawSeparationPdf(separation.model, onProgress)),
   });
 
   const [templateId, setTemplateId] = useState('blank-jsa');
@@ -2964,6 +2959,7 @@ function App() {
             />
           )}
           {tab === 'documents' && activeDoc === 'disciplinary' && (
+            <Suspense fallback={<p className="helperText">Opening the form…</p>}>
             <DisciplinaryWorkflow
               onHandedOff={handOffAfterSubmit('disciplinary')}
               model={disciplinary.model} upd={disciplinary.upd} step={disciplinary.step} setStep={disciplinary.setStep}
@@ -2973,8 +2969,10 @@ function App() {
               onGeneratePdf={disciplinaryPdf.generate} onDownload={disciplinaryPdf.downloadClick}
               onMarkReady={markDisciplinaryReady} onMarkIncomplete={markDisciplinaryIncomplete} onStartNew={startNewDisciplinary}
             />
+            </Suspense>
           )}
           {tab === 'documents' && activeDoc === 'uncontrolledEvent' && (
+            <Suspense fallback={<p className="helperText">Opening the form…</p>}>
             <UncontrolledEventWorkflow
               onHandedOff={handOffAfterSubmit('uncontrolledEvent')}
               model={uncontrolledEvent.model} upd={uncontrolledEvent.upd} step={uncontrolledEvent.step} setStep={uncontrolledEvent.setStep}
@@ -2984,8 +2982,10 @@ function App() {
               onGeneratePdf={uncontrolledEventPdf.generate} onDownload={uncontrolledEventPdf.downloadClick}
               onMarkReady={markUncontrolledEventReady} onMarkIncomplete={markUncontrolledEventIncomplete} onStartNew={startNewUncontrolledEvent}
             />
+            </Suspense>
           )}
           {tab === 'documents' && activeDoc === 'medicalEvent' && (
+            <Suspense fallback={<p className="helperText">Opening the form…</p>}>
             <MedicalEventWorkflow
               onHandedOff={handOffAfterSubmit('medicalEvent')}
               model={medicalEvent.model} upd={medicalEvent.upd} step={medicalEvent.step} setStep={medicalEvent.setStep}
@@ -2995,8 +2995,10 @@ function App() {
               onGeneratePdf={medicalEventPdf.generate} onDownload={medicalEventPdf.downloadClick}
               onMarkReady={markMedicalEventReady} onMarkIncomplete={markMedicalEventIncomplete} onStartNew={startNewMedicalEvent}
             />
+            </Suspense>
           )}
           {tab === 'documents' && activeDoc === 'separation' && (
+            <Suspense fallback={<p className="helperText">Opening the form…</p>}>
             <SeparationWorkflow
               onHandedOff={handOffAfterSubmit('separation')}
               model={separation.model} upd={separation.upd} step={separation.step} setStep={separation.setStep}
@@ -3006,6 +3008,7 @@ function App() {
               onGeneratePdf={separationPdf.generate} onDownload={separationPdf.downloadClick}
               onMarkReady={markSeparationReady} onMarkIncomplete={markSeparationIncomplete} onStartNew={startNewSeparation}
             />
+            </Suspense>
           )}
           {tab === 'today' && (
             <Suspense fallback={<p className="helperText">Loading today…</p>}>
@@ -5588,6 +5591,11 @@ function prepareSingleLineTextForCapture(pageEl) {
 async function generateJsaPdf(pageRefsRef, onProgress) {
   const pages = pageRefsRef.current;
   if (!pages.length) throw new Error('No pages to export — the document plan is empty.');
+
+  /* Fetched here rather than at the top of the file so the crew members
+     who only read and sign a JSA never download the PDF machinery at all.
+     See documents/pdfLibs.js. */
+  const { html2canvas, PDFDocument } = await loadPdfLibs();
 
   if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
     try { await document.fonts.ready; } catch { /* non-fatal: proceed with whatever is loaded */ }

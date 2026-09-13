@@ -1,6 +1,5 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
-import html2canvas from 'html2canvas';
-import { PDFDocument } from 'pdf-lib';
+import { loadPdfLibs } from '../documents/pdfLibs';
 import { isIncidentPrintFinal, printedIncidentFingerprint } from './incidentModel';
 import {
   IncidentPageShell, Page1Content, Page2Content, Page3Content, Page4Content, Page5Content, Page6Content, ContinuationPage,
@@ -469,6 +468,10 @@ function waitForImages(el) {
 export async function generateIncidentPdf(pageRefsRef, onProgress) {
   const pages = pageRefsRef.current;
   if (!pages.length) throw new Error('No pages to export -- the document plan is empty.');
+
+  /* Fetched on demand, not at the top of the file -- see
+     ../documents/pdfLibs.js. */
+  const { html2canvas, PDFDocument } = await loadPdfLibs();
 
   if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
     try { await document.fonts.ready; } catch { /* non-fatal */ }
