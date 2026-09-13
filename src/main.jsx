@@ -4885,7 +4885,7 @@ function JsaPreviewPagerModal({ jsa, plan, initialIndex = 0, onClose }) {
                   pages={[current.lines]}
                   indexOffset={current.idx}
                   signInTotal={plan.signInPages.length}
-                  pageOffset={1 + plan.continuationPages.length}
+                  pageOffset={1 + (plan.continuationColumns || []).length}
                   totalPages={plan.totalPages}
                   className="documentPage"
                 />
@@ -5153,11 +5153,28 @@ function PrintBrandHeader({ title, subtitle, pageNumber, totalPages }) {
 function PrintTaskTable({ columns, start, className = '' }) {
   const cols = columns || { tasks: [], hazards: [], controls: [] };
   const from = start || { tasks: 0, hazards: 0, controls: 0 };
+  /* The number is written out as ordinary text rather than left to the
+     browser's own list marker. html2canvas -- which is what actually
+     paints the PDF -- puts a ::marker on the top of the line box instead
+     of on the text's baseline, so every number floated about half a line
+     above its own task. It looked fine in the preview, because the
+     preview is the live DOM and the live DOM was right; it was only
+     wrong in the printed file. Plain text in a span is painted correctly,
+     which the body text on this same page has always proved.
+
+     The widths below are chosen to put the text at exactly the same x as
+     the old `padding-left: 15px` did, so nothing re-wraps and the page-fit
+     maths is untouched. */
   const column = (items, offset) => (
     items.length
       ? (
-        <ol className="printTaskList" start={offset + 1}>
-          {items.map((item, i) => <li key={`${offset}-${i}`}>{item}</li>)}
+        <ol className="printTaskList">
+          {items.map((item, i) => (
+            <li key={`${offset}-${i}`}>
+              <span className="printTaskNum">{offset + i + 1}.</span>
+              <span className="printTaskText">{item}</span>
+            </li>
+          ))}
         </ol>
       )
       : null
@@ -5520,10 +5537,18 @@ function PdfExportRoot({ jsa, plan, pageRefsRef }) {
           pageRef={el => { continuationRefs.current[idx] = el; }}
         />
       ))}
+      {/* continuationColumns, NOT continuationPages -- the two arrays can
+          have different lengths, and only continuationColumns is what
+          actually gets rendered above. Counting the wrong one numbered a
+          real five-page JSA "1, 3, 4, 5, 6 of 5": every sign-in sheet
+          reserved a page for a continuation sheet that was never printed,
+          and the last one claimed to be page 6 of 5. totalPages was fixed
+          to read continuationColumns some time ago; these three offsets
+          were left behind. */}
       <AttachedSignIn
         jsa={jsa}
         pages={plan.signInPages}
-        pageOffset={1 + plan.continuationPages.length}
+        pageOffset={1 + (plan.continuationColumns || []).length}
         totalPages={plan.totalPages}
         getPageRef={(idx, el) => { signInRefs.current[idx] = el; }}
       />
@@ -5799,7 +5824,7 @@ function PrintableJsa({ jsa }) {
       <AttachedSignIn
         jsa={jsa}
         pages={plan.signInPages}
-        pageOffset={1 + plan.continuationPages.length}
+        pageOffset={1 + (plan.continuationColumns || []).length}
         totalPages={plan.totalPages}
       />
     </div>

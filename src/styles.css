@@ -2580,7 +2580,14 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 .documentPage .continuationTaskTable td { height: 35px; font-size: 9.8px; line-height: 1.2; }
 .documentPage .continuationNotice { border: 1px solid #000; border-top: 0; padding: 4px 5px; font-size: 8px; line-height: 1.15; background: #f4f4f4; }
 .documentPage .continuationInfoTable th, .documentPage .continuationInfoTable td,
-.documentPage .signInInfoTable th, .documentPage .signInInfoTable td { font-size: 8.6px; padding: 3px 4px; }
+/* Two-line clearance. Three foremen on one JSA wraps this cell onto a
+   second line, and at the old 3px/1.3 that second line printed sitting on
+   the row's bottom rule -- "Kris Taute" with the rule through it. Same
+   cause as the main page's info table (see the note above it): html2canvas
+   paints text lower than the live DOM says, so a row with no slack has
+   nowhere to absorb it. Same remedy, now that the sign-in sheet has been
+   reported too. */
+.documentPage .signInInfoTable th, .documentPage .signInInfoTable td { font-size: 8.6px; padding: 3.5px 4px 5px; line-height: 1.42; }
 .documentPage .signInAck { font-size: 8.8px; line-height: 1.2; padding: 4px 5px; }
 .documentPage .attachedSignatureGrid {
   flex: 0 0 auto;
@@ -2619,7 +2626,7 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   flex: 0 0 100%;
   padding-left: 16px;
   font-size: 8px;
-  line-height: 10px;
+  line-height: 14px;
   letter-spacing: 0.02em;
   color: #000;
   white-space: nowrap;
@@ -2777,7 +2784,7 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   .printInfoTable th { width: 13%; background: #ededed !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-weight: 700; text-align: left; font-size: 8.8px; padding: 2.8px 4px !important; line-height: 1.16; }
   .printInfoTable td { width: 20%; font-size: 8.8px; padding: 2.8px 4px !important; line-height: 1.16; }
   .continuationInfoTable th, .continuationInfoTable td,
-  .signInInfoTable th, .signInInfoTable td { font-size: 8.6px; padding: 3px 4px; }
+  .signInInfoTable th, .signInInfoTable td { font-size: 8.6px; padding: 3.5px 4px 5px; line-height: 1.42; }
 
   .ackBlock { border: 1px solid #000; border-top: 0; padding: 5px 6px; font-size: 8.2px; text-transform: uppercase; line-height: 1.24; }
   .signInAck { font-size: 8.8px; line-height: 1.2; padding: 4px 5px; }
@@ -2883,7 +2890,7 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
     flex: 0 0 100%;
     padding-left: 16px;
     font-size: 8px;
-    line-height: 10px;
+    line-height: 14px;
     letter-spacing: 0.02em;
     color: #000;
     white-space: nowrap;
@@ -3057,7 +3064,7 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 .printMeasureRoot .printTaskTable td, .pdfExportRoot .printTaskTable td { height: 24px; padding: 3.5px 4.5px; font-size: 9.8px; line-height: 1.32; vertical-align: middle; white-space: pre-line; overflow-wrap: break-word; }
 .printMeasureRoot .continuationTaskTable td, .pdfExportRoot .continuationTaskTable td { height: 35px; font-size: 9.8px; line-height: 1.34; }
 .printMeasureRoot .continuationInfoTable th, .pdfExportRoot .continuationInfoTable th, .printMeasureRoot .continuationInfoTable td, .pdfExportRoot .continuationInfoTable td,
-.printMeasureRoot .signInInfoTable th, .pdfExportRoot .signInInfoTable th, .printMeasureRoot .signInInfoTable td, .pdfExportRoot .signInInfoTable td { font-size: 8.6px; padding: 3px 4px; }
+.printMeasureRoot .signInInfoTable th, .pdfExportRoot .signInInfoTable th, .printMeasureRoot .signInInfoTable td, .pdfExportRoot .signInInfoTable td { font-size: 8.6px; padding: 3.5px 4px 5px; line-height: 1.42; }
 .printMeasureRoot .continuationNotice, .pdfExportRoot .continuationNotice { border: 1px solid #000; border-top: 0; padding: 4px 5px; font-size: 8px; line-height: 1.15; background: #f4f4f4; }
 .printMeasureRoot .continuationFlag, .pdfExportRoot .continuationFlag { border: 1px solid #9b111e; margin-top: 3px; padding: 3px 5px; text-align: center; font-weight: 700; font-size: 7px; color: #7f1d1d; background: #fff1f2; }
 .printMeasureRoot .printFooter, .pdfExportRoot .printFooter { border-top: 1px solid #999; padding-top: 3px; text-align: center; font-size: 7px; color: #333; letter-spacing: .2px; }
@@ -3117,12 +3124,24 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 }
 .pdfExportRoot .attachedSigLineNum { flex: 0 0 auto; }
 /* Must match .attachedSigLineName in the @media print block exactly --
-   this is the copy that actually becomes the PDF. */
+   this is the copy that actually becomes the PDF.
+
+   line-height is 14px, not the 10px it shipped with. At 10px the box was
+   barely taller than the 8px text, and `overflow: hidden` -- which is
+   here for the ellipsis on a long name -- then sliced the bottom off
+   every name in the real export: "Gaines Newell" and "travis kennedy"
+   both cut through the baseline on a live archived JSA. The live DOM was
+   innocent; html2canvas simply paints text lower than the box says, and
+   a box with no slack has nowhere to put it.
+
+   14px keeps the row at exactly 55px, which matters -- the whole sign-in
+   pagination is built on that number (see SIGNIN_ROW_HEIGHT_PX), and a
+   taller row would move every page boundary on the sheet. */
 .pdfExportRoot .attachedSigLineName {
   flex: 0 0 100%;
   padding-left: 16px;
   font-size: 8px;
-  line-height: 10px;
+  line-height: 14px;
   letter-spacing: 0.02em;
   color: #000;
   white-space: nowrap;
@@ -3535,13 +3554,31 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
    by before. */
 .documentPage .printTaskTable td,
 .documentPage .continuationTaskTable td { vertical-align: top; }
+/* The number is a real span, not a ::marker -- html2canvas paints a
+   marker on the top of the line box instead of on the text's baseline,
+   which floated every number about half a line above its own task in the
+   printed PDF while the live preview looked perfect. See PrintTaskTable.
+
+   12px + 3px = the 15px the old padding-left reserved, so the task text
+   starts on exactly the same x, nothing re-wraps, and the page-fit
+   maths above is untouched. */
 .documentPage .printTaskList,
 .documentPage .continuationTaskTable .printTaskList {
   margin: 0;
-  padding-left: 15px;
-  list-style-position: outside;
+  padding-left: 0;
+  list-style: none;
 }
+.documentPage .printTaskList .printTaskNum {
+  flex: 0 0 12px;
+  text-align: right;
+  padding-right: 3px;
+  font-size: 8.6px;
+  color: #333;
+}
+.documentPage .printTaskList .printTaskText { flex: 1 1 auto; min-width: 0; }
 .documentPage .printTaskList li {
+  display: flex;
+  align-items: baseline;
   font-size: 9.8px;
   line-height: 1.25;
   padding: 0 0 1.5px;
@@ -3550,19 +3587,27 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
      one entry, so it must not reintroduce the cell's newline handling. */
   white-space: normal;
 }
-.documentPage .printTaskList li::marker { font-size: 8.6px; color: #333; }
 
 @media print {
   .printTaskTable td, .continuationTaskTable td { vertical-align: top; }
-  .printTaskList { margin: 0; padding-left: 15px; list-style-position: outside; }
+  .printTaskList { margin: 0; padding-left: 0; list-style: none; }
+  .printTaskList .printTaskNum {
+    flex: 0 0 12px;
+    text-align: right;
+    padding-right: 3px;
+    font-size: 8.6px;
+    color: #333;
+  }
+  .printTaskList .printTaskText { flex: 1 1 auto; min-width: 0; }
   .printTaskList li {
+    display: flex;
+    align-items: baseline;
     font-size: 9.8px;
     line-height: 1.25;
     padding: 0 0 1.5px;
     overflow-wrap: break-word;
     white-space: normal;
   }
-  .printTaskList li::marker { font-size: 8.6px; color: #333; }
 }
 
 /* The column layout is ONE table row, so the table no longer grows by

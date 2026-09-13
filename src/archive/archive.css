@@ -224,3 +224,64 @@
    numbers first -- which is the whole point of the column (Fonzo,
    2026-09-11: "easier to notice which jobs we have"). */
 .arcFallback { color: var(--text-3, var(--muted)); }
+
+/* ── Portrait, on a phone ──
+   Seven columns do not fit across 390px. The table used to be left to
+   scroll sideways inside .arcTableWrap, which meant the document date ran
+   off the edge, the action buttons wrapped, and every row grew to the
+   height of the tallest thing in it -- a screen of mostly empty boxes
+   with a column of dashes down the middle.
+
+   So below 760px it stops being a table and each record becomes a card.
+   Nothing is hidden and nothing scrolls sideways: every value keeps its
+   own heading, supplied by the data-label on each cell in ArchiveView.
+   The type badge and the date lead, because those are what somebody is
+   scanning for. */
+@media (max-width: 760px) {
+  .arcTableWrap { overflow-x: visible; }
+  .arcTable,
+  .arcTable tbody,
+  .arcTable tr,
+  .arcTable td { display: block; width: auto; }
+  .arcTable { border: 0; background: none; }
+  /* The header row is what the per-cell labels replace. */
+  .arcTable thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+  .arcTable tbody tr {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    padding: 14px 15px 12px;
+    margin-bottom: 10px;
+  }
+  .arcTable tbody tr:hover { background: var(--surface); }
+
+  .arcTable td { border-bottom: 0; padding: 0; font-size: 16px; }
+  /* Every cell after the type badge carries its heading above it. */
+  .arcTable td[data-label] { display: grid; grid-template-columns: 118px 1fr; gap: 10px; align-items: baseline; padding: 5px 0; }
+  .arcTable td[data-label]::before {
+    content: attr(data-label);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+  /* An em dash under a heading is noise on a small screen -- a card with
+     no employee on it simply does not mention one. The four document
+     types that never carry a name stop printing a column of dashes. */
+  .arcTable td[data-label]:not(:has(*)) { color: var(--text-3); }
+
+  .arcTable tbody tr td:first-child { padding-bottom: 8px; margin-bottom: 4px; border-bottom: 1px solid var(--line); }
+
+  /* .arcTable td wins on specificity over a bare .arcRowActions, so
+     the class has to be qualified or the buttons never lay out. */
+  .arcTable td.arcRowActions { white-space: normal; display: flex; gap: 8px; padding-top: 12px; }
+  .arcTable td.arcRowActions .btn { margin-left: 0; flex: 1 1 auto; min-height: 44px; }
+
+  /* Six shelves two-up rather than one enormous column. */
+  .arcShelves { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 20px; }
+  .arcShelf { min-height: 74px; padding: 12px 14px; }
+  .arcShelfCount { font-size: 28px; }
+  .arcShelfName { font-size: 12px; letter-spacing: .08em; }
+}

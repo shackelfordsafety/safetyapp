@@ -14,8 +14,12 @@
   height: 44px;
   padding: 0;
   border: 0;
-  background:
-    radial-gradient(circle at center, var(--surface) 0 13px, transparent 13.5px);
+  /* No fill. It used to paint a 26px disc of --surface behind the mark,
+     which is invisible only while the thing behind it happens to be that
+     same colour -- on the Records heading in dark mode it showed up as a
+     stray dark block sitting next to the title. The ring below is what
+     makes it read as a button; the disc was never doing that job. */
+  background: none;
   box-shadow: none;
   font: inherit;
   font-size: 15px;

@@ -622,15 +622,20 @@ export default function ArchiveView() {
                     <span className="arcType">{DOC_LABELS[r.doc_type] || r.doc_type}</span>
                     {r.source === 'uploaded' && <span className="arcUploaded">Uploaded</span>}
                   </td>
-                  <td>{r.employee_name || '—'}</td>
+                  {/* data-label is what each cell calls itself once the
+                      table stops being a table. On a phone held upright
+                      seven columns cannot fit, so each row becomes a card
+                      and every value needs to carry its own heading --
+                      see the portrait block in archive.css. */}
+                  <td data-label="Employee">{r.employee_name || '—'}</td>
                   {/* Job # where the document carries one -- only the JSA
                       asks for it today. The five others fall back to the
                       job site rather than showing an empty column, which
                       would make the archive look broken. */}
-                  <td>{r.jobNumber || (r.job_site ? <span className="arcFallback">{r.job_site}</span> : '—')}</td>
-                  <td>{fmtDate(r.doc_date)}</td>
-                  <td>{fmtWhen(r.submitted_at)}</td>
-                  <td>{r.filedByName || <span className="arcNoFiler">Not recorded</span>}</td>
+                  <td data-label="Job #">{r.jobNumber || (r.job_site ? <span className="arcFallback">{r.job_site}</span> : '—')}</td>
+                  <td data-label="Document date">{fmtDate(r.doc_date)}</td>
+                  <td data-label="Filed">{fmtWhen(r.submitted_at)}</td>
+                  <td data-label="Filed by">{r.filedByName || <span className="arcNoFiler">Not recorded</span>}</td>
                   <td className="arcRowActions" onClick={e => e.stopPropagation()}>
                     {r.pdf_path && (
                       <button type="button" className="btn secondary sm" onClick={() => openPdf(r)} disabled={opening === r.id}>

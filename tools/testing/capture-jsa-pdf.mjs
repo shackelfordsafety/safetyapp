@@ -47,7 +47,7 @@ const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--stric
 try {
   await waitForServer(BASE_URL, 25000);
   const browser = await chromium.launch();
-  const draftJson = readFileSync(path.join(__dirname, 'fixtures', 'entergy-taps-draft.json'), 'utf8');
+  const draftJson = readFileSync(path.join(__dirname, 'fixtures', process.env.JSA_FIXTURE || 'entergy-taps-draft.json'), 'utf8');
 
   const ctx = await browser.newContext({ viewport: { width: 1180, height: 900 }, acceptDownloads: true });
   await ctx.addInitScript(j => window.localStorage.setItem('sdc.jsa.draft.v4', j), draftJson);
