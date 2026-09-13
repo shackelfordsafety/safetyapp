@@ -3714,3 +3714,94 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 @media (prefers-reduced-motion: reduce) {
   .screenLoadingBar::after { animation: none; width: 100%; opacity: 0.45; }
 }
+
+/* ── Today at a glance, on Home ──
+   Counts, not rows. Home used to list unfinished documents and so did My
+   Work, which is what made Fonzo say the two screens were "doing each
+   other's jobs" (2026-09-13). The rows live in My Work now; these are the
+   numbers, and every one of them is a way in.
+
+   Built as real buttons rather than tiles-with-a-click so they announce
+   themselves properly and take a keyboard. */
+.homeToday .glanceRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+.glanceItem {
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  text-align: left;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.glanceItem:hover { border-color: var(--navy, #171719); }
+.glanceItem:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.glanceNum {
+  font-family: var(--font-condensed);
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.glanceLabel {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-3, var(--muted));
+}
+/* The one that is somebody's move gets the company red. Everything else
+   stays quiet -- a screen where four things shout is a screen where
+   nothing does. */
+.glanceItem--act { border-color: var(--accent); }
+.glanceItem--act .glanceNum { color: var(--accent); }
+
+/* A JSA the crew is signing right now, spelled out rather than counted. */
+.signingList { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; }
+.signingRow {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.signingRow:hover { border-color: var(--navy, #171719); }
+.signingRow:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.signingDot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--good, #1F7A4D);
+}
+.signingLabel { flex: 1 1 auto; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.signingCount { flex: 0 0 auto; font-size: 14px; color: var(--text-2, var(--muted)); font-variant-numeric: tabular-nums; }
+
+@media (max-width: 560px) {
+  .homeToday .glanceRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .glanceItem { padding: 12px 14px; }
+  .glanceNum { font-size: 27px; }
+  .signingCount { font-size: 13px; }
+}
+
+/* A start tile for a document that is already underway. Marked so it
+   reads as "pick this back up" at a glance rather than looking like the
+   five beside it that have not been touched. */
+.startDocTile--open { border-color: var(--accent); }
+.startDocTileOpen { display: grid; gap: 2px; margin: 0 0 4px; }
+.startDocTileOpen strong { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.startDocTileOpen span { font-size: 13.5px; color: var(--text-2, var(--muted)); }

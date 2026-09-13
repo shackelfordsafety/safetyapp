@@ -87,10 +87,17 @@ async function main() {
     /* The heading always renders -- it is the COUNT after it that said
        'NOT FINISHED - 1' on Fonzo's phone over a JSA he had already
        published. */
-    const eyebrow = await page.locator('.homeSectionEyebrow', { hasText: /Not finished/i }).first().innerText();
-    check('JSA: Home counts no unfinished work', /0s*$/.test(eyebrow.trim()), eyebrow.trim());
-    const cards = await page.locator('.continueCard').count();
-    check('JSA: and no draft card is left on Home', cards === 0, `${cards} card(s)`);
+    /* The count moved 2026-09-13. It used to be part of a section heading
+       reading "Not finished - 1"; Home now leads with a row of counts and
+       the rows themselves live in My Work. Same number, same meaning, new
+       element -- so this reads the tile instead of the heading. */
+    const notFinished = await page.locator('.glanceItem', { hasText: /Not finished/i }).first().innerText();
+    check('JSA: Home counts no unfinished work', /(^|\D)0(\D|$)/.test(notFinished.trim()), notFinished.trim().replace(/\n/g, ' '));
+    /* And the start tile must be offering to START one, not to continue
+       one -- a tile that still said "Continue JSA" would mean the draft
+       survived the discard. */
+    const stillOpen = await page.locator('.startDocTile--open').count();
+    check('JSA: and no tile is still offering to continue it', stillOpen === 0, `${stillOpen} tile(s)`);
 
     /* 3. One of the four on the shared hook, same shape: start a new one
           while the old one is mid-save. */

@@ -100,13 +100,15 @@ async function main() {
     // Home should now show all six waiting.
     await page.getByRole('button', { name: 'Home', exact: false }).first().click();
     await page.waitForTimeout(700);
-    /* Home shows at most four cards and counts the rest -- deliberate,
-       MAX_VISIBLE in main.jsx. So the COUNT is what proves all six landed;
-       asserting on cards would just be asserting the cap. */
-    const eyebrow = await page.locator('.homeSectionEyebrow', { hasText: /Not finished/i }).first().innerText();
-    check('Home counts all six as unfinished', /6s*$/.test(eyebrow.trim()), eyebrow.trim());
-    const cards = await page.locator('.continueCard').count();
-    check('and shows the first four, the rest counted', cards === 4, `${cards} cards`);
+    /* Home stopped listing unfinished documents on 2026-09-13 -- the rows
+       live in My Work and Home carries the count, because both screens
+       listing the same drafts is what made them feel interchangeable. So
+       the count still proves all six landed, and each one's own start tile
+       should now be offering to continue it rather than start it. */
+    const notFinished = await page.locator('.glanceItem', { hasText: /Not finished/i }).first().innerText();
+    check('Home counts all six as unfinished', /(^|\D)6(\D|$)/.test(notFinished.trim()), notFinished.trim().replace(/\n/g, ' '));
+    const openTiles = await page.locator('.startDocTile--open').count();
+    check('and every one of the six tiles offers to continue it', openTiles === 6, `${openTiles} tiles`);
 
     // And the clear-down works.
     await goSettings(page);

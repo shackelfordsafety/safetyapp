@@ -10,6 +10,7 @@ import CrewSignInKiosk from './jsa/CrewSignInKiosk';
 import { getContentRows, getContentColumns } from './jsa/jsaContent';
 import { handOffDraft, readLastFinished } from './shared/handOff';
 import useWaitingCount from './open/useWaitingCount';
+import useTodayGlance from './today/useTodayGlance';
 
 /* Shown while a screen that loads on demand is on its way. Says what is
    happening and shows the app is alive -- on bad site signal a bare line
@@ -2929,7 +2930,7 @@ function App() {
             </div>
           )}
           {tab === 'home' && (
-            <HomeView customTemplates={customTemplates} setTab={setTab} docEntries={homeDocEntries} />
+            <HomeView customTemplates={customTemplates} setTab={setTab} docEntries={homeDocEntries} waitingCount={waitingCount} />
           )}
           {tab === 'documents' && !activeDoc && (
             <DocCenterView startHandlers={{
@@ -3151,19 +3152,23 @@ function docNumber(id) {
 }
 
 /* ── Home view ──
-   Two questions, in the order a field user actually asks them: "let me finish
-   what I started" and "let me start the right document". Both are answered
-   across ALL six document types on equal footing — see homeDocEntries in
-   App() for why that ordering changed — followed by the Workspace shortcuts. */
-function HomeView({ customTemplates, setTab, docEntries }) {
+   Two questions, in the order a field user actually asks them: "what is
+   happening today" and "let me start the right document".
+
+   It used to open with a list of unfinished documents, which My Work also
+   listed -- the same set of documents on two screens, which is exactly why
+   Fonzo said the two "are doing each other's jobs" (2026-09-13). Home now
+   answers the first question with COUNTS and leaves the rows to My Work.
+   The six start tiles stay, because starting the morning JSA is the thing
+   that happens every single day and it belongs one tap from opening the
+   app. */
+function HomeView({ customTemplates, setTab, docEntries, waitingCount = 0 }) {
+  const glance = useTodayGlance();
   const [query, setQuery] = useState('');
   const inProgress = docEntries.filter(e => e.draft);
   const q = query.trim().toLowerCase();
   const matching = q ? inProgress.filter(e => e.draft.title.toLowerCase().includes(q)) : inProgress;
   const sorted = [...matching].sort((a, b) => b.draft.savedAt - a.draft.savedAt);
-  const MAX_VISIBLE = 4;
-  const visible = q ? sorted : sorted.slice(0, MAX_VISIBLE);
-  const overflowCount = q ? 0 : Math.max(0, sorted.length - MAX_VISIBLE);
 
   return (
     <div className="homeLayout">
@@ -3188,16 +3193,67 @@ function HomeView({ customTemplates, setTab, docEntries }) {
         </label>
       </header>
 
-      <section className="homeSection">
-        <span className="homeSectionEyebrow">Not finished &middot; {inProgress.length}</span>
-        {inProgress.length === 0 ? (
-          /* Says what this section is FOR, not what you supposedly did.
-             It used to read "Everything you started is signed and
-             downloaded" -- which is a flat lie to somebody opening the app
-             for the first time, who has started nothing (outside tester,
-             2026-09-10). There is no reliable way to tell a brand-new user
-             from one who cleared his work, so the copy is written to be
-             true for both. */
+      {/* Today at a glance. Every line is a number and a way into the
+          rows behind it -- no line is the only copy of anything. Lines
+          that need an account simply do not appear without one, rather
+          than nagging a crew member to sign in for something that is not
+          his job. */}
+      <section className="homeSection homeToday">
+        <span className="homeSectionEyebrow">Today</span>
+        <div className="glanceRow">
+          <button type="button" className="glanceItem" onClick={() => setTab('today')}>
+            <span className="glanceNum">{inProgress.length}</span>
+            <span className="glanceLabel">Not finished</span>
+          </button>
+          {glance.signedIn && (
+            <button type="button" className="glanceItem" onClick={() => setTab('board')}>
+              <span className="glanceNum">{glance.outForSigning.length}</span>
+              <span className="glanceLabel">Out for signing</span>
+            </button>
+          )}
+          {glance.signedIn && (
+            <button type="button" className="glanceItem" onClick={() => setTab('today')}>
+              <span className="glanceNum">{glance.filedToday}</span>
+              <span className="glanceLabel">Filed today</span>
+            </button>
+          )}
+          {waitingCount > 0 && (
+            <button type="button" className="glanceItem glanceItem--act" onClick={() => setTab('today')}>
+              <span className="glanceNum">{waitingCount}</span>
+              <span className="glanceLabel">Waiting on you</span>
+            </button>
+          )}
+        </div>
+
+        {/* The one thing worth spelling out rather than counting: a JSA
+            the crew is signing right now, and how far along it is. */}
+        {glance.outForSigning.length > 0 && (
+          <ul className="signingList">
+            {glance.outForSigning.map(b => (
+              <li key={b.id}>
+                <button type="button" className="signingRow" onClick={() => setTab('board')}>
+                  <span className="signingDot" aria-hidden="true" />
+                  <span className="signingLabel">{b.label}</span>
+                  <span className="signingCount">
+                    {b.expected ? `${b.signed} of ${b.expected} signed` : `${b.signed} signed`}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* Nothing started, nothing out signing, nothing filed, nothing
+            waiting -- which is what a brand-new account sees, and what
+            anybody sees first thing in the morning. Says what this screen
+            is FOR rather than congratulating somebody on work they have
+            not done: an outside tester (2026-09-10) found the old copy
+            claiming "Everything you started is signed and downloaded" to
+            a man who had started nothing. There is no reliable way to
+            tell a new user from one who finished everything, so this is
+            written to be true for both. */}
+        {inProgress.length === 0 && waitingCount === 0
+          && glance.outForSigning.length === 0 && glance.filedToday === 0 && (
           <div className="homeEmptyRow">
             <span className="homeEmptyCheck" aria-hidden="true">&#10003;</span>
             <div className="homeEmptyText">
@@ -3205,17 +3261,39 @@ function HomeView({ customTemplates, setTab, docEntries }) {
               <span>Anything you start shows up here until it&rsquo;s signed and filed. Pick one below to begin.</span>
             </div>
           </div>
-        ) : matching.length === 0 ? (
-          <div className="homeEmptyRow">
-            <div className="homeEmptyText">
-              <strong>No matches</strong>
-              <span>Nothing unfinished matches &ldquo;{query}&rdquo;.</span>
+        )}
+
+        {inProgress.length > 0 && (
+          <button type="button" className="homeSeeAll" onClick={() => setTab('today')}>
+            {/* Deliberately does not contain the word "documents". It used
+                to read "Finish 2 started documents", which collides with
+                the Documents shortcut further down the page -- anything
+                looking for a control called Documents found this one
+                first, because it sits above it. A person scanning the
+                screen has the same problem. The count is already on the
+                tile above this line. */}
+            Finish what you started &rsaquo;
+          </button>
+        )}
+      </section>
+
+      {/* Search still works, it just is not the resting state of the
+          screen any more. It only ever filtered unfinished documents, so
+          with that list moved to My Work it shows its results here on
+          demand instead of sitting empty. */}
+      {q && (
+        <section className="homeSection">
+          <span className="homeSectionEyebrow">Matching your search &middot; {matching.length}</span>
+          {matching.length === 0 ? (
+            <div className="homeEmptyRow">
+              <div className="homeEmptyText">
+                <strong>No matches</strong>
+                <span>Nothing unfinished matches &ldquo;{query}&rdquo;.</span>
+              </div>
             </div>
-          </div>
-        ) : (
-          <>
+          ) : (
             <div className="continueGrid">
-              {visible.map(e => {
+              {sorted.map(e => {
                 const { progress } = e.draft;
                 const pct = progress.total ? Math.round((progress.done / progress.total) * 100) : 0;
                 const Icon = DOC_ICONS[e.id] || IconDocuments;
@@ -3235,14 +3313,9 @@ function HomeView({ customTemplates, setTab, docEntries }) {
                 );
               })}
             </div>
-            {overflowCount > 0 && (
-              <button type="button" className="homeSeeAll" onClick={() => setTab('today')}>
-                See all {sorted.length} &rsaquo;
-              </button>
-            )}
-          </>
-        )}
-      </section>
+          )}
+        </section>
+      )}
 
       <section className="homeSection">
         <span className="homeSectionEyebrow">Start a Document</span>
@@ -3250,20 +3323,39 @@ function HomeView({ customTemplates, setTab, docEntries }) {
           {docEntries.map(e => {
             const Icon = DOC_ICONS[e.id] || IconDocuments;
             return (
-              <section className="startDocTile" key={e.id}>
+              /* A tile whose document is already started says Continue and
+                 opens it. Moving the unfinished list off Home left no way
+                 to pick a draft back up from the first screen -- and worse,
+                 the tile still said "Start", so the obvious tap on a JSA
+                 you were halfway through was the one that offered to throw
+                 it away. The tile is the natural place for this: one entry
+                 per document type, saying what that document's actual
+                 state is. */
+              <section className={`startDocTile${e.draft ? ' startDocTile--open' : ''}`} key={e.id}>
                 <div className="startDocTileHead">
                   <Icon className="startDocTileIcon" />
                   <span className="startDocTileNum">{docNumber(e.id)}</span>
                 </div>
                 <h2>{e.shortTitle}</h2>
-                <p>{e.description}</p>
+                {e.draft ? (
+                  <p className="startDocTileOpen">
+                    <strong>{e.draft.title}</strong>
+                    <span>{e.draft.nextStep} &middot; saved {e.draft.savedLabel}</span>
+                  </p>
+                ) : (
+                  <p>{e.description}</p>
+                )}
                 {e.onBrowseTemplates && (
                   <button type="button" className="btn ghost sm startDocTileTemplates" onClick={e.onBrowseTemplates}>
                     Templates{customTemplates.length > 0 ? ` (${customTemplates.length})` : ''}
                   </button>
                 )}
-                <button type="button" className="startDocTileStart" onClick={e.onStart}>
-                  {e.startLabel}<span aria-hidden="true">&rsaquo;</span>
+                <button
+                  type="button"
+                  className="startDocTileStart"
+                  onClick={e.draft ? e.draft.onOpen : e.onStart}
+                >
+                  {e.draft ? e.continueLabel : e.startLabel}<span aria-hidden="true">&rsaquo;</span>
                 </button>
               </section>
             );
