@@ -15,6 +15,19 @@ import useTodayGlance from './today/useTodayGlance';
 /* Shown while a screen that loads on demand is on its way. Says what is
    happening and shows the app is alive -- on bad site signal a bare line
    of grey text alone on a white page reads as a crash. */
+/* The mark that goes with the "this needs you" red, everywhere it is used.
+   Fonzo, 2026-09-13: "anything w 'this needs you' red put an exclamation
+   point on it."
+
+   Colour on its own is a bad way to carry meaning on a phone in the sun,
+   on a screen with the brightness down, or for the roughly one man in
+   twelve who does not see red the way the rest do. The colour stays -- it
+   just no longer has to do the job alone. Hidden from screen readers,
+   which are already told in words what is waiting. */
+function NeedsYouMark() {
+  return <span className="needsYouMark" aria-hidden="true">!</span>;
+}
+
 function ScreenLoading({ label }) {
   return (
     <div className="screenLoading" role="status" aria-live="polite">
@@ -3143,13 +3156,15 @@ const DOC_ICONS = {
   separation: IconSeparation,
 };
 
-/* "01"-"06" — part of the document's name per the C2 spec (tile, header
-   eyebrow, and draft card all show it), derived from DOCUMENT_REGISTRY's
-   own order rather than stored anywhere, so it can't drift out of sync. */
-function docNumber(id) {
-  const idx = DOCUMENT_REGISTRY.findIndex(d => d.id === id);
-  return idx === -1 ? '' : String(idx + 1).padStart(2, '0');
-}
+/* The "01"-"06" that used to sit on every tile and draft card are gone
+   (2026-09-13, Fonzo: "delete the numbers"). They came from the C2 spec
+   and they looked like a sequence, which is the one thing they were not:
+   a JSA is not step one of anything, you pick the document you need. A
+   number that encodes no real order is decoration, and it was competing
+   with the document's own name for the eye.
+
+   Nothing is renumbered by this -- there was never a number stored
+   anywhere, it was always derived from DOCUMENT_REGISTRY's order. */
 
 /* ── Home view ──
    Two questions, in the order a field user actually asks them: "what is
@@ -3220,7 +3235,11 @@ function HomeView({ customTemplates, setTab, docEntries, waitingCount = 0 }) {
           {waitingCount > 0 && (
             <button type="button" className="glanceItem glanceItem--act" onClick={() => setTab('today')}>
               <span className="glanceNum">{waitingCount}</span>
-              <span className="glanceLabel">Waiting on you</span>
+              {/* Red alone is not allowed to carry the meaning. Anything
+                  wearing the "this needs you" red also wears a mark, so it
+                  reads the same to somebody who does not see the colour --
+                  in sunlight, on a washed-out screen, or colour-blind. */}
+              <span className="glanceLabel">Waiting on you<NeedsYouMark /></span>
             </button>
           )}
         </div>
@@ -3300,7 +3319,7 @@ function HomeView({ customTemplates, setTab, docEntries, waitingCount = 0 }) {
                 return (
                   <section className="continueCard" key={e.id}>
                     <div className="continueCardBody">
-                      <span className="continueCardType"><Icon className="continueCardIcon" />{docNumber(e.id)} &middot; {e.shortTitle}</span>
+                      <span className="continueCardType"><Icon className="continueCardIcon" />{e.shortTitle}</span>
                       <strong className="continueCardTitle">{e.draft.title}</strong>
                       <span className="continueCardMeta">{e.draft.nextStep} &middot; saved {e.draft.savedLabel}</span>
                       <span className="continueWorkProgress">
@@ -3334,7 +3353,6 @@ function HomeView({ customTemplates, setTab, docEntries, waitingCount = 0 }) {
               <section className={`startDocTile${e.draft ? ' startDocTile--open' : ''}`} key={e.id}>
                 <div className="startDocTileHead">
                   <Icon className="startDocTileIcon" />
-                  <span className="startDocTileNum">{docNumber(e.id)}</span>
                 </div>
                 <h2>{e.shortTitle}</h2>
                 {/* A tile that is not started says nothing beyond its own
@@ -3346,7 +3364,7 @@ function HomeView({ customTemplates, setTab, docEntries, waitingCount = 0 }) {
                     type, with details". */}
                 {e.draft && (
                   <p className="startDocTileOpen">
-                    <strong>{e.draft.title}</strong>
+                    <strong>{e.draft.title}<NeedsYouMark /></strong>
                     <span>{e.draft.nextStep} &middot; saved {e.draft.savedLabel}</span>
                   </p>
                 )}

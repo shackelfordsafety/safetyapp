@@ -3845,3 +3845,33 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   padding-top: 6px;
   margin-top: 2px;
 }
+
+/* ── "This needs you" ──
+   The mark that rides along with the accent red wherever it means
+   something is somebody's move. Fonzo, 2026-09-13: "anything w 'this
+   needs you' red put an exclamation point on it."
+
+   Colour on its own is a poor carrier of meaning on a phone in direct
+   sun, on a screen dimmed to save battery, or for the roughly one man in
+   twelve who does not see red the way the rest do. The red stays; it
+   just no longer has to do the job by itself. */
+.needsYouMark {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink, #fff);
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: none;
+  vertical-align: text-bottom;
+}
+/* The draft title truncates; the mark must not be what gets truncated. */
+.startDocTileOpen strong { white-space: normal; overflow: visible; text-overflow: clip; }
