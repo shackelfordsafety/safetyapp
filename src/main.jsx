@@ -5584,8 +5584,19 @@ function dataUrlToUint8Array(dataUrl) {
    capture, success or failure, so the mutation never outlives a single
    page's capture and can never accumulate across repeated exports. */
 function prepareSingleLineTextForCapture(pageEl) {
+  /* The task table's own column headers are included here. They are plain
+     single-line cells exactly like the info table's, and they were simply
+     never on this list -- so they kept the full downward bias and printed
+     sitting on their bottom border, 11.6px of white above the text and
+     none below, right beside info-table rows that were properly centred.
+     Measured across all 168 cells of a real five-page export.
+
+     So is the number on each sign-in line. On a blank sheet it is the
+     only ink in a 55px box and it read 29.2 above / 16.8 below -- about
+     six pixels low, which is this same quirk and nothing else. */
   const cells = pageEl.querySelectorAll(
-    '.printInfoTable th, .printInfoTable td, .printSimpleTable th, .printSimpleTable td'
+    '.printInfoTable th, .printInfoTable td, .printSimpleTable th, .printSimpleTable td, '
+    + '.printTaskTable th, .continuationTaskTable th, .attachedSigLineNum'
   );
   const wrappedSpans = [];
   cells.forEach((cell) => {
@@ -5607,12 +5618,44 @@ function prepareSingleLineTextForCapture(pageEl) {
     wrappedSpans.push(span);
   });
 
+  /* The acknowledgement paragraph and the sign-in notice need the same
+     correction, but they cannot get it the same way. Both open with a
+     bold lead-in ("Subcontractors/Employee(s) Acknowledgement:",
+     "Sign-In:") in its own <strong>, so shifting only the text node would
+     lift the sentence and leave its own heading behind. And the
+     acknowledgement runs to three lines, which the single-line rule above
+     deliberately refuses to touch.
+
+     So their CONTENTS are wrapped and moved, not the block itself. A
+     first attempt put the shift on the block and changed nothing: these
+     blocks draw their own border, so moving the element takes the border
+     along with it and the text sits exactly where it did inside the box.
+     The measurements said so immediately -- 12.4/0 before, 12.8/0 after.
+
+     The same -5px used everywhere else in this app lands them in the same
+     band as every other row on the page. */
+  const shiftedBlocks = [];
+  pageEl.querySelectorAll('.ackBlock, .attachedSignInNotice').forEach((block) => {
+    if (block.querySelector(':scope > .pdfBlockTextShift')) return;
+    const inner = document.createElement('span');
+    inner.className = 'pdfBlockTextShift';
+    while (block.firstChild) inner.appendChild(block.firstChild);
+    block.appendChild(inner);
+    shiftedBlocks.push(inner);
+  });
+
   return function cleanupSingleLineTextCapture() {
     wrappedSpans.forEach((span) => {
       const parent = span.parentNode;
       if (!parent) return;
       while (span.firstChild) parent.insertBefore(span.firstChild, span);
       parent.removeChild(span);
+    });
+    shiftedBlocks.forEach((inner) => {
+      const parent = inner.parentNode;
+      if (!parent) return;
+      while (inner.firstChild) parent.insertBefore(inner.firstChild, inner);
+      parent.removeChild(inner);
     });
   };
 }

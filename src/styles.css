@@ -3102,6 +3102,13 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
    padding on .printInfoTable/.printSimpleTable cells) and must be
    re-measured if any of those three values change again. */
 .pdfExportRoot .pdfSingleLineText { display: inline-block; transform: translateY(-5px); }
+/* Same -5px, applied to a whole block instead of a wrapped text node --
+   for the acknowledgement paragraph and the sign-in notice, which each
+   open with their own bold heading and so cannot have just their text
+   lifted. Added only for the duration of one page's capture and removed
+   in the same finally, exactly like .pdfSingleLineText. See
+   prepareSingleLineTextForCapture. */
+.pdfExportRoot .pdfBlockTextShift { display: block; transform: translateY(-5px); }
 .pdfExportRoot .attachedSignatureGrid {
   flex: 0 0 auto;
   display: grid;
