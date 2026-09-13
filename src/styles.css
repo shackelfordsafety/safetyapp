@@ -3610,3 +3610,55 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 .sidebarNavItem { position: relative; }
 .mobileNavItem { position: relative; }
 .navBadge--mobile { top: 4px; right: 50%; transform: translateX(18px); }
+
+/* ── Waiting for a screen to arrive ──
+   The four Superintendent documents, Records and the board are fetched
+   when you open them rather than up front, which is what keeps the crew
+   from downloading the PDF machinery just to read a JSA. On a good
+   connection nobody ever sees this. On bad site signal they do, and a
+   line of small grey text alone on a white page reads as "it broke" --
+   which is exactly the wrong message to send a foreman standing in a
+   yard. So it gets the middle of the screen, the app's own type, and it
+   says what is happening. */
+.screenLoading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3, 12px);
+  min-height: 50vh;
+  padding: var(--space-6, 32px) 16px;
+  text-align: center;
+}
+.screenLoadingLabel {
+  font-family: var(--font-condensed, inherit);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text-2, var(--muted));
+}
+.screenLoadingBar {
+  width: min(220px, 60vw);
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line, #e3e3e3);
+  overflow: hidden;
+}
+.screenLoadingBar::after {
+  content: '';
+  display: block;
+  width: 40%;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--brand-crimson, #C51F3A);
+  animation: screenLoadingSlide 1.1s ease-in-out infinite;
+}
+@keyframes screenLoadingSlide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+/* Somebody who has asked for less movement gets a still bar, not a
+   missing one -- the point is to show the app is alive. */
+@media (prefers-reduced-motion: reduce) {
+  .screenLoadingBar::after { animation: none; width: 100%; opacity: 0.45; }
+}

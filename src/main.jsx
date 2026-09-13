@@ -11,6 +11,18 @@ import { getContentRows, getContentColumns } from './jsa/jsaContent';
 import { handOffDraft, readLastFinished } from './shared/handOff';
 import useWaitingCount from './open/useWaitingCount';
 
+/* Shown while a screen that loads on demand is on its way. Says what is
+   happening and shows the app is alive -- on bad site signal a bare line
+   of grey text alone on a white page reads as a crash. */
+function ScreenLoading({ label }) {
+  return (
+    <div className="screenLoading" role="status" aria-live="polite">
+      <div className="screenLoadingLabel">{label}</div>
+      <div className="screenLoadingBar" aria-hidden="true" />
+    </div>
+  );
+}
+
 /* Lazy, like everything that reaches the cloud. */
 const ViewAsPicker = lazy(() => loadModule(() => import('./open/ViewAsPicker')));
 const SimPanel = lazy(() => loadModule(() => import('./sim/SimPanel')));
@@ -2959,7 +2971,7 @@ function App() {
             />
           )}
           {tab === 'documents' && activeDoc === 'disciplinary' && (
-            <Suspense fallback={<p className="helperText">Opening the form…</p>}>
+            <Suspense fallback={<ScreenLoading label="Opening the form…" />}>
             <DisciplinaryWorkflow
               onHandedOff={handOffAfterSubmit('disciplinary')}
               model={disciplinary.model} upd={disciplinary.upd} step={disciplinary.step} setStep={disciplinary.setStep}
@@ -2972,7 +2984,7 @@ function App() {
             </Suspense>
           )}
           {tab === 'documents' && activeDoc === 'uncontrolledEvent' && (
-            <Suspense fallback={<p className="helperText">Opening the form…</p>}>
+            <Suspense fallback={<ScreenLoading label="Opening the form…" />}>
             <UncontrolledEventWorkflow
               onHandedOff={handOffAfterSubmit('uncontrolledEvent')}
               model={uncontrolledEvent.model} upd={uncontrolledEvent.upd} step={uncontrolledEvent.step} setStep={uncontrolledEvent.setStep}
@@ -2985,7 +2997,7 @@ function App() {
             </Suspense>
           )}
           {tab === 'documents' && activeDoc === 'medicalEvent' && (
-            <Suspense fallback={<p className="helperText">Opening the form…</p>}>
+            <Suspense fallback={<ScreenLoading label="Opening the form…" />}>
             <MedicalEventWorkflow
               onHandedOff={handOffAfterSubmit('medicalEvent')}
               model={medicalEvent.model} upd={medicalEvent.upd} step={medicalEvent.step} setStep={medicalEvent.setStep}
@@ -2998,7 +3010,7 @@ function App() {
             </Suspense>
           )}
           {tab === 'documents' && activeDoc === 'separation' && (
-            <Suspense fallback={<p className="helperText">Opening the form…</p>}>
+            <Suspense fallback={<ScreenLoading label="Opening the form…" />}>
             <SeparationWorkflow
               onHandedOff={handOffAfterSubmit('separation')}
               model={separation.model} upd={separation.upd} step={separation.step} setStep={separation.setStep}
@@ -3011,18 +3023,18 @@ function App() {
             </Suspense>
           )}
           {tab === 'today' && (
-            <Suspense fallback={<p className="helperText">Loading today…</p>}>
+            <Suspense fallback={<ScreenLoading label="Loading your work…" />}>
               <TodayView entries={draftEntries} goDocs={goDocs} onPickedUp={openPickedUpDocument} />
             </Suspense>
           )}
           {tab === 'templates' && <TemplatesView allTemplates={allTemplates} customTemplates={customTemplates} loadTemplate={requestLoadTemplate} deleteTemplate={deleteTemplate} startBlank={requestStartBlank} shareTemplate={shareTemplate} importTemplateFile={importTemplateFile} />}
           {tab === 'board' && (
-            <Suspense fallback={<p className="helperText">Loading your board…</p>}>
+            <Suspense fallback={<ScreenLoading label="Loading your board…" />}>
               <MyBoard />
             </Suspense>
           )}
           {tab === 'archive' && (
-            <Suspense fallback={<p className="helperText">Loading records…</p>}>
+            <Suspense fallback={<ScreenLoading label="Loading records…" />}>
               <ArchiveView />
             </Suspense>
           )}
