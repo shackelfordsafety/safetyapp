@@ -237,13 +237,22 @@
    own heading, supplied by the data-label on each cell in ArchiveView.
    The type badge and the date lead, because those are what somebody is
    scanning for. */
-@media (max-width: 760px) {
+@media (max-width: 1100px) {
   .arcTableWrap { overflow-x: visible; }
   .arcTable,
-  .arcTable tbody,
   .arcTable tr,
   .arcTable td { display: block; width: auto; }
   .arcTable { border: 0; background: none; }
+  /* Cards flow into however many columns fit. One up on a phone, two on
+     an iPad held upright -- which is the whole reason this breakpoint
+     reaches 1100px: an iPad in portrait is 820-1024px wide, the old 760
+     never caught it, and it was still being handed the squeezed table. */
+  .arcTable tbody {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+    gap: 10px;
+    align-items: start;
+  }
   /* The header row is what the per-cell labels replace. */
   .arcTable thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 
@@ -252,7 +261,6 @@
     border: 1px solid var(--line);
     border-radius: 11px;
     padding: 14px 15px 12px;
-    margin-bottom: 10px;
   }
   .arcTable tbody tr:hover { background: var(--surface); }
 
@@ -280,6 +288,20 @@
   .arcTable td.arcRowActions .btn { margin-left: 0; flex: 1 1 auto; min-height: 44px; }
 
   /* Six shelves two-up rather than one enormous column. */
+}
+
+/* Six shelves in two rows of three on a tablet held upright. Left to fit
+   themselves they went five across with "Uncontrolled" orphaned on a row
+   of its own, which reads like something failed to load. */
+@media (min-width: 700px) and (max-width: 1100px) {
+  .arcShelves { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* The shelves only need shrinking on an actual phone. They already sit
+   three across on an iPad in portrait, which is right -- forcing them
+   two-up there would give six enormous tiles and push the records
+   themselves off the first screen. */
+@media (max-width: 560px) {
   .arcShelves { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 20px; }
   .arcShelf { min-height: 74px; padding: 12px 14px; }
   .arcShelfCount { font-size: 28px; }
