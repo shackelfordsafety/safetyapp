@@ -43,6 +43,19 @@ export const SEPARATION_REASON_GROUPS = [
 ];
 export const SEPARATION_REASONS = [...SEPARATION_REASON_GROUPS.flat(), 'Other'];
 
+/* One reading of the expenses answer, wherever it is asked for -- the
+   screen, the PDF, and the Review facsimile. Tolerates the boolean that
+   drafts written before 2026-09-14 still carry, so an old separation
+   prints exactly what it printed yesterday. */
+export function expensesAnswer(model) {
+  const v = model?.expensesResolved;
+  if (v === true) return 'yes';
+  if (v === false) return 'no';
+  return v === 'yes' || v === 'no' || v === 'na' ? v : 'no';
+}
+
+export const EXPENSES_ANSWER_LABELS = { yes: 'Yes', no: 'No', na: 'N/A' };
+
 export const REHIRE_STATUSES = [
   { value: 'yes', label: 'Yes' },
   { value: 'no', label: 'No' },
@@ -95,7 +108,15 @@ export function emptySeparation() {
     accessRemoved: [],
     accessRemovedOther: '',
     finalTimesheetSubmitted: false,
-    expensesResolved: false,
+    /* 'yes' | 'no' | 'na'. Fonzo, 2026-09-14: "need an N/A button for
+       expenses and receipts, not everyone has a credit card." Most of the
+       crew never holds one, so answering No said there was something
+       outstanding when there was never anything to settle.
+
+       Was a boolean. Drafts saved before today still hold true/false and
+       are read through expensesAnswer() below, so nothing already written
+       changes what it prints. */
+    expensesResolved: 'no',
     outstandingPropertyNotes: '',
 
     // Acknowledgement / Approvals. Employee and HR signatures are never
@@ -218,7 +239,12 @@ export function hasMeaningfulSeparationContent(model) {
     || Boolean(model.separationType) || Boolean(model.separationReason)
     || Boolean(model.warningNoticesGiven) || Boolean(model.documentationAttached)
     || Boolean(model.eligibleForRehire) || Boolean(model.finalTimesheetSubmitted)
-    || Boolean(model.expensesResolved) || Boolean(model.employeeRefusedToSign)
+    /* Compared against the default rather than coerced to a boolean. This
+       field became 'yes'|'no'|'na' when N/A was added, and the string 'no'
+       is truthy -- so a plain Boolean() here would call an untouched blank
+       separation "meaningful", start autosaving it, and warn about losing
+       work nobody had done. */
+    || expensesAnswer(model) !== 'no' || Boolean(model.employeeRefusedToSign)
     || (model.propertyReturned || []).length > 0 || (model.accessRemoved || []).length > 0
     || Boolean(model.employeeSignatureData) || Boolean(model.supervisorSignatureData) || Boolean(model.hrSignatureData);
 }

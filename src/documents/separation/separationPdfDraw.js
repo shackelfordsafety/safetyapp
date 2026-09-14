@@ -3,7 +3,7 @@
 import { createFormPdf, loadLogoPngBytes, fmtDate } from '../pdfDraw';
 import {
   SEPARATION_TYPES, SEPARATION_REASONS, REHIRE_STATUSES,
-  PROPERTY_RETURNED_OPTIONS, ACCESS_REMOVED_OPTIONS,
+  PROPERTY_RETURNED_OPTIONS, ACCESS_REMOVED_OPTIONS, expensesAnswer, EXPENSES_ANSWER_LABELS,
   
 } from './separationModel';
 
@@ -129,7 +129,7 @@ export async function drawSeparationPdf(model, onProgress) {
   doc.grayBar('Company Closeout');
   doc.infoTable([[
     'Final Timesheet Submitted?', model.finalTimesheetSubmitted ? 'Yes' : 'No',
-    'Expenses / Receipts Resolved?', model.expensesResolved ? 'Yes' : 'No',
+    'Expenses / Receipts Resolved?', EXPENSES_ANSWER_LABELS[expensesAnswer(model)],
   ]], 0.3);
 
   const withOther = (opts, otherText) => (otherText ? opts.map(o => (o === 'Other' ? `Other — ${otherText}` : o)) : opts);
@@ -223,7 +223,7 @@ export function separationFacsimileBlocks(model) {
   blocks.push({ type: 'grayBar', text: 'Company Closeout' });
   blocks.push({ type: 'infoTable', rows: [[
     'Final Timesheet Submitted?', model.finalTimesheetSubmitted ? 'Yes' : 'No',
-    'Expenses / Receipts Resolved?', model.expensesResolved ? 'Yes' : 'No',
+    'Expenses / Receipts Resolved?', EXPENSES_ANSWER_LABELS[expensesAnswer(model)],
   ]] });
 
   const withOther = (opts, otherText) => (otherText ? opts.map(o => (o === 'Other' ? `Other — ${otherText}` : o)) : opts);

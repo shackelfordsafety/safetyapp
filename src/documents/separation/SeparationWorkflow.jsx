@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import {
   SEPARATION_STEPS, SEPARATION_TYPES, SEPARATION_REASON_GROUPS,
   REHIRE_STATUSES, PROPERTY_RETURNED_OPTIONS, ACCESS_REMOVED_OPTIONS,
-  getSeparationReadinessChecks, isSeparationReady, isSeparationPrintFinal,
+  getSeparationReadinessChecks, isSeparationReady, isSeparationPrintFinal, expensesAnswer,
   separationStepStatus,
 } from './separationModel';
 import { separationFacsimileBlocks } from './separationPdfDraw';
@@ -126,9 +126,13 @@ function StepCloseout({ model, upd, prev, next }) {
         />
         <SegmentedToggle
           label="Expenses / receipts resolved"
-          value={model.expensesResolved ? 'yes' : 'no'}
-          onChange={v => upd({ expensesResolved: v === 'yes' })}
-          options={[{ value: 'yes', label: 'Yes', tone: 'yes' }, { value: 'no', label: 'No', tone: 'no' }]}
+          value={expensesAnswer(model)}
+          onChange={v => upd({ expensesResolved: v })}
+          options={[
+            { value: 'yes', label: 'Yes', tone: 'yes' },
+            { value: 'no', label: 'No', tone: 'no' },
+            { value: 'na', label: 'N/A' },
+          ]}
         />
         <TextAreaField label="Any company property or paperwork still outstanding?" rows={3} value={model.outstandingPropertyNotes} onChange={v => upd({ outstandingPropertyNotes: v })} voice />
       </div>
