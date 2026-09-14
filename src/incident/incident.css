@@ -36,6 +36,11 @@
 .yesNoToggle button.active.yes { background: color-mix(in srgb, #2e7d32 18%, transparent); border-color: #2e7d32; color: #1b5e20; }
 .yesNoToggle button.active.no { background: color-mix(in srgb, var(--accent) 16%, transparent); border-color: var(--accent); color: var(--accent); }
 html[data-theme='dark'] .yesNoToggle button.active.yes { color: #8bd48f; }
+/* The matching half of the line above, which was never written. A selected
+   "No" kept the button red on a dark ground -- 3.35:1, under the readable
+   floor -- while the selected "Yes" had already been lightened for exactly
+   the same reason. --accent-text is the dark theme's own red-for-words. */
+html[data-theme='dark'] .yesNoToggle button.active.no { color: var(--accent-text, #FF7A84); }
 
 .chipGrid { display: flex; flex-wrap: wrap; gap: 8px; }
 .chipToggle {

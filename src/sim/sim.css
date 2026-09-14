@@ -14,7 +14,13 @@
   font-size: 14.5px;
   line-height: 1.5;
   border-left: 3px solid var(--line);
-  background: var(--panel, #f3f3f1);
+  /* --surface, not --panel: there is no --panel token in this app, so this
+     fell through to the hardcoded light colour in BOTH themes. In dark mode
+     that put light text on a near-white box -- measured 1.01:1, which is
+     text you genuinely cannot see. The one that says "this is the real app,
+     anything you do here is real", of all of them. */
+  background: var(--surface, #f3f3f1);
+  color: var(--text);
 }
 .simStateSafe { border-left-color: var(--good, #1F7A4D); }
 .simStateLive { border-left-color: var(--brand, #C51F3A); }

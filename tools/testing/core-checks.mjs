@@ -65,6 +65,7 @@ const CORE = [
 const SWEEPS = [
   ['monkey-every-workflow.mjs', 'press everything in all six workflows (add --desktop for the other input mode)'],
   ['verify-signatures-every-doc.mjs', 'a signature can still be captured in every document that asks for one'],
+  ['verify-dark-every-screen.mjs', 'nothing is unreadable in the dark (add --light for the sunlight case)'],
 ];
 
 const BY_HAND = [

@@ -429,7 +429,12 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [tabindex]:focus-v
 
 /* ── Utility ── */
 .eyebrow {
-  color: var(--accent);
+  /* --accent-text, not --accent: the first is red WORDS, the second is a
+     red BUTTON. On a dark screen the button red is #D42030, which measures
+     3.69:1 against the dark ground -- under the 4.5:1 a man needs to read
+     11px uppercase in a truck at 5am. The token already existed for this
+     exact reason; this rule just never used it. */
+  color: var(--accent-text, var(--accent));
   text-transform: uppercase;
   font-weight: 700;
   letter-spacing: 1.2px;
@@ -472,7 +477,11 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [tabindex]:focus-v
 }
 .cardHeader p { color: var(--muted); font-size: 13.5px; }
 .cardBody { padding: 0 20px 20px; }
-.aboutVersionLine { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); }
+/* --text-3, not --text-faint: at 11px monospace the faint grey measured
+   3.43:1, under the readable floor. This line is the one somebody reads
+   out over the phone when a screen is behaving oddly, so it has to survive
+   being squinted at on a sunlit iPad. */
+.aboutVersionLine { font-family: var(--font-mono); font-size: 11px; color: var(--text-3, var(--muted)); }
 
 /* ── Step panel ──
    A real raised white surface on the off-white workspace — the previous
@@ -1882,6 +1891,21 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 .fitBadge.good { background: color-mix(in srgb, var(--good) 14%, transparent); color: var(--good); border-color: color-mix(in srgb, var(--good) 35%, transparent); }
 .fitBadge.warn { background: color-mix(in srgb, var(--warn) 14%, transparent); color: var(--warn); border-color: color-mix(in srgb, var(--warn) 35%, transparent); }
 .fitBadge.bad { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); border-color: color-mix(in srgb, var(--danger) 35%, transparent); }
+
+/* The three rules above are tinted for a PALE ground, and the builder
+   header is navy. There is already a rule up at .builderHeader .fitBadge
+   turning these white for exactly that reason -- but it carries the same
+   specificity (two classes) as .fitBadge.good and sits EARLIER, so it lost
+   every time and never did anything. The result was "Fits on main JSA" in
+   #1F6B4A on navy: 2.78:1, on every step of every JSA, against a 4.5:1
+   floor for 11px uppercase. Re-stated here, after the three, so it wins. */
+.builderHeader .fitBadge.good,
+.builderHeader .fitBadge.warn,
+.builderHeader .fitBadge.bad {
+  background: rgba(255, 255, 255, .14);
+  border-color: rgba(255, 255, 255, .3);
+  color: #fff;
+}
 
 /* ── Drafts / templates / settings ── */
 .listStack { display: grid; gap: 10px; }
