@@ -764,7 +764,37 @@ function buildMeasuredPlan(jsa, measurements) {
 // caught up to the latest edit) — per the requirement that estimates remain
 // only an initial fallback, never the final pagination authority.
 function resolvePagePlan(jsa, measurements) {
-  const taskPlan = buildMeasuredPlan(jsa, measurements) || paginateTaskContent(jsa);
+  /* The measured plan is used ONLY if it can actually describe the pages
+     that get printed.
+
+     It cannot, and has not been able to since the column layout landed:
+     paginateTaskContent() returns `columns` and `continuationColumns` --
+     "the columns are what actually prints now", per its own comment -- and
+     buildMeasuredPlan() was never updated to produce either. The totalPages
+     line below reads taskPlan.continuationColumns.length, so every single
+     time a measured plan won, the app threw "cannot read length of
+     undefined" and the screen died. Not the step being edited: EVERY
+     screen, because the printable JSA is always mounted.
+
+     That is what Kris hit on his first morning (2026-09-14). Speaking into
+     a hazards field is one way in -- spoken text lands in one go, the
+     measuring rig catches up, the measured plan wins, and the app dies.
+     Typing rarely got there because the fingerprint changes on every
+     keystroke and the rig never catches up, which is why Fonzo never saw
+     it across four devices.
+
+     So nobody has ever successfully used measured pagination, and falling
+     back to the heuristic is not a change in behaviour -- it is what every
+     person who did not crash was already getting. Printed output is
+     identical by construction.
+
+     The measured system now needs rebuilding against columns, or removing.
+     That is a real decision about print accuracy and it belongs to Fonzo,
+     not slipped into a crash fix. */
+  const measured = buildMeasuredPlan(jsa, measurements);
+  const taskPlan = (measured && Array.isArray(measured.continuationColumns))
+    ? measured
+    : paginateTaskContent(jsa);
   const signInPages = getSignaturePages(jsa);
   return {
     ...taskPlan,
