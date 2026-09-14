@@ -8,6 +8,17 @@ import {
 
 const FORM_TITLE = 'UNCONTROLLED EVENT REPORT';
 
+/* What goes on the ruled line under a signature: the person who signed,
+   then their role. Both names were already being collected -- reportedByName
+   with a title, and supervisorReviewName -- and neither was printed, so the
+   record said 'Supervisor Signature' over a squiggle and left whoever read
+   it back to guess. Same fix as the separation and disciplinary forms.
+
+   Shared by the real PDF and the Review facsimile so the two cannot drift. */
+function signatureLine(role, name, title) {
+  const who = [String(name || '').trim(), String(title || '').trim()].filter(Boolean).join(' - ');
+  return who ? `${who} — ${role}` : role;
+}
 export async function drawUncontrolledEventPdf(model, onProgress) {
   onProgress?.(1, 1);
   const logoBytes = await loadLogoPngBytes(`${import.meta.env.BASE_URL}icons/shackelford-logo.webp`);
@@ -81,12 +92,12 @@ export async function drawUncontrolledEventPdf(model, onProgress) {
   ], 0.34);
 
   doc.signatureRow({
-    label: 'Reported By Signature',
+    label: signatureLine('Reported By', model.reportedByName, model.reportedByTitle),
     image: await doc.embedSignature(model.reportedBySignatureData),
     dateValue: fmtDate(model.reportedBySignatureDate),
   });
   doc.signatureRow({
-    label: 'Supervisor Signature',
+    label: signatureLine('Supervisor', model.supervisorReviewName),
     image: await doc.embedSignature(model.supervisorSignatureData),
     dateValue: fmtDate(model.supervisorSignatureDate),
   });
@@ -147,8 +158,8 @@ export function uncontrolledEventFacsimileBlocks(model) {
     ['Supervisor Reviewing', model.supervisorReviewName],
   ] });
 
-  blocks.push({ type: 'signatureRow', label: 'Reported By Signature', dataUrl: model.reportedBySignatureData, dateValue: fmtDate(model.reportedBySignatureDate) });
-  blocks.push({ type: 'signatureRow', label: 'Supervisor Signature', dataUrl: model.supervisorSignatureData, dateValue: fmtDate(model.supervisorSignatureDate) });
+  blocks.push({ type: 'signatureRow', label: signatureLine('Reported By', model.reportedByName, model.reportedByTitle), dataUrl: model.reportedBySignatureData, dateValue: fmtDate(model.reportedBySignatureDate) });
+  blocks.push({ type: 'signatureRow', label: signatureLine('Supervisor', model.supervisorReviewName), dataUrl: model.supervisorSignatureData, dateValue: fmtDate(model.supervisorSignatureDate) });
 
   return blocks;
 }

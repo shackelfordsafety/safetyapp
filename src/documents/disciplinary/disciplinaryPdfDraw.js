@@ -18,6 +18,21 @@ function employeeSigNote(model) {
   return null;
 }
 
+/* What goes on the ruled line under a signature: the person who signed,
+   then their role. Same rule as the separation form, for the same reason --
+   a write-up is read back months later by somebody who was not in the room,
+   and "Manager Signature" says what the box is for, not who gave the
+   notice. Role alone when nobody is named, because an unsigned line still
+   has to read as a form.
+
+   Shared by the real PDF and the Review facsimile below, so the two cannot
+   drift apart -- which they had already done on the separation form, where
+   the witness printed on paper and was missing from the preview. */
+function signatureLine(role, name) {
+  const who = String(name || '').trim();
+  return who ? `${who} — ${role}` : role;
+}
+
 const FORM_TITLE = 'EMPLOYEE DISCIPLINARY NOTICE FORM';
 
 /* Section wording is the paper form's own, verbatim — see the 2026-08-12
@@ -75,14 +90,14 @@ export async function drawDisciplinaryPdf(model, onProgress) {
   doc.grayBar('Signatures');
   const empNote = employeeSigNote(model);
   doc.signatureRow(empNote
-    ? { label: 'Employee Signature', note: empNote }
+    ? { label: signatureLine('Employee', model.employeeName), note: empNote }
     : {
-      label: 'Employee Signature',
+      label: signatureLine('Employee', model.employeeName),
       image: await doc.embedSignature(model.employeeSignatureData),
       dateValue: fmtDate(model.employeeSignatureDate),
     });
   doc.signatureRow({
-    label: 'Manager Signature',
+    label: signatureLine('Manager', model.managerName),
     image: await doc.embedSignature(model.managerSignatureData),
     dateValue: fmtDate(model.managerSignatureDate),
   });
@@ -99,7 +114,7 @@ export async function drawDisciplinaryPdf(model, onProgress) {
   if (model.witnessSignatureData || model.witnessName) {
     doc.note(model.witnessStatement || 'I was present when this was discussed.');
     doc.signatureRow({
-      label: `Witness${model.witnessName ? ` — ${model.witnessName}` : ''}`,
+      label: signatureLine('Witness', model.witnessName),
       image: await doc.embedSignature(model.witnessSignatureData),
       dateValue: fmtDate(model.witnessSignatureDate),
     });
@@ -135,17 +150,32 @@ export function disciplinaryFacsimileBlocks(model) {
   const empNote = employeeSigNote(model);
   blocks.push({
     type: 'signatureRow',
-    label: 'Employee Signature',
+    label: signatureLine('Employee', model.employeeName),
     ...(empNote
       ? { note: empNote }
       : { dataUrl: model.employeeSignatureData, dateValue: fmtDate(model.employeeSignatureDate) }),
   });
   blocks.push({
     type: 'signatureRow',
-    label: 'Manager Signature',
+    label: signatureLine('Manager', model.managerName),
     dataUrl: model.managerSignatureData,
     dateValue: fmtDate(model.managerSignatureDate),
   });
+
+  /* The witness, which the PDF above has printed all along and this preview
+     did not. Exactly the drift the separation form had: Review promised a
+     form without a witness on it while the printed copy carried one. The
+     comment at the top of this function says to keep the two in step; this
+     is that being true rather than being asserted. */
+  if (model.witnessSignatureData || model.witnessName) {
+    blocks.push({ type: 'note', text: model.witnessStatement || 'I was present when this was discussed.' });
+    blocks.push({
+      type: 'signatureRow',
+      label: signatureLine('Witness', model.witnessName),
+      dataUrl: model.witnessSignatureData,
+      dateValue: fmtDate(model.witnessSignatureDate),
+    });
+  }
 
   return blocks;
 }

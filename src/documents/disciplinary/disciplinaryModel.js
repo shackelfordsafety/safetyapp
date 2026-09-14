@@ -73,6 +73,18 @@ export function emptyDisciplinary() {
     employeeRefusedToSign: false,
     employeeSignatureData: null,
     employeeSignatureDate: '',
+    /* WHO IS GIVING THE NOTICE, which is not `supervisor` above.
+       `supervisor` describes who the employee works for. This is the
+       manager holding the meeting and putting his name to it -- often not
+       the employee's own boss.
+
+       Added 2026-09-14, the same gap the separation form had. There, with
+       nowhere to record it, the name got typed into the HR box instead --
+       and when the printed form finally started showing names, it printed
+       the SUPERVISOR over the signer's signature, naming the wrong man as
+       the one who gave the notice. Fixed there, so fixed here before it
+       does the same thing on a live write-up. */
+    managerName: '',
     // Manager signature is the one thing on this notice that's actually
     // digitized -- Fonzo/whoever is filling this out is always right there
     // with the device, so it's always required, always captured here.
@@ -121,8 +133,17 @@ export function hasMeaningfulDisciplinaryContent(model) {
 export const DISCIPLINARY_STEPS = [
   { id: 'notice', label: 'Notice Details', helper: 'Employee info, warning level, and what occurred' },
   { id: 'response', label: 'Corrective Action', helper: 'Required correction and consequence' },
-  { id: 'review', label: 'Review', helper: 'Check everything before anyone signs' },
-  { id: 'signatures', label: 'Signature', helper: 'Manager signs — employee signs the printed copy' },
+  /* Signatures BEFORE review, matching the separation form. Fonzo's rule,
+     2026-09-14: a document signed in a room with the employee is filled in,
+     signed, and THEN read back over by the one person left holding it.
+     (The JSA is deliberately the other way round -- it is read out loud at
+     the tailgate and then signed by the crew.)
+
+     The helper also used to say "employee signs the printed copy", written
+     when nothing here was signed on a screen. There is a live signature pad
+     for the employee on that step. */
+  { id: 'signatures', label: 'Signature', helper: 'Manager, employee and witness sign' },
+  { id: 'review', label: 'Review', helper: 'Read the finished notice over before sending it' },
   { id: 'export', label: 'Submit', helper: 'Send it for review, or make a paper copy' },
 ];
 

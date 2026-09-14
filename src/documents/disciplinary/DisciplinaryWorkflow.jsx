@@ -76,7 +76,7 @@ function StepResponse({ model, upd, prev, next }) {
         <TextAreaField label="What happens if this isn't corrected?" rows={3} value={model.ifNotCorrected} onChange={v => upd({ ifNotCorrected: v })} voice />
       </NumberedSection>
 
-      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Review" />
+      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Signatures" />
     </StepPanel>
   );
 }
@@ -87,24 +87,30 @@ function StepResponse({ model, upd, prev, next }) {
 function StepReview({ checks, prev, next, onJumpCheck }) {
   const remainingCount = checks.filter(c => !c.ok).length;
   return (
-    <StepPanel title="Review" intro="Make sure everything is right before anyone signs. Tap any item below to fix it.">
+    <StepPanel title="Review" intro="Read the finished notice over before it goes. Tap any item below to fix it.">
       <div className="card">
         <div className="cardHeader"><strong>Readiness</strong></div>
         <p className="helperText">
           {remainingCount === 0
-            ? 'Everything is filled in. Continue to signatures when ready.'
+            ? 'Everything is filled in and signed. Send it when you are ready.'
             : `${remainingCount} ${remainingCount === 1 ? 'item' : 'items'} still needed — tap one to go straight to it.`}
         </p>
         <ReadinessChecklist checks={checks} onJump={onJumpCheck} />
       </div>
-      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Signatures" />
+      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Submit" />
     </StepPanel>
   );
 }
 
-/* ── Step: Signature — manager only. Employee always signs the printed
-   copy by hand (Fonzo, 2026-08-29: "the only thing i wanted digitized is
-   the superintendent, foreman, safety parts"). ── */
+/* ── Step: Signatures — the three people in the room: the manager giving
+   the notice, the employee, and a witness.
+
+   This used to say "manager only -- employee always signs the printed copy
+   by hand", from the 2026-08-29 rule that only staff signatures were
+   digitized. That was reversed on 2026-09-11 when the witness slot was
+   added and employee signatures became digital; the comment was left
+   behind, describing a form that no longer existed, while the step
+   underneath it captured all three. ── */
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -132,6 +138,21 @@ function StepSignatures({ model, upd, prev, next }) {
         <SignaturePad label="Manager Signature" value={model.managerSignatureData} onChange={data => upd({ managerSignatureData: data, managerSignatureDate: data ? today() : model.managerSignatureDate })} />
         <Field label="Manager Signature Date" type="date" value={model.managerSignatureDate} onChange={v => upd({ managerSignatureDate: v })} />
       </div>
+      {/* Deliberately NOT the Supervisor field from Notice Details. That one
+          says who the employee works for; this says who is giving the notice
+          and signing above. They are often different people, and on the
+          separation form printing the first over the second put the wrong
+          man's name on a real record. */}
+      <Field
+        label="Manager Name and Title"
+        value={model.managerName}
+        onChange={v => upd({ managerName: v })}
+        placeholder="Whoever is signing above"
+      />
+      <p className="helperText">
+        Whoever is giving this notice &mdash; not the employee&rsquo;s supervisor, unless they
+        happen to be the same person. This is the name that prints under the signature.
+      </p>
 
       {/* A verbal warning is not signed by anybody but the manager, so none
           of the rest of this belongs on screen for one. */}
@@ -150,7 +171,7 @@ function StepSignatures({ model, upd, prev, next }) {
           {!model.employeeRefusedToSign && (
             <div className="formPairRow">
               <SignaturePad
-                label="Employee Signature"
+                label={model.employeeName ? `${model.employeeName} — Employee Signature` : 'Employee Signature'}
                 value={model.employeeSignatureData}
                 onChange={data => upd({ employeeSignatureData: data, employeeSignatureDate: data ? today() : model.employeeSignatureDate })}
               />
@@ -181,7 +202,7 @@ function StepSignatures({ model, upd, prev, next }) {
         </>
       )}
 
-      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Submit" />
+      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Review" />
     </StepPanel>
   );
 }
