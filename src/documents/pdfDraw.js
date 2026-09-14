@@ -189,6 +189,22 @@ export async function createFormPdf({ formTitle, logoBytes }) {
     get cursor() { return y; },
     space(h) { y += h; },
 
+    /* Reserve room for a group of blocks that must not be split.
+       Each block only guarantees room for ITSELF, so a note that fits at
+       the bottom of a page followed by a signature row that does not
+       leaves the note stranded on one page and the line it introduces on
+       the next. That is how a separation's witness ended up alone on a
+       continuation sheet, under a statement printed a page earlier, with
+       nothing to say what it was attesting to.
+
+       Call it with the combined height before drawing the group. Never
+       breaks a page that is already fresh, so a group taller than a whole
+       page still draws rather than looping. */
+    keepTogether(h) {
+      if (!page) { newPage(false); return; }
+      if (y + h > bottomLimit() && h <= pageCapacity()) newPage(true);
+    },
+
     /* MAJOR section divider. */
     grayBar(text) {
       const size = 9.5;

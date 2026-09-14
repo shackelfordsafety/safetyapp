@@ -110,8 +110,22 @@ export function emptySeparation() {
     employeeRefusedToSign: false,
     employeeSignatureData: null,
     employeeSignatureDate: '',
-    // Supervisor signature is the one thing on this record that's actually
-    // digitized -- always required, always captured here.
+    /* WHO IS SIGNING, which is not the same person as `supervisor` above.
+       `supervisor` is an info field describing who the employee WORKED for.
+       This is the manager who ran the separation and is putting his name to
+       it -- often not the employee's own boss at all.
+
+       Added 2026-09-14 after the form printed the wrong man's name over a
+       real signature. Fonzo, who let Derrick Wilson go: "it's employee
+       manager, which is the person giving the conversation, not the
+       person's manager or what it says on the document... I'm not his
+       foreman. I'm not his boss. I'm not his superintendent. That's Cedric
+       Wilson. But he's not signing because he's not the one letting him
+       go. I am."
+
+       Until this existed there was nowhere to record it, which is why the
+       HR name box had been pressed into service for it. */
+    managerName: '',
     supervisorSignatureData: null,
     supervisorSignatureDate: '',
     hrName: '',

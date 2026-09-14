@@ -16,6 +16,26 @@ function optionLabel(options, v) {
   return options.find(o => o.value === v)?.label || '';
 }
 
+/* What goes on the ruled line under a signature.
+   Fonzo, 2026-09-14, looking at a real signed separation: "why is the name
+   not under the signature line... we need to make it so the person's name
+   that's signing is underneath their signature and the dates right next to
+   it."
+
+   It used to print the ROLE there -- "Employee Signature", "Supervisor
+   Signature" -- which tells a reader what the box is for and not who signed
+   it. A separation is read back months later by somebody who was not in the
+   room; the name is the whole point. HR was the one exception and it was
+   done backwards, "HR / Management — Alfonso Hernandez", so the role pushed
+   the name onto a second line.
+
+   Name first, role after, and the role alone when nobody has been named --
+   an unnamed line still has to read as a form. */
+function signatureLine(role, name) {
+  const who = String(name || '').trim();
+  return who ? `${who} — ${role}` : role;
+}
+
 export async function drawSeparationPdf(model, onProgress) {
   onProgress?.(1, 1);
   const logoBytes = await loadLogoPngBytes(`${import.meta.env.BASE_URL}icons/shackelford-logo.webp`);
@@ -88,21 +108,21 @@ export async function drawSeparationPdf(model, onProgress) {
      not only on the screen the supervisor filled in. */
   doc.note('Employee signature acknowledges receipt and does not necessarily indicate agreement.');
   const employeeItem = model.employeeRefusedToSign
-    ? { label: 'Employee Signature', note: 'Refused / Unavailable to Sign' }
+    ? { label: signatureLine('Employee', model.employeeName), note: 'Refused / Unavailable to Sign' }
     : {
-      label: 'Employee Signature',
+      label: signatureLine('Employee', model.employeeName),
       image: await doc.embedSignature(model.employeeSignatureData),
       dateValue: fmtDate(model.employeeSignatureDate),
     };
   doc.multiSignatureRow([
     employeeItem,
     {
-      label: 'Supervisor Signature',
+      label: signatureLine('Manager', model.managerName),
       image: await doc.embedSignature(model.supervisorSignatureData),
       dateValue: fmtDate(model.supervisorSignatureDate),
     },
     {
-      label: `HR / Management${model.hrName ? ` — ${model.hrName}` : ''}`,
+      label: signatureLine('HR / Management', model.hrName),
       image: await doc.embedSignature(model.hrSignatureData),
       dateValue: fmtDate(model.hrSignatureDate),
     },
@@ -117,10 +137,16 @@ export async function drawSeparationPdf(model, onProgress) {
      employee signed, refused, or was not there. Stored on the model at the
      moment of signing so it cannot drift if the form is edited after. */
   if (model.witnessSignatureData || model.witnessName) {
+    /* The statement and the line it introduces are one thing. Without this
+       the note printed at the foot of page 1 and the witness signed alone
+       on page 2, under nothing -- which is worse than not printing it,
+       because a signature detached from what it attests to is exactly what
+       the statement exists to prevent. */
+    doc.keepTogether(22 + 60);
     doc.note(model.witnessStatement || 'I was present when this separation was discussed.');
     doc.multiSignatureRow([
       {
-        label: `Witness${model.witnessName ? ` — ${model.witnessName}` : ''}`,
+        label: signatureLine('Witness', model.witnessName),
         image: await doc.embedSignature(model.witnessSignatureData),
         dateValue: fmtDate(model.witnessSignatureDate),
       },
@@ -193,9 +219,9 @@ export function separationFacsimileBlocks(model) {
   blocks.push({ type: 'grayBar', text: 'Acknowledgement / Approvals' });
   blocks.push({ type: 'note', text: 'Employee signature acknowledges receipt and does not necessarily indicate agreement.' });
   const employeeItem = model.employeeRefusedToSign
-    ? { label: 'Employee Signature', note: 'Refused / Unavailable to Sign' }
+    ? { label: signatureLine('Employee', model.employeeName), note: 'Refused / Unavailable to Sign' }
     : {
-      label: 'Employee Signature',
+      label: signatureLine('Employee', model.employeeName),
       dataUrl: model.employeeSignatureData,
       dateValue: fmtDate(model.employeeSignatureDate),
     };
@@ -203,10 +229,25 @@ export function separationFacsimileBlocks(model) {
     type: 'multiSignatureRow',
     items: [
       employeeItem,
-      { label: 'Supervisor Signature', dataUrl: model.supervisorSignatureData, dateValue: fmtDate(model.supervisorSignatureDate) },
-      { label: `HR / Management${model.hrName ? ` — ${model.hrName}` : ''}`, dataUrl: model.hrSignatureData, dateValue: fmtDate(model.hrSignatureDate) },
+      { label: signatureLine('Manager', model.managerName), dataUrl: model.supervisorSignatureData, dateValue: fmtDate(model.supervisorSignatureDate) },
+      { label: signatureLine('HR / Management', model.hrName), dataUrl: model.hrSignatureData, dateValue: fmtDate(model.hrSignatureDate) },
     ],
   });
+
+  /* The witness, which the real PDF has printed all along and this preview
+     did not. The two are meant to mirror each other block for block -- see
+     the comment at the top of this function -- and they had drifted, so the
+     Review screen quietly promised a form without the witness on it while
+     the PDF printed one with. */
+  if (model.witnessSignatureData || model.witnessName) {
+    blocks.push({ type: 'note', text: model.witnessStatement || 'I was present when this separation was discussed.' });
+    blocks.push({
+      type: 'multiSignatureRow',
+      items: [
+        { label: signatureLine('Witness', model.witnessName), dataUrl: model.witnessSignatureData, dateValue: fmtDate(model.witnessSignatureDate) },
+      ],
+    });
+  }
 
   return blocks;
 }
