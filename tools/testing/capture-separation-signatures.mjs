@@ -47,9 +47,10 @@ try {
   }
   // The fixture has the employee refusing, which correctly hides their
   // pad. Capture the ordinary case too -- the employee IS signing.
-  await p.getByRole('button', { name: /they sign below/i }).first().click().catch(() => {});
+  await p.getByRole('button', { name: /^Yes$/ }).first().click().catch(() => {});
   await p.waitForTimeout(600);
 
+  console.log('step order:', JSON.stringify((await p.locator('.stepNavRow').allInnerTexts()).map(t => t.replace(/s+/g, ' ').trim())));
   const labels = await p.locator('.signaturePad .fieldLabel').allInnerTexts();
   console.log('signature pads on the step:', JSON.stringify(labels.map(l => l.trim())));
   await p.screenshot({ path: path.join(outDir, 'signature-step.png'), fullPage: true });

@@ -231,8 +231,17 @@ export function hasMeaningfulSeparationContent(model) {
 export const SEPARATION_STEPS = [
   { id: 'details', label: 'Separation Details', helper: 'Employee info, separation type, reason, and explanation' },
   { id: 'closeout', label: 'Closeout', helper: 'Rehire status and company closeout' },
-  { id: 'review', label: 'Review', helper: 'Check everything before anyone signs' },
+  /* Signatures BEFORE review. Fonzo, 2026-09-14: "review should just come
+     after signatures in the workflow."
+
+     Note this is the opposite of the JSA, deliberately, because the two
+     documents are read at different moments. A JSA is reviewed out loud at
+     the tailgate meeting and THEN signed by the crew, so its checklist
+     belongs before signing. A separation is filled in, signed in the room
+     with the employee, and only then read back over by the one person left
+     holding it -- so its review is the last look before it goes to HR. */
   { id: 'signatures', label: 'Signature', helper: 'Manager, employee and witness sign — HR signs later' },
+  { id: 'review', label: 'Review', helper: 'Read the finished record over before sending it' },
   { id: 'export', label: 'Submit', helper: 'Send it for review, or make a paper copy' },
 ];
 
@@ -249,7 +258,7 @@ export function getSeparationReadinessChecks(model) {
     { key: 'separationReason', label: 'Reason for separation selected', ok: has(model.separationReason), step: 'details' },
     { key: 'detailedExplanation', label: 'Detailed explanation', ok: has(model.detailedExplanation), step: 'details' },
     { key: 'eligibleForRehire', label: 'Re-hire eligibility answered', ok: has(model.eligibleForRehire), step: 'closeout' },
-    { key: 'supervisorSignature', label: 'Supervisor signature', ok: Boolean(model.supervisorSignatureData), step: 'signatures' },
+    { key: 'supervisorSignature', label: 'Manager signature', ok: Boolean(model.supervisorSignatureData), step: 'signatures' },
   ];
   if (model.separationReason === 'Other') {
     checks.push({ key: 'separationReasonOther', label: 'Other reason (specify)', ok: has(model.separationReasonOther), step: 'details' });

@@ -133,7 +133,7 @@ function StepCloseout({ model, upd, prev, next }) {
         <TextAreaField label="Any company property or paperwork still outstanding?" rows={3} value={model.outstandingPropertyNotes} onChange={v => upd({ outstandingPropertyNotes: v })} voice />
       </div>
 
-      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Review" />
+      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Signatures" />
     </StepPanel>
   );
 }
@@ -149,12 +149,12 @@ function StepReview({ checks, prev, next, onJumpCheck }) {
         <div className="cardHeader"><strong>Readiness</strong></div>
         <p className="helperText">
           {remainingCount === 0
-            ? 'Everything is filled in. Continue to signatures when ready.'
+            ? 'Everything is filled in and signed. Send it when you are ready.'
             : `${remainingCount} ${remainingCount === 1 ? 'item' : 'items'} still needed — tap one to go straight to it.`}
         </p>
         <ReadinessChecklist checks={checks} onJump={onJumpCheck} />
       </div>
-      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Signatures" />
+      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Submit" />
     </StepPanel>
   );
 }
@@ -224,18 +224,20 @@ function StepSignatures({ model, upd, prev, next }) {
           on. Fonzo, 2026-09-11, after HR hit this on a real separation:
           "if employee is not able to sign, should have a employee not
           available button". It was built and unreachable. */}
-      {/* Re-worded 2026-09-14. It used to ask "Is the employee signing the
-          PRINTED copy?" and offer "Yes -- leave a blank line", which was
-          written when nothing here was signed on a screen. With a live pad
-          sitting directly underneath it, that answer told the man running
-          the meeting that saying Yes would leave the line EMPTY. It is the
-          opposite: Yes means he signs, right here, now. */}
+      {/* Re-worded twice on 2026-09-14, both times because it described a
+          form that no longer exists. It asked "Is the employee signing the
+          PRINTED copy?" and offered "Yes -- leave a blank line", wording
+          from when nothing here was signed on a screen. Fonzo: "What
+          printed copy? There's no printed copy, but it's all digital."
+
+          There is a live pad directly underneath. The only question worth
+          asking is whether the man is standing there to use it. */}
       <SegmentedToggle
-        label="Is the employee signing?"
+        label="Is the employee available to sign?"
         value={model.employeeRefusedToSign ? 'no' : 'yes'}
         onChange={v => upd({ employeeRefusedToSign: v === 'no' })}
         options={[
-          { value: 'yes', label: 'Yes — they sign below', tone: 'yes' },
+          { value: 'yes', label: 'Yes', tone: 'yes' },
           { value: 'no', label: 'No — refused or not available', tone: 'no' },
         ]}
       />
@@ -250,7 +252,7 @@ function StepSignatures({ model, upd, prev, next }) {
       {!model.employeeRefusedToSign && (
         <div className="formPairRow">
           <SignaturePad
-            label="Employee Signature"
+            label={model.employeeName ? `${model.employeeName} — Employee Signature` : 'Employee Signature'}
             value={model.employeeSignatureData}
             onChange={data => upd({ employeeSignatureData: data, employeeSignatureDate: data ? today() : model.employeeSignatureDate })}
           />
@@ -291,7 +293,7 @@ function StepSignatures({ model, upd, prev, next }) {
           office. They just do not belong in front of three people standing
           in a trailer. */}
 
-      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Submit" />
+      <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Review" />
     </StepPanel>
   );
 }
