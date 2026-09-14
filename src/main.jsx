@@ -3109,7 +3109,10 @@ function App() {
           </div>
         </aside>
 
-        <main className={`page${isDocFlow ? '' : ' pageWithBottomNav'}`}>
+        {/* The bottom bar is on every screen now, so every screen has to
+            leave room for it -- otherwise a document's last field sits
+            underneath it. */}
+        <main className="page pageWithBottomNav">
           {/* Hidden during a document flow -- a man mid-JSA at 6:15 does
               not need a housekeeping notice on the screen. */}
           {needsName && !nameNudgeHidden && !isDocFlow && (
@@ -3245,9 +3248,23 @@ function App() {
         </main>
       </div>
 
-      {!isDocFlow && (
-        <MobileBottomNav tab={tab} goHome={goHome} goDocs={goDocs} setTab={setTab} waitingCount={waitingCount} />
-      )}
+      {/* ALWAYS. It used to be hidden inside a document flow, on the
+          reasoning that the workflow's own header and action bar already
+          owned wayfinding in there. They do not.
+
+          Fonzo, 2026-09-14, after showing the app to one of his own men:
+          "he got confused as to what to fill out... that little bar at the
+          bottom needs to be static. You should be able to get to the home
+          at any given point, get to any tab at any given point. Getting
+          into a tab shouldn't force you to reload the page or refresh or
+          go back on the website."
+
+          On a phone this bar was the ONLY way to reach another tab, so
+          starting a document took every exit off the screen except one
+          back button -- and a man who does not know what he is looking at
+          has no reason to trust that button. The sidebar never disappeared
+          on a tablet, which is why this survived: it only bit on a phone. */}
+      <MobileBottomNav tab={tab} goHome={goHome} goDocs={goDocs} setTab={setTab} waitingCount={waitingCount} />
 
       {confirmReplace && (
         <ConfirmReplaceDialog
@@ -3384,17 +3401,14 @@ function HomeView({ customTemplates, setTab, docEntries, waitingCount = 0, waiti
               word for the office, not the trailer. */}
           <p>Fill out the day's paperwork and send it where it needs to go.</p>
         </div>
-        <label className="homeSearch">
-          <IconSearch className="homeSearchIcon" />
-          <input
-            type="search"
-            className="homeSearchInput"
-            placeholder="Search job site or person"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            aria-label="Search in-progress documents by job site or person"
-          />
-        </label>
+        {/* The search box is gone. Fonzo, 2026-09-14: "There shouldn't be a
+            search box at the top of home."
+
+            It only ever filtered documents you had already started, which
+            is a list of two or three -- and it sat in the first thing a man
+            sees when he opens the app, inviting him to type something
+            before he has done anything. The first screen's job is to get
+            him into the right document; Records is where searching belongs. */}
       </header>
 
       {/* Today at a glance. Every line is a number and a way into the

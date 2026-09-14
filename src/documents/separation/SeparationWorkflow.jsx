@@ -199,18 +199,18 @@ function StepSignatures({ model, upd, prev, next }) {
       intro="The three people in the room sign here — you, the employee, and a witness. HR signs later, on their own screen."
     >
       <div className="formPairRow">
-        <SignaturePad label="Manager Signature" value={model.supervisorSignatureData} onChange={data => upd({ supervisorSignatureData: data, supervisorSignatureDate: data ? new Date().toISOString().slice(0, 10) : model.supervisorSignatureDate })} />
-        <Field label="Manager Signature Date" type="date" value={model.supervisorSignatureDate} onChange={v => upd({ supervisorSignatureDate: v })} />
+        <SignaturePad label="Management Signature" value={model.supervisorSignatureData} onChange={data => upd({ supervisorSignatureData: data, supervisorSignatureDate: data ? new Date().toISOString().slice(0, 10) : model.supervisorSignatureDate })} />
+        <Field label="Management Signature Date" type="date" value={model.supervisorSignatureDate} onChange={v => upd({ supervisorSignatureDate: v })} />
       </div>
       {/* Deliberately NOT the Supervisor field from step one. That one says
           who the employee worked for; this says who ran the meeting and is
           signing above. They are usually different people, and printing the
           first over the second put the wrong man's name on a real record. */}
       <Field
-        label="Manager Name"
+        label="Management Name and Title"
         value={model.managerName}
         onChange={v => upd({ managerName: v })}
-        placeholder="Whoever is signing above"
+        placeholder="e.g. Alfonso Hernandez - Safety Manager"
       />
       <p className="helperText">
         The manager holding this meeting &mdash; not the employee&rsquo;s supervisor, unless

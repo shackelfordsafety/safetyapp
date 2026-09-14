@@ -240,7 +240,7 @@ export const SEPARATION_STEPS = [
      belongs before signing. A separation is filled in, signed in the room
      with the employee, and only then read back over by the one person left
      holding it -- so its review is the last look before it goes to HR. */
-  { id: 'signatures', label: 'Signature', helper: 'Manager, employee and witness sign — HR signs later' },
+  { id: 'signatures', label: 'Signature', helper: 'Management, employee and witness sign — HR signs later' },
   { id: 'review', label: 'Review', helper: 'Read the finished record over before sending it' },
   { id: 'export', label: 'Submit', helper: 'Send it for review, or make a paper copy' },
 ];
@@ -258,7 +258,7 @@ export function getSeparationReadinessChecks(model) {
     { key: 'separationReason', label: 'Reason for separation selected', ok: has(model.separationReason), step: 'details' },
     { key: 'detailedExplanation', label: 'Detailed explanation', ok: has(model.detailedExplanation), step: 'details' },
     { key: 'eligibleForRehire', label: 'Re-hire eligibility answered', ok: has(model.eligibleForRehire), step: 'closeout' },
-    { key: 'supervisorSignature', label: 'Manager signature', ok: Boolean(model.supervisorSignatureData), step: 'signatures' },
+    { key: 'supervisorSignature', label: 'Management signature', ok: Boolean(model.supervisorSignatureData), step: 'signatures' },
   ];
   if (model.separationReason === 'Other') {
     checks.push({ key: 'separationReasonOther', label: 'Other reason (specify)', ok: has(model.separationReasonOther), step: 'details' });

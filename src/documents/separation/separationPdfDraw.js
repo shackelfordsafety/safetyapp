@@ -61,7 +61,7 @@ function approvalPeople(model) {
         dateValue: fmtDate(model.employeeSignatureDate),
       },
     {
-      label: signatureLine('Manager', model.managerName),
+      label: signatureLine('Management', model.managerName),
       dataUrl: model.supervisorSignatureData,
       dateValue: fmtDate(model.supervisorSignatureDate),
     },
@@ -166,7 +166,7 @@ export async function drawSeparationPdf(model, onProgress) {
      signed -- an empty fourth box on the copy handed over in the meeting
      is a box nobody present can fill, and it was the reason the witness got
      pushed onto a full-width row of its own. */
-  if (model.hrSignatureData || model.hrName) {
+  if (model.hrSignatureData) {
     doc.keepTogether(60);
     doc.multiSignatureRow([
       {
@@ -247,7 +247,7 @@ export function separationFacsimileBlocks(model) {
   }
   blocks.push({ type: 'multiSignatureRow', items: approvalPeople(model) });
 
-  if (model.hrSignatureData || model.hrName) {
+  if (model.hrSignatureData) {
     blocks.push({
       type: 'multiSignatureRow',
       items: [

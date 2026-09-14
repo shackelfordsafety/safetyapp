@@ -417,11 +417,24 @@ async function main() {
       await page.waitForSelector('text=Notice Details');
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       check(overflow <= 1, `No horizontal overflow on phone (scrollWidth - clientWidth = ${overflow})`);
-      const bottomNavHidden = await page.evaluate(() => {
+      /* REVERSED 2026-09-14. This used to assert the opposite -- that the
+         bottom nav was HIDDEN inside a builder -- on the reasoning that the
+         workflow's own header owned wayfinding in there.
+
+         Fonzo, after watching one of his own men try to use it: "he got
+         confused as to what to fill out... that little bar at the bottom
+         needs to be static. You should be able to get to the home at any
+         given point, get to any tab at any given point."
+
+         On a phone that bar was the only way to reach another tab, so
+         opening a document took every exit off the screen but one. */
+      const bottomNavUsable = await page.evaluate(() => {
         const el = document.querySelector('.mobileBottomNav');
-        return !el || getComputedStyle(el).display === 'none';
+        if (!el) return false;
+        const cs = getComputedStyle(el);
+        return cs.display !== 'none' && cs.visibility !== 'hidden' && el.getBoundingClientRect().height > 20;
       });
-      check(bottomNavHidden, 'Bottom nav hidden while the Disciplinary Notice builder is open');
+      check(bottomNavUsable, 'Bottom nav stays reachable while the Disciplinary Notice builder is open');
 
       // Smoke-test the shared SignaturePad's native touch listener path
       // (see src/incident/SignaturePad.jsx) with real CDP touch dispatch,
