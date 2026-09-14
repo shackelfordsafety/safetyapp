@@ -31,6 +31,13 @@ const repoRoot = path.resolve(__dirname, '..', '..');
 const outDir = path.join(__dirname, 'output', 'crash');
 mkdirSync(outDir, { recursive: true });
 
+/* The full sweep is 115 browser contexts and takes about six minutes --
+   too slow for core-checks, which cuts a check off at 150 seconds. So the
+   default run is the REGRESSION: every shape that was actually caught
+   crashing, plus the whole-device values, which is what must never come
+   back. --all re-runs the whole search when hunting something new. */
+const FULL = process.argv.includes('--all');
+
 const PORT = 4372;
 const BASE = `http://localhost:${PORT}`;
 const DRAFT_KEY = 'sdc.jsa.draft.v4';
@@ -50,6 +57,12 @@ const BAD = [
 ];
 
 /* Every field of the draft the print path and the work step read. */
+/* The five that actually took the app down on the hazards step, and the
+   shapes that did it. Kept explicit so the regression run stays fast and
+   still covers every real crash this found. */
+const CAUGHT_FIELDS = ['jobSite', 'location', 'date', 'jobNumber', 'taskRows'];
+const CAUGHT_SHAPES = [['object', { 0: 'a' }], ['number', 3], ['null', null]];
+
 const FIELDS = [
   'taskRows', 'suggestionBundles', 'crewSignatures',
   'dailyTasks', 'hazardsSummary', 'controlsSummary',
@@ -172,9 +185,9 @@ async function main() {
       ? 'Navigation reaches the Tasks / Hazards step. Good.'
       : 'WARNING: never reached the hazards step — every "clean" below is meaningless.');
 
-    console.log('— one draft field at a time —');
-    for (const field of FIELDS) {
-      for (const [shapeName, value] of BAD) {
+    console.log(FULL ? '— one draft field at a time —' : '— the shapes that were caught crashing —');
+    for (const field of FULL ? FIELDS : CAUGHT_FIELDS) {
+      for (const [shapeName, value] of (FULL ? BAD : CAUGHT_SHAPES)) {
         const draft = { ...base, status: 'draft' };
         if (value === undefined) delete draft[field];
         else draft[field] = value;
