@@ -11,6 +11,7 @@ import { getContentRows, getContentColumns } from './jsa/jsaContent';
 import { handOffDraft, readLastFinished } from './shared/handOff';
 import useWaitingCount from './open/useWaitingCount';
 import useTodayGlance from './today/useTodayGlance';
+import JobPicker from './jobs/JobPicker';
 
 /* Shown while a screen that loads on demand is on its way. Says what is
    happening and shows the app is alive -- on bad site signal a bare line
@@ -3950,6 +3951,7 @@ function StepJob({ jsa, upd, prev, next }) {
           <div className="formSection">
             <span className="formSectionHeading">Site Details</span>
             <div className="formGrid">
+              <JobPicker jsa={jsa} upd={upd} />
               <div className="formPairRow">
                 <F label="Location / City" value={jsa.location} onChange={v => upd({ location: v })} />
                 <F label="Job Site" value={jsa.jobSite} onChange={v => upd({ jobSite: v })} />
@@ -4684,6 +4686,7 @@ function TemplatesView({ allTemplates, customTemplates, loadTemplate, deleteTemp
 /* Only mounted when there is a session, and lazy either way, so Settings
    stays a local-only screen for anyone who never signs in. */
 const ProfileCard = lazy(() => loadModule(() => import('./account/ProfileCard')));
+const JobsCard = lazy(() => loadModule(() => import('./jobs/JobsCard')));
 
 function SettingsView({ settings, setSettings }) {
   const session = readStoredSession();
@@ -4749,6 +4752,15 @@ function SettingsView({ settings, setSettings }) {
       {session && (
         <Suspense fallback={null}>
           <ProfileCard session={session} />
+        </Suspense>
+      )}
+
+      {/* The job list, and for the office the form that keeps it. Absent
+          rather than empty for anybody signed out -- it is a company list,
+          not a device one. */}
+      {session && (
+        <Suspense fallback={null}>
+          <JobsCard />
         </Suspense>
       )}
 

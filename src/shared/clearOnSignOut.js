@@ -37,6 +37,11 @@ const CONTENT_KEYS = [
   'sdc.uncontrolled.lastFinished.v1',
   'sdc.medical.lastFinished.v1',
   'sdc.separation.lastFinished.v1',
+  // The cached job list. The jobs themselves are not sensitive -- they are
+  // printed across the top of every JSA in the truck -- but the cache also
+  // holds WHICH of them this person keeps on their own shortlist, and that
+  // is theirs. It comes back on the next sign-in.
+  'sdc.jobs.v1',
 ];
 
 const LABELS = {
