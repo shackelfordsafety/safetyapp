@@ -218,7 +218,7 @@ export const SEPARATION_STEPS = [
   { id: 'details', label: 'Separation Details', helper: 'Employee info, separation type, reason, and explanation' },
   { id: 'closeout', label: 'Closeout', helper: 'Rehire status and company closeout' },
   { id: 'review', label: 'Review', helper: 'Check everything before anyone signs' },
-  { id: 'signatures', label: 'Signature', helper: 'Supervisor signs — employee and HR sign the printed copy' },
+  { id: 'signatures', label: 'Signature', helper: 'Manager, employee and witness sign — HR signs later' },
   { id: 'export', label: 'Submit', helper: 'Send it for review, or make a paper copy' },
 ];
 

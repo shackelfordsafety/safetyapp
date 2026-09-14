@@ -177,14 +177,31 @@ function witnessStatementFor(model) {
   return `I was present when this separation was discussed. ${outcome}`;
 }
 
+/* ── Step: Signatures — the three people who are in the room ──────────────
+   Fonzo, 2026-09-14, looking at a real separation he had just run:
+   "There should be three things on there. The manager that's talking to
+   the employee, the employee, and the witness."
+
+   It had four, in the wrong order, with HR in the middle of them. HR is
+   not in that room -- the notice reaches HR afterwards, and Pat signs it
+   on her own screen when she files it. Putting her pad here meant the one
+   person running the meeting had to scroll past a slot nobody present
+   could use, twice, while a man waited to sign.
+
+   So: manager, employee, witness, in the order they actually sign. The HR
+   fields are NOT deleted -- hrSignatureData and hrName still exist on the
+   model, still print, and are still what Pat fills in. They are simply not
+   on the screen of the person holding the meeting. */
 function StepSignatures({ model, upd, prev, next }) {
   return (
-    <StepPanel title="Signatures" intro="Everyone signs here — supervisor, employee, a witness who was in the room, and HR. Nothing has to be printed to be signed.">
+    <StepPanel
+      title="Signatures"
+      intro="The three people in the room sign here — you, the employee, and a witness. HR signs later, on their own screen."
+    >
       <div className="formPairRow">
-        <SignaturePad label="Supervisor Signature" value={model.supervisorSignatureData} onChange={data => upd({ supervisorSignatureData: data, supervisorSignatureDate: data ? new Date().toISOString().slice(0, 10) : model.supervisorSignatureDate })} />
-        <Field label="Supervisor Signature Date" type="date" value={model.supervisorSignatureDate} onChange={v => upd({ supervisorSignatureDate: v })} />
+        <SignaturePad label="Manager Signature" value={model.supervisorSignatureData} onChange={data => upd({ supervisorSignatureData: data, supervisorSignatureDate: data ? new Date().toISOString().slice(0, 10) : model.supervisorSignatureDate })} />
+        <Field label="Manager Signature Date" type="date" value={model.supervisorSignatureDate} onChange={v => upd({ supervisorSignatureDate: v })} />
       </div>
-      <Field label="HR / Management Name" value={model.hrName} onChange={v => upd({ hrName: v })} />
 
       {/* The printed form has always been able to say "Refused /
           Unavailable to Sign" in place of the employee's line -- see
@@ -192,18 +209,25 @@ function StepSignatures({ model, upd, prev, next }) {
           on. Fonzo, 2026-09-11, after HR hit this on a real separation:
           "if employee is not able to sign, should have a employee not
           available button". It was built and unreachable. */}
+      {/* Re-worded 2026-09-14. It used to ask "Is the employee signing the
+          PRINTED copy?" and offer "Yes -- leave a blank line", which was
+          written when nothing here was signed on a screen. With a live pad
+          sitting directly underneath it, that answer told the man running
+          the meeting that saying Yes would leave the line EMPTY. It is the
+          opposite: Yes means he signs, right here, now. */}
       <SegmentedToggle
-        label="Is the employee signing the printed copy?"
+        label="Is the employee signing?"
         value={model.employeeRefusedToSign ? 'no' : 'yes'}
         onChange={v => upd({ employeeRefusedToSign: v === 'no' })}
         options={[
-          { value: 'yes', label: 'Yes — leave a blank line', tone: 'yes' },
-          { value: 'no', label: 'No — not available or refused', tone: 'no' },
+          { value: 'yes', label: 'Yes — they sign below', tone: 'yes' },
+          { value: 'no', label: 'No — refused or not available', tone: 'no' },
         ]}
       />
       <p className="helperText">
         Choosing &ldquo;no&rdquo; prints <strong>Refused / Unavailable to Sign</strong> on the
-        employee&apos;s line instead of a blank one, so the printed record says why it is empty.
+        employee&apos;s line instead of leaving it blank, so the record says why it is
+        empty &mdash; and the witness below is what stands in its place.
       </p>
 
       {/* Employee signature. Acknowledges receipt, not agreement -- the
@@ -246,14 +270,11 @@ function StepSignatures({ model, upd, prev, next }) {
         {witnessStatementFor(model)}
       </p>
 
-      <div className="formPairRow">
-        <SignaturePad
-          label="HR / Management Signature"
-          value={model.hrSignatureData}
-          onChange={data => upd({ hrSignatureData: data, hrSignatureDate: data ? today() : model.hrSignatureDate })}
-        />
-        <Field label="HR Signature Date" type="date" value={model.hrSignatureDate} onChange={v => upd({ hrSignatureDate: v })} />
-      </div>
+      {/* HR's own signature and name used to sit here, under the witness,
+          on the screen of the man running the meeting. They are not gone --
+          they print, and they are filled in by whoever files this at the
+          office. They just do not belong in front of three people standing
+          in a trailer. */}
 
       <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Submit" />
     </StepPanel>
