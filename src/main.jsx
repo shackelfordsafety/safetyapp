@@ -24,6 +24,29 @@ import useTodayGlance from './today/useTodayGlance';
    twelve who does not see red the way the rest do. The colour stays -- it
    just no longer has to do the job alone. Hidden from screen readers,
    which are already told in words what is waiting. */
+/* What the row is actually asking you to do, in the words the job uses.
+   Never "status: submitted" -- a superintendent does not have a status,
+   he has a form somebody needs him to look at.
+
+   The person's name carries most of the weight. "Needs your sign-off"
+   is a rule; "Needs your sign-off · from Nic Mann" is a man waiting. */
+function waitingLine(item) {
+  const who = item.from || null;
+  const when = item.at ? new Date(item.at) : null;
+  const clock = when && !Number.isNaN(when.getTime())
+    ? (when.toDateString() === new Date().toDateString()
+      ? when.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+      : when.toLocaleDateString([], { month: 'short', day: 'numeric' }))
+    : '';
+  let ask;
+  if (item.kind === 'signoff') ask = who ? `Needs your sign-off · from ${who}` : 'Needs your sign-off';
+  /* Was '... · see what changed', which said twice what the arrow on
+     the row already says once, and ran off the side of a phone. */
+  else if (item.kind === 'change') ask = who ? `${who} changed this` : 'An approver changed this';
+  else ask = who ? `Yours to finish · handed over by ${who}` : 'Yours to finish';
+  return clock ? `${ask} · ${clock}` : ask;
+}
+
 function NeedsYouMark() {
   return <span className="needsYouMark" aria-hidden="true">!</span>;
 }
@@ -1575,7 +1598,7 @@ function App() {
   /* How many things are actually somebody's move, on the My Work button,
      visible from every screen. The review queue worked all day and nobody
      knew anything was in it -- see useWaitingCount. */
-  const { count: waitingCount } = useWaitingCount();
+  const { count: waitingCount, items: waitingItems } = useWaitingCount();
   const [activeDoc, setActiveDoc] = useState(null); // null | 'jsa-start' | 'jsa' | 'incident'
   const [jsaStep, setJsaStep] = useState('job');
 
@@ -2943,7 +2966,7 @@ function App() {
             </div>
           )}
           {tab === 'home' && (
-            <HomeView customTemplates={customTemplates} setTab={setTab} docEntries={homeDocEntries} waitingCount={waitingCount} />
+            <HomeView customTemplates={customTemplates} setTab={setTab} docEntries={homeDocEntries} waitingCount={waitingCount} waitingItems={waitingItems} />
           )}
           {tab === 'documents' && !activeDoc && (
             <DocCenterView startHandlers={{
@@ -3177,7 +3200,7 @@ const DOC_ICONS = {
    The six start tiles stay, because starting the morning JSA is the thing
    that happens every single day and it belongs one tap from opening the
    app. */
-function HomeView({ customTemplates, setTab, docEntries, waitingCount = 0 }) {
+function HomeView({ customTemplates, setTab, docEntries, waitingCount = 0, waitingItems = [] }) {
   const glance = useTodayGlance();
   const [query, setQuery] = useState('');
   const inProgress = docEntries.filter(e => e.draft);
@@ -3243,6 +3266,45 @@ function HomeView({ customTemplates, setTab, docEntries, waitingCount = 0 }) {
             </button>
           )}
         </div>
+
+        {/* The number above says you are behind. This says on WHAT.
+
+            Fonzo, on why the count alone was not enough: Pat only reviewed
+            Kameron's separation form because he picked up the phone and
+            told her it was there. A badge reading "1" would not have
+            spelled the name, and a man who cannot see what is waiting has
+            no reason to believe it is urgent.
+
+            Three at most, then a way to the rest. A worklist that runs off
+            the bottom of a phone is a worklist nobody reads to the end;
+            everything here is in My Work in full, so nothing is lost by
+            stopping at three. */}
+        {waitingItems.length > 0 && (
+          <ul className="waitingList">
+            {waitingItems.slice(0, 3).map(item => (
+              <li key={item.key}>
+                <button type="button" className="waitingRow" onClick={() => setTab('today')}>
+                  <span className="waitingMark" aria-hidden="true">!</span>
+                  <span className="waitingText">
+                    <span className="waitingTitle">
+                      {item.type}
+                      {item.title ? <span className="waitingWho"> · {item.title}</span> : null}
+                    </span>
+                    <span className="waitingMeta">{waitingLine(item)}</span>
+                  </span>
+                  <span className="waitingGo" aria-hidden="true">&rsaquo;</span>
+                </button>
+              </li>
+            ))}
+            {waitingItems.length > 3 && (
+              <li>
+                <button type="button" className="waitingMore" onClick={() => setTab('today')}>
+                  {waitingItems.length - 3} more waiting on you &rsaquo;
+                </button>
+              </li>
+            )}
+          </ul>
+        )}
 
         {/* The one thing worth spelling out rather than counting: a JSA
             the crew is signing right now, and how far along it is. */}

@@ -3802,6 +3802,84 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 .signingLabel { flex: 1 1 auto; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .signingCount { flex: 0 0 auto; font-size: 14px; color: var(--text-2, var(--muted)); font-variant-numeric: tabular-nums; }
 
+/* ── What is waiting on you, spelled out ──
+   The count on the tile above says you are behind. These rows say on
+   what, and who is waiting -- the difference between a badge people tap
+   past and a form that actually gets looked at.
+
+   Built on .signingRow's shape on purpose: two lists sitting under the
+   same heading that behave differently is two things to learn. The only
+   real difference is the mark on the left, which is crimson because
+   these are the rows that need a decision from the person reading them.
+   Red never carries the meaning alone here either -- the "!" is a shape,
+   readable in sunlight and to anyone who does not see the colour. */
+.waitingList { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; }
+.waitingRow {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px 10px 14px;
+  background: var(--accent-tint);
+  border: 1px solid var(--accent-border-tint);
+  border-radius: 9px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.waitingRow:hover { border-color: var(--accent); }
+.waitingRow:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.waitingMark {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink, #fff);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+.waitingText { flex: 1 1 auto; min-width: 0; display: grid; gap: 1px; }
+.waitingTitle {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The person's name is the part Pat actually recognises, so it stays at
+   full strength while the document type beside it does not compete. */
+.waitingWho { font-weight: 700; }
+.waitingMeta {
+  font-size: 13.5px;
+  color: var(--text-2, var(--muted));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.waitingGo { flex: 0 0 auto; color: var(--text-3, var(--muted)); font-size: 18px; line-height: 1; }
+.waitingMore {
+  width: 100%;
+  padding: 8px 14px;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  text-align: left;
+  cursor: pointer;
+}
+.waitingMore:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+@media (max-width: 560px) {
+  .waitingMeta { font-size: 13px; }
+}
+
+
 @media (max-width: 560px) {
   .homeToday .glanceRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .glanceItem { padding: 12px 14px; }

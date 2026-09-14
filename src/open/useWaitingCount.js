@@ -31,8 +31,24 @@ const APPROVERS = {
   separation: ['hr', 'owner'],
 };
 
+/* Long enough to know what it is, short enough to fit on one line of a
+   phone. "Incident Report" is what OpenDocsView calls it, so the words a
+   man reads on Home are the words he finds when he taps through. */
+const DOC_LABELS = {
+  jsa: 'JSA',
+  incident: 'Incident Report',
+  disciplinary: 'Disciplinary Notice',
+  separation: 'Employee Separation',
+  medicalEvent: 'Medical Event',
+  uncontrolledEvent: 'Uncontrolled Event',
+};
+
+function label(kind) {
+  return DOC_LABELS[kind] || 'Document';
+}
+
 export default function useWaitingCount() {
-  const [count, setCount] = useState(0);
+  const [state, setState] = useState({ count: 0, items: [] });
 
   const refresh = useCallback(async () => {
     try {
@@ -49,9 +65,40 @@ export default function useWaitingCount() {
         }
         return r.state === 'open' && r.assigned_to === me?.id;
       });
-      setCount(mine.length + (notices || []).length);
+
+      /* The same set the count has always covered, now carrying enough to
+         say WHICH document and WHO it came from. The count is unchanged --
+         the badges on the nav read this too, and a badge that disagrees
+         with the list under it is worse than no list.
+
+         Named by the person on it where there is one, because that is how
+         Pat thinks of a separation form -- it is "Kameron's", not
+         "separation #4". A JSA has no person, so it falls back to the job
+         site. */
+      const items = [
+        ...mine.map((r) => ({
+          key: `doc:${r.id}`,
+          kind: r.state === 'submitted' ? 'signoff' : 'yours',
+          type: label(r.doc_type),
+          title: r.employee_name || r.job_site || null,
+          from: r.state === 'submitted'
+            ? (r.submittedByName || r.createdByName || null)
+            : (r.updatedByName || r.createdByName || null),
+          at: r.state === 'submitted' ? (r.submitted_at || r.updated_at) : r.updated_at,
+        })),
+        ...(notices || []).map((n) => ({
+          key: `edit:${n.id}`,
+          kind: 'change',
+          type: label(n.doc_type),
+          title: null,
+          from: n.editedByName || null,
+          at: n.edited_at,
+        })),
+      ].sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0));
+
+      setState({ count: mine.length + (notices || []).length, items });
     } catch {
-      setCount(0);
+      setState({ count: 0, items: [] });
     }
   }, []);
 
@@ -74,5 +121,5 @@ export default function useWaitingCount() {
     };
   }, [refresh]);
 
-  return { count, refresh };
+  return { ...state, refresh };
 }
