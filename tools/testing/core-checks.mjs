@@ -51,6 +51,8 @@ const CORE = [
   ['verify-site-packs.mjs', 'the site-type hazard packs are intact'],
   ['verify-job-picker.mjs', 'picking a job never blocks one being typed in by hand'],
   ['reproduce-hazards-crash.mjs', 'a bad value saved on the device cannot kill the app'],
+  ['verify-typing-crash.mjs', 'typing a hazard and pausing does not kill the app'],
+  ['verify-voice-crash.mjs', 'speaking into a field does not kill the app'],
   ['verify-view-as-wording.mjs', 'the app names roles, never people'],
   ['verify-simulator.mjs', 'the simulator fills documents and stays hidden otherwise'],
   ['verify-conditional-fields.mjs', 'fields appear and hide when they should'],
