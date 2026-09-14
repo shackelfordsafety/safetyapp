@@ -98,7 +98,7 @@ function waitForServer(url, timeoutMs) {
   });
 }
 
-async function shoot(browser, vp, state, rows, notices, dark) {
+async function shoot(browser, vp, state, rows, notices, dark, asBefore) {
   const context = await browser.newContext({
     viewport: { width: vp.width, height: vp.height },
     ...(vp.touch ? { hasTouch: true, isMobile: Boolean(vp.mobile) } : {}),
@@ -118,6 +118,21 @@ async function shoot(browser, vp, state, rows, notices, dark) {
   if (dark) {
     await context.addInitScript(() => {
       localStorage.setItem('sdc.settings.v2', JSON.stringify({ theme: 'dark' }));
+    });
+  }
+
+  /* The honest before/after: the SAME five things waiting, rendered by
+     the screen as it was. Home could already count them -- the list is
+     the only thing that is new -- so hiding just the list shows exactly
+     what yesterday's build put in front of you, rather than comparing a
+     busy morning against an empty one. */
+  if (asBefore) {
+    await context.addInitScript(() => {
+      document.addEventListener('DOMContentLoaded', () => {
+        const el = document.createElement('style');
+        el.textContent = '.waitingList{display:none!important}';
+        document.head.appendChild(el);
+      });
     });
   }
 
@@ -148,12 +163,12 @@ async function main() {
     await waitForServer(BASE_URL, 25000);
     const browser = await chromium.launch();
     for (const vp of VIEWPORTS) {
-      for (const [state, rows, notices, dark] of [
-        ['before', [], [], false],
-        ['after', OPEN_ROWS, NOTICES, false],
-        ['after-dark', OPEN_ROWS, NOTICES, true],
+      for (const [state, rows, notices, dark, asBefore] of [
+        ['before', OPEN_ROWS, NOTICES, false, true],
+        ['after', OPEN_ROWS, NOTICES, false, false],
+        ['after-dark', OPEN_ROWS, NOTICES, true, false],
       ]) {
-        const { errors, seen } = await shoot(browser, vp, state, rows, notices, dark);
+        const { errors, seen } = await shoot(browser, vp, state, rows, notices, dark, asBefore);
         if (errors.length) { bad += 1; console.log(`  [${state}-${vp.name}] PAGE ERRORS: ${errors.join(' | ')}`); }
         else console.log(`  ${state}-${vp.name}.png  badge=${seen.badge ?? '-'}  rows=${seen.rows.length}  more=${seen.more ?? '-'}`);
         seen.rows.forEach(r => console.log(`      ${r}`));
