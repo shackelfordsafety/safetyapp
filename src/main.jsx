@@ -886,8 +886,136 @@ const BUILT_IN_TEMPLATES = [{
   data: emptyJsa(),
 }];
 
+/* ── Nothing off the device is trusted to be the right shape ─────────────
+   Kris Taute, first morning on the app (2026-09-14): got to the hazards on
+   a JSA, hit "Something went wrong", and every reload put him straight
+   back on it. One value in his saved draft was not the type the screen
+   expected, the render threw, and because the bad value was SAVED, the
+   crash came back every time he opened the app. On his phone only. Nobody
+   else could see it, and he was on another job by the time we needed the
+   stack.
+
+   That is the whole failure mode, and it was never really about which
+   field it was: `{ ...emptyJsa(), ...raw }` takes whatever localStorage
+   hands over, so a list that came back as an object, a string that came
+   back as a number, or a row half written when Android killed the tab all
+   sail straight through to a render that assumes otherwise. PrintableJsa
+   is always mounted, so one bad value takes down every screen, not just
+   the one you were on. tools/testing/reproduce-hazards-crash.mjs found
+   eight shapes that do it; this closes all eight and the ones nobody has
+   hit yet.
+
+   emptyJsa() is the canonical shape, so it is also the spec: every field
+   is forced back to the TYPE of its own default. No list of fields to keep
+   in step -- add a field to emptyJsa() and it is covered from that moment.
+
+   What this deliberately does NOT do is drop a document. A man's typing is
+   worth more than tidiness: anything readable is kept exactly as it is,
+   and only a value that would crash the screen is replaced by its default.
+   Losing a morning's work to a cleanup would be the worse bug. */
+
+function isPlainObject(v) {
+  return Boolean(v) && typeof v === 'object' && !Array.isArray(v);
+}
+
+/* A field the form types into. Numbers and booleans are real answers
+   somebody's device may have stored, so they are kept as text rather than
+   thrown away; an object or a list never is. */
+function asText(value, fallback) {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  return fallback;
+}
+
+function asCount(value, fallback) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+/* One row of the task table. Written by hand, by a template, and by the
+   task-suggestion bundles, which is three chances for it to arrive half
+   formed -- and a null row here is what killed the hazards step outright. */
+function cleanTaskRow(row) {
+  if (!isPlainObject(row)) return null;
+  return {
+    ...row,
+    step: asText(row.step, ''),
+    hazards: asText(row.hazards, ''),
+    controls: asText(row.controls, ''),
+  };
+}
+
+/* What a task suggestion added, so it can be taken back out again. The
+   two lists are what removal reads; without them, removing the task
+   throws. */
+function cleanBundle(bundle) {
+  if (!isPlainObject(bundle)) return null;
+  return {
+    ...bundle,
+    taskText: asText(bundle.taskText, ''),
+    hazards: (Array.isArray(bundle.hazards) ? bundle.hazards : []).filter(x => typeof x === 'string'),
+    controls: (Array.isArray(bundle.controls) ? bundle.controls : []).filter(x => typeof x === 'string'),
+    selectedHazards: (Array.isArray(bundle.selectedHazards) ? bundle.selectedHazards : []).filter(x => typeof x === 'string'),
+    selectedControls: (Array.isArray(bundle.selectedControls) ? bundle.selectedControls : []).filter(x => typeof x === 'string'),
+  };
+}
+
+/* A crew signature is only worth keeping if the image survived -- a row
+   with no picture prints as a blank box over somebody's name, which is
+   worse than an honest empty line. */
+function cleanSignature(sig) {
+  if (!isPlainObject(sig)) return null;
+  if (typeof sig.dataUrl !== 'string' || !sig.dataUrl) return null;
+  return { ...sig, name: asText(sig.name, ''), signedAt: asText(sig.signedAt, '') };
+}
+
+const LIST_CLEANERS = {
+  taskRows: cleanTaskRow,
+  suggestionBundles: cleanBundle,
+  crewSignatures: cleanSignature,
+};
+
+function sanitizeJsa(raw) {
+  const defaults = emptyJsa();
+  if (!isPlainObject(raw)) return defaults;
+
+  const out = { ...defaults };
+  Object.keys(defaults).forEach((key) => {
+    const value = raw[key];
+    if (value === undefined) return;
+    const fallback = defaults[key];
+
+    if (Array.isArray(fallback)) {
+      if (!Array.isArray(value)) return;               // keep the default []
+      const clean = LIST_CLEANERS[key];
+      out[key] = clean ? value.map(clean).filter(Boolean) : value;
+      return;
+    }
+    if (typeof fallback === 'number') { out[key] = asCount(value, fallback); return; }
+    if (typeof fallback === 'string') { out[key] = asText(value, fallback); return; }
+    if (isPlainObject(fallback)) { out[key] = isPlainObject(value) ? value : fallback; return; }
+    out[key] = value;
+  });
+
+  /* Anything the app has added since this draft was written is not in
+     emptyJsa() yet and is none of our business -- carried across
+     untouched, the way the old spread did. */
+  Object.keys(raw).forEach((key) => {
+    if (!(key in defaults)) out[key] = raw[key];
+  });
+
+  return out;
+}
+
+/* The same problem, one level up: a stored list of templates that came
+   back as null or an object gets spread, and "n is not iterable" takes
+   out the whole app before a single screen renders. */
+function asStoredList(value) {
+  return Array.isArray(value) ? value : [];
+}
+
 function makeTodayFromTemplate(data) {
-  return { ...emptyJsa(), ...data, id: crypto.randomUUID?.() || String(Date.now()), status: 'draft', date: todayISO(), timeIssued: '', timeExpired: '', tailgateTopic: '', previousDaySafety: '', signatureLineCount: Number(data?.signatureLineCount) || 30, signInMode: 'kiosk', crewSignatures: [], notes: '', lastSavedAt: '', taskRows: withRowIds(data?.taskRows) };
+  return { ...sanitizeJsa(data), id: crypto.randomUUID?.() || String(Date.now()), status: 'draft', date: todayISO(), timeIssued: '', timeExpired: '', tailgateTopic: '', previousDaySafety: '', signatureLineCount: Number(data?.signatureLineCount) || 30, signInMode: 'kiosk', crewSignatures: [], notes: '', lastSavedAt: '', taskRows: withRowIds(data?.taskRows) };
 }
 function templatePayload(jsa, name) {
   return {
@@ -1575,7 +1703,7 @@ function RemoveBundleModal({ task, hazards, controls, onCancel, onRemoveTaskOnly
 /* ── App ── */
 function App() {
   const [settings, setSettings] = useState(() => ({ theme: 'light', customQuick: { task: [], hazard: [], control: [] }, ...safeJson(localStorage.getItem(KEYS.settings), {}) }));
-  const [customTemplates, setCustomTemplates] = useState(() => safeJson(localStorage.getItem(KEYS.templates), []));
+  const [customTemplates, setCustomTemplates] = useState(() => asStoredList(safeJson(localStorage.getItem(KEYS.templates), [])));
 
   /* Templates and settings follow the account across devices. Silent by
      design: nothing loads while signed out, it never blocks a screen, and
@@ -1593,7 +1721,14 @@ function App() {
     onNeedsName: setNeedsName,
   });
 
-  const [savedDraft, setSavedDraft] = useState(() => safeJson(localStorage.getItem(KEYS.draft), null));
+  const [savedDraft, setSavedDraft] = useState(() => {
+    /* Home reads this copy directly to title the row, so it has to be as
+       shape-safe as the one the builder opens -- an object where a job
+       site belongs is rendered as a React child and takes out the app
+       before any screen appears. */
+    const raw = safeJson(localStorage.getItem(KEYS.draft), null);
+    return raw ? sanitizeJsa(raw) : null;
+  });
   const [jsa, setJsa] = useState(() => emptyJsa());
   const [tab, setTab] = useState('home');
   /* How many things are actually somebody's move, on the My Work button,
@@ -2284,7 +2419,7 @@ function App() {
   function loadSavedDraft() {
     const raw = safeJson(localStorage.getItem(KEYS.draft), savedDraft);
     if (!raw) { showToast('No saved draft found on this device.'); return; }
-    const normalized = { ...emptyJsa(), ...raw, taskRows: withRowIds(raw.taskRows) };
+    const normalized = { ...sanitizeJsa(raw), taskRows: withRowIds(sanitizeJsa(raw).taskRows) };
     setJsa(normalized);
     setSavedDraft(normalized);
     setTemplateId('blank-jsa');
@@ -2402,7 +2537,7 @@ function App() {
   // localStorage, persisted immediately, and guarded by the same
   // ConfirmReplaceDialog every other JSA "replace the draft" action uses.
   function loadImportedJsa(data) {
-    const normalized = { ...emptyJsa(), ...data, taskRows: withRowIds(data.taskRows) };
+    const normalized = { ...sanitizeJsa(data), taskRows: withRowIds(sanitizeJsa(data).taskRows) };
     setJsa(normalized);
     setSavedDraft(normalized);
     setTemplateId('blank-jsa');
@@ -5108,8 +5243,8 @@ function QuickPanel({ title, groups, onPick, onRemove, existingValue = '', itemT
   const keyBase = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   const recentKey = `sdc.quick.recent.${keyBase}`;
   const favoriteKey = `sdc.quick.favorites.${keyBase}`;
-  const [recent, setRecent] = useState(() => safeJson(localStorage.getItem(recentKey), []));
-  const [favorites, setFavorites] = useState(() => safeJson(localStorage.getItem(favoriteKey), []));
+  const [recent, setRecent] = useState(() => asStoredList(safeJson(localStorage.getItem(recentKey), [])));
+  const [favorites, setFavorites] = useState(() => asStoredList(safeJson(localStorage.getItem(favoriteKey), [])));
   const baseGroups = Array.isArray(groups) ? groups : [];
   const availableGroups = [
     ...(favorites.length ? [{ title: 'Favorites', items: favorites }] : []),

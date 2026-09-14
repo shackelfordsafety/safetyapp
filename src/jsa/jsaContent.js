@@ -68,7 +68,12 @@ export function isGenericRow(row) {
 }
 
 export function normalizeRows(rows) {
-  return (Array.isArray(rows) ? rows : []).filter(r => hasText(r.step) || hasText(r.hazards) || hasText(r.controls));
+  /* A null or half-written row is not a row. It used to throw here --
+     reading .step off null -- which took down every screen at once,
+     because the printable JSA is always mounted. */
+  return (Array.isArray(rows) ? rows : [])
+    .filter(r => r && typeof r === 'object')
+    .filter(r => hasText(r.step) || hasText(r.hazards) || hasText(r.controls));
 }
 
 export function rowsFromSummary(jsa) {
