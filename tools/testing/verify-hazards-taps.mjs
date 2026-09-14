@@ -7,21 +7,20 @@
 // his phone: something he TAPS on that screen does it, and Fonzo -- four
 // devices, months of use -- never taps it.
 //
-// So this taps all of them. Every quick-add chip in Tasks, Hazards and
-// Controls, one at a time, on a phone-sized screen, checking after each
-// one whether the app died. A crash names the exact chip.
+// So this taps all of them. Every quick-add chip, in every category, in
+// all three pickers, on a phone-sized screen, checking after each tap
+// whether the app died. A crash names the exact chip.
 //
-// UNFINISHED, and honest about it: the chip list re-renders after every
-// tap, so this currently gets one tap deep before its handles go stale. It
-// is committed anyway because it already earned its keep -- it is what
-// found that the quick-add panels start CLOSED on a phone and OPEN on a
-// desktop, which is a real difference between Kris and Fonzo. Finish it by
-// re-querying the chips by label each pass instead of holding handles.
-// NOT in core-checks until it does.
+// Two things the first version of this got wrong, both worth keeping
+// written down:
 //
-// Runs in a single page on purpose: the point is the sequence a real man
-// goes through, and it makes a hundred-odd taps take seconds instead of
-// minutes.
+//   1. The pickers are <details open={forceOpen || !isTouchPrimary}>, so
+//      they start CLOSED on a phone and OPEN on a desktop. Kris and Fonzo
+//      are not looking at the same screen. On touch they open from a
+//      button labelled "Suggestions".
+//   2. Tapping a task chip can open a suggestion sheet OVER the list,
+//      which detaches every chip behind it. Without dismissing that sheet
+//      the sweep silently stops after one tap and reports itself clean.
 
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
@@ -51,6 +50,11 @@ function waitForServer(url, timeoutMs) {
   });
 }
 
+const crashed = page => page.locator('text=Something went wrong').count().then(n => n > 0);
+const detail = page => page.evaluate(
+  () => document.querySelector('details pre')?.textContent || '',
+).catch(() => '');
+
 async function openHazards(context) {
   const page = await context.newPage();
   const errors = [];
@@ -58,24 +62,31 @@ async function openHazards(context) {
   await page.goto(BASE, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(800);
 
-  // Start a brand new JSA, exactly as a foreman would on his first morning.
+  // A brand new JSA, exactly as a foreman would on his first morning.
   const start = page.getByRole('button', { name: /^Start/i }).first();
-  if (await start.count()) { await start.click(); await page.waitForTimeout(700); }
+  if (await start.count()) { await start.click().catch(() => {}); await page.waitForTimeout(700); }
   const blank = page.getByRole('button', { name: /Start Blank|Blank JSA/i }).first();
-  if (await blank.count()) { await blank.click(); await page.waitForTimeout(800); }
-
+  if (await blank.count()) { await blank.click().catch(() => {}); await page.waitForTimeout(800); }
   const step = page.locator('.stepNavRow', { hasText: /Tasks/i }).first();
-  if (await step.count()) { await step.click(); await page.waitForTimeout(800); }
+  if (await step.count()) { await step.click().catch(() => {}); await page.waitForTimeout(800); }
+
+  // On touch the pickers are collapsed behind this.
+  for (const o of await page.getByRole('button', { name: /^Suggestions$/i }).all()) {
+    await o.click().catch(() => {});
+    await page.waitForTimeout(200);
+  }
+  await page.waitForTimeout(500);
   return { page, errors };
 }
 
-async function crashed(page) {
-  return (await page.locator('text=Something went wrong').count()) > 0;
-}
-
-async function detail(page) {
-  return page.evaluate(() => document.querySelector('details pre')?.textContent || '')
-    .catch(() => '');
+/* Anything that opened over the list has to go before the next tap, or
+   every chip behind it is unreachable and the sweep reports nothing. */
+async function dismissOverlay(page) {
+  if (!(await page.locator('.dialogOverlay').count())) return;
+  const closers = page.getByRole('button', { name: /Cancel|Close|Not now|Keep|Skip|No thanks/i });
+  if (await closers.count()) await closers.first().click().catch(() => {});
+  else await page.keyboard.press('Escape').catch(() => {});
+  await page.waitForTimeout(250);
 }
 
 async function main() {
@@ -90,60 +101,55 @@ async function main() {
     const context = await browser.newContext({
       viewport: { width: 412, height: 915 }, hasTouch: true, isMobile: true,
     });
+    const { page, errors } = await openHazards(context);
 
-    let { page, errors } = await openHazards(context);
-    const reached = await page.locator('.stepPanel', { hasText: /Hazard/i }).count();
-    console.log(reached ? 'On the Tasks / Hazards step.' : 'WARNING: never reached the hazards step.');
+    const panels = page.locator('.quickPanel');
+    const panelCount = await panels.count();
+    console.log(`${panelCount} pickers open on the Tasks / Hazards step.`);
+    if (!panelCount) console.log('WARNING: no pickers found — the sweep below proves nothing.');
 
-    /* Open every quick-add picker first -- the chips only exist once the
-       panel they live in is showing. */
-    /* On a touch device every quick-add panel starts CLOSED --
-       <details open={forceOpen || !isTouchPrimary}>. That is a real
-       difference between Kris's phone and Fonzo's desktop, and it is why
-       the first version of this sweep found nothing to tap. */
-    const openers = await page.getByRole('button', { name: /^Suggestions$/i }).all();
-    for (const o of openers) { await o.click().catch(() => {}); await page.waitForTimeout(200); }
-    await page.waitForTimeout(600);
+    for (let p = 0; p < panelCount && !hits.length; p += 1) {
+      const panel = panels.nth(p);
+      const title = (await panel.locator('summary').first().innerText().catch(() => `picker ${p + 1}`)).trim();
+      const select = panel.locator('select').first();
+      const categories = await select.locator('option').allInnerTexts().catch(() => []);
+      console.log(`\n${title} — ${categories.length} categories`);
 
-    const chips = page.locator('.quickChipWrap .chip');
-    const total = await chips.count();
-    console.log(`${total} chips to tap.`);
+      for (const category of categories) {
+        if (hits.length) break;
+        await select.selectOption({ label: category }).catch(() => {});
+        await page.waitForTimeout(300);
 
-    for (let i = 0; i < total; i += 1) {
-      if (await crashed(page)) break;
-      const chip = chips.nth(i);
-      let label = '';
-      try { label = (await chip.innerText()).replace(/\s+/g, ' ').trim().slice(0, 60); } catch { continue; }
-      if (!label) continue;
-      try { await chip.click({ timeout: 2000 }); } catch { continue; }
-      tapped += 1;
-      await page.waitForTimeout(120);
+        const count = await panel.locator('.quickChipWrap .chip').count();
+        for (let i = 0; i < count; i += 1) {
+          if (await crashed(page)) break;
+          /* Re-queried every pass on purpose: the list re-renders after
+             each tap, so a handle taken earlier is already stale. */
+          const chip = panel.locator('.quickChipWrap .chip').nth(i);
+          let label = '';
+          try { label = (await chip.innerText({ timeout: 1500 })).replace(/\s+/g, ' ').trim(); } catch { continue; }
+          if (!label) continue;
 
-      if (await crashed(page)) {
-        const d = (await detail(page)).split(/\r?\n/).slice(0, 3).join(' | ');
-        hits.push({ label, d });
-        console.log(`  CRASH on tapping: ${JSON.stringify(label)}\n         ${d}`);
-        await page.screenshot({ path: path.join(outDir, 'tap-crash.png'), fullPage: true }).catch(() => {});
-        break;
-      }
-      /* A suggestion sheet may have opened over the list -- take the
-         offered hazards and controls, which is what a man actually does,
-         then carry on down the chips. */
-      const accept = page.getByRole('button', { name: /Add (these|all)|Use these|Add to JSA/i }).first();
-      if (await accept.count()) {
-        await accept.click().catch(() => {});
-        await page.waitForTimeout(250);
-        if (await crashed(page)) {
-          const d = (await detail(page)).split(/\r?\n/).slice(0, 3).join(' | ');
-          hits.push({ label: `${label} → accepting its suggestions`, d });
-          console.log(`  CRASH accepting suggestions for: ${JSON.stringify(label)}\n         ${d}`);
-          await page.screenshot({ path: path.join(outDir, 'tap-crash.png'), fullPage: true }).catch(() => {});
-          break;
+          try { await chip.click({ timeout: 2000 }); } catch { await dismissOverlay(page); continue; }
+          tapped += 1;
+          await page.waitForTimeout(140);
+
+          for (const when of ['tapping', 'closing the sheet for']) {
+            if (when === 'closing the sheet for') await dismissOverlay(page);
+            if (await crashed(page)) {
+              const d = (await detail(page)).split(/\r?\n/).slice(0, 4).join(' | ');
+              hits.push({ label, category, title, when, d });
+              console.log(`  CRASH ${when} ${JSON.stringify(label)} in ${category}\n         ${d}`);
+              await page.screenshot({ path: path.join(outDir, 'tap-crash.png'), fullPage: true }).catch(() => {});
+              break;
+            }
+          }
+          if (hits.length) break;
         }
       }
     }
 
-    if (errors.length) console.log('console errors:', errors.slice(0, 3).join(' | '));
+    if (errors.length) console.log('\nconsole errors:', errors.slice(0, 3).join(' | '));
     await browser.close();
     console.log(`\n${tapped - hits.length}/${tapped} passed`);
     if (hits.length) console.log(`${hits.length} CHECK(S) FAILED — a tap on the hazards step kills the app.`);

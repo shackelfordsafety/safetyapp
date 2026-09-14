@@ -60,6 +60,13 @@ const CORE = [
 
 /* Need a real account. Run by hand before anything that touches the
    review chain or publishing. */
+/* Too slow for the list above -- they drive hundreds of interactions --
+   but they are the broad sweeps. Run them after anything structural. */
+const SWEEPS = [
+  ['monkey-every-workflow.mjs', 'press everything in all six workflows (add --desktop for the other input mode)'],
+  ['verify-signatures-every-doc.mjs', 'a signature can still be captured in every document that asks for one'],
+];
+
 const BY_HAND = [
   ['verify-publish-hands-off.mjs', 'publishing takes the JSA off the device'],
   ['verify-last-jsa-across-devices.mjs', '"same info as last time?" follows you'],
