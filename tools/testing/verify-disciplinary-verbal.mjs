@@ -104,7 +104,7 @@ async function main() {
     await page.mouse.down();
     await page.mouse.move(box.x + box.width - 20, box.y + box.height / 2 - 10, { steps: 8 });
     await page.mouse.up();
-    await page.locator('.signaturePadActions button', { hasText: /^Save$/ }).first().click();
+    await page.locator('.signaturePadActions button', { hasText: /^(Done|Save)$/ }).first().click();
 
     await page.getByRole('tab').last().first().click();
     await page.waitForSelector('text=Readiness');

@@ -167,7 +167,7 @@ async function main() {
         const canvas = page.locator('canvas.signatureCanvas').first();
         if (!(await canvas.count())) break;
         try { await draw(page, canvas); } catch { break; }
-        const save = page.getByRole('button', { name: /^Save$/i }).first();
+        const save = page.getByRole('button', { name: /^(Done|Save)$/i }).first();
         if (await save.count()) { await save.click().catch(() => {}); await page.waitForTimeout(350); }
         signedHere += 1;
       }

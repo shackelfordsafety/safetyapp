@@ -160,7 +160,7 @@ async function main() {
 
         /* Some pads commit as you draw and show only Clear; others have an
            explicit Save. Both are legitimate -- take whichever is there. */
-        const save = page.getByRole('button', { name: /^Save$/i }).first();
+        const save = page.getByRole('button', { name: /^(Done|Save)$/i }).first();
         if (await save.count()) { await save.click().catch(() => {}); await page.waitForTimeout(400); }
 
         const kept = await page.locator('img.signaturePreview').count();

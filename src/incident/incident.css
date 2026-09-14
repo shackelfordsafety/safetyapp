@@ -601,3 +601,28 @@ html[data-theme='dark'] .incidentReadinessItem.ok .checkIcon { color: #8bd48f; }
 .incidentWatermark--page5 {
   color: rgba(197, 31, 58, 0.08);
 }
+
+/* ── The signing sheet ──
+   A signature stopped being a field in a form and became a moment: the
+   background dims, one thing is on screen, and the only ways out are Done
+   and Cancel. See SignaturePad.jsx for why -- a small Save button under
+   the pad lost a real employee's signature on a real separation.
+
+   Sized generously on purpose. The pad measures its own container, so a
+   wider sheet gives a bigger box to sign in, which is the whole point when
+   somebody is signing with a finger on a tailgate. */
+.signSheetOverlay { align-items: center; }
+.signSheet {
+  width: min(92vw, 680px);
+  max-height: 92vh;
+  overflow-y: auto;
+  display: grid;
+  gap: 4px;
+}
+.signSheetTitle { margin: 0; font-size: 20px; }
+.signSheetHint { margin: 0 0 6px; color: var(--text-2, var(--muted)); font-size: 14.5px; }
+/* Inside the sheet the label is already the heading above it. */
+.signSheet .signaturePad > .fieldLabel { display: none; }
+.signSheet .signaturePadActions { justify-content: flex-end; gap: 10px; }
+/* The one that commits. Big enough that nobody walks away from it. */
+.signSheet .signaturePadActions .btn.primary { min-height: 48px; padding-inline: 26px; font-size: 16px; }

@@ -292,7 +292,7 @@ export default function SignaturePad({ value, onChange, label, disabled, autoOpe
     );
   }
 
-  return (
+  const pad = (
     <div className="signaturePad">
       {label ? <div className="fieldLabel">{label}</div> : null}
       <div className="signatureCanvasWrap" ref={wrapRef}>
@@ -321,9 +321,50 @@ export default function SignaturePad({ value, onChange, label, disabled, autoOpe
         {!commitOnStroke && (
           <>
             <button type="button" className="btn ghost sm" onClick={cancelEdit}>Cancel</button>
-            <button type="button" className="btn primary sm" onClick={saveSignature}>Save</button>
+            <button type="button" className="btn primary sm" onClick={saveSignature}>Done</button>
           </>
         )}
+      </div>
+    </div>
+  );
+
+  /* The crew page signs inline and commits as the pen moves -- ten seconds,
+     a cracked phone, nothing on screen to lose. Leave it exactly as it is. */
+  if (commitOnStroke) return pad;
+
+  /* ── Everywhere else: a signing sheet, not a panel in a form ────────────
+     Fonzo, 2026-09-14, working out why signatures kept going missing on a
+     real separation: "the vanishing signatures on me bc we never hit save
+     on the signature... you click a sign button and a pop up pops up and
+     dims the background for the person to sign."
+
+     He is right, and it was not his mistake. Save was a small button under
+     the pad, below the fold on a phone, with nothing to say the mark was
+     uncommitted. You drew, it LOOKED signed, you moved on, and it was
+     gone -- on a document where the person who signed it has already left
+     the property. That is the worst failure this app can have: paperwork
+     you believe you have and do not.
+
+     A sheet fixes it by making signing a moment instead of a field. The
+     background dims, there is one thing on screen, and the only ways out
+     are Done and Cancel -- deliberately NOT a tap on the backdrop or the
+     Escape key, which are the two ways a half-drawn signature used to
+     disappear without anybody deciding anything. */
+  return (
+    <div className="signaturePad">
+      {label ? <div className="fieldLabel">{label}</div> : null}
+      <div className="signaturePreview signaturePreviewEmpty">Signing…</div>
+      <div className="dialogOverlay signSheetOverlay">
+        <div
+          className="dialogPanel signSheet"
+          role="dialog"
+          aria-modal="true"
+          aria-label={label ? `${label}` : 'Signature'}
+        >
+          <h3 className="signSheetTitle">{label || 'Signature'}</h3>
+          <p className="signSheetHint">Sign in the box, then tap Done.</p>
+          {pad}
+        </div>
       </div>
     </div>
   );

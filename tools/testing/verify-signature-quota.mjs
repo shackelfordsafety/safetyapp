@@ -139,7 +139,7 @@ async function main() {
     await page.waitForTimeout(400);
     const canvas = page.locator('canvas.signatureCanvas').first();
     await draw(page, canvas);
-    const save = page.getByRole('button', { name: /^Save$/i }).first();
+    const save = page.getByRole('button', { name: /^(Done|Save)$/i }).first();
     if (await save.count()) { await save.click().catch(() => {}); await page.waitForTimeout(400); }
 
     const onScreenNow = await page.locator('img.signaturePreview').count();

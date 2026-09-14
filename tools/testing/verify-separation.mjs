@@ -74,7 +74,7 @@ async function drawSignature(page, scopeLocator) {
   }
   await page.mouse.up();
   await page.waitForTimeout(100);
-  await page.locator('.signaturePadActions button', { hasText: /^Save$/ }).first().click();
+  await page.locator('.signaturePadActions button', { hasText: /^(Done|Save)$/ }).first().click();
   await page.waitForTimeout(150);
 }
 
@@ -372,7 +372,7 @@ async function main() {
         return false;
       });
       check(hasInk, 'Touch input (native touch listener path) draws visible ink on the signature canvas');
-      await page.locator('.signaturePadActions button', { hasText: /^Save$/ }).first().click();
+      await page.locator('.signaturePadActions button', { hasText: /^(Done|Save)$/ }).first().click();
       const previewSrc = await page.locator('.signaturePreview').first().getAttribute('src');
       check(Boolean(previewSrc && previewSrc.startsWith('data:image/png')), 'Touch-drawn signature saves to a real PNG preview');
 
@@ -405,7 +405,7 @@ async function main() {
       await page.mouse.down();
       await page.mouse.move(box.x + box.width - 20, box.y + box.height / 2 - 10, { steps: 6 });
       await page.mouse.up();
-      await page.locator('.signaturePadActions button', { hasText: /^Save$/ }).first().click();
+      await page.locator('.signaturePadActions button', { hasText: /^(Done|Save)$/ }).first().click();
       await page.getByRole('tab').last().first().click();
       await page.waitForTimeout(400);
       await page.waitForSelector('text=Readiness');
