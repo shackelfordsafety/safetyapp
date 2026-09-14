@@ -210,7 +210,22 @@ export async function fetchFiledToday() {
 
   const { data, error } = await db
     .from('documents')
-    .select('id, doc_type, employee_name, job_site, doc_date, submitted_at, data, pdf_path')
+    /* Summary columns only. `data` used to be in here, and `data` is the
+       whole document -- for a JSA that is every crew signature stored as an
+       image inside the record, 1.5 to 2.9 MB apiece on real ones.
+
+       This query runs on Home AND again on My Work, to draw a count and a
+       line of text per row. On 2026-09-14 that meant downloading and
+       unpacking 1.77 MB to render two lines, twice. Pat's screen went black
+       for about five seconds after a refresh; it was this, on an office
+       desktop, not a slow connection.
+
+       Nothing read it. The only preview that uses a document body reads it
+       from jsa_publications, and Records already fetches one row's `data`
+       on demand when somebody actually opens it -- same pattern, which is
+       what this should have been doing all along. It would have got worse
+       every week: a JSA a day is ~2 MB a day added to this screen. */
+    .select('id, doc_type, employee_name, job_site, doc_date, submitted_at, pdf_path')
     .gte('submitted_at', since.toISOString())
     .order('submitted_at', { ascending: false });
   if (error) throw new Error(error.message);
