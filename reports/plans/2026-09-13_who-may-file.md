@@ -1,117 +1,49 @@
-# Who is allowed to file a document — one decision, then one migration
+# Who is allowed to file a document — DECIDED, no change
 
-Written overnight 2026-09-13. **Nothing has been changed.** This is the
-last open finding from the 2026-09-11 database audit, written up so it
-takes about a minute to rule on.
+Asked 2026-09-13 overnight, answered by Fonzo 2026-09-14.
 
-## The one sentence
+## The decision
 
-The database asks one question — "may you file this?" — where the company
-has two: *may you fill this in* and *may you say it is final*. Because
-those got answered together, the safety coordinator cannot file his own
-incident report.
+> "Safety should only be able to submit their own JSAs, everything else
+> requires the PM/HR approval, bc a safety could write up an incident
+> report and the PM not like it."
 
-## What is true right now
+**No change.** The database already does exactly this. The last open
+finding from the 2026-09-11 audit is closed as "working as intended",
+not as a bug deferred.
 
-`private.can_file_doc_type` allows, in this order:
+## Why the finding was wrong
 
-| Who | May file |
-|---|---|
-| `is_admin` (one account: yours) | everything |
-| `owner` (2 people) | everything |
-| anyone at all | JSA |
-| `pm` (**nobody holds this role**) + `hr` (1 person) | incident, medical, uncontrolled |
-| `hr` (1 person) | disciplinary, separation |
-| `safety`, `clerk`, `foreman`, `field` | **JSA only** |
+The audit called it a hole that "safety cannot file ANY non-JSA
+document". That reads as though a safety coordinator cannot report an
+incident. He can. Filing and submitting are two different gates, and
+only one of them is about roles:
 
-Read that bottom row again. `safety` is your role. You can file things
-today only because your account carries the admin flag, and that flag is
-the one thing that goes to HR with the logins when you leave. The day
-after the handover, the safety coordinator's account can file a JSA and
-nothing else.
-
-This is masked right now — `ARCHIVE_FILING_ENABLED` is `false`, so nobody
-files anything but a JSA yet. It bites the moment that flag flips.
-
-## Why it is wrong, plainly
-
-Filing is not approval. Filing is "this paperwork is done, put it in the
-cabinet." Approval is "I am the one who says this is final." The audit
-found the code treating them as the same question, which means the only
-way to let somebody file a form is to also let them sign it off.
-
-The two are already separate in the app — `SendForReviewButton` and
-`ApproveAndFileButton` are different buttons — and separate in your head.
-They are one line in the database.
-
-## What I would change (your call)
-
-Split the question in two. **Who approves stays exactly as it is** — the
-rule you set yourself, that a safety coordinator does not get to decide a
-report is final, does not move. What changes is that filing follows the
-document instead of the role:
-
-> You may file a document if you created it, or if you are allowed to
-> approve that kind of document.
-
-| Kind | Approves it (unchanged) | Could also file it (new) |
+| Step | What it means | Who may |
 |---|---|---|
-| JSA | — | anyone, unchanged |
-| Incident, Medical, Uncontrolled | pm, hr, owner | whoever wrote it |
-| Disciplinary, Separation | hr, owner | whoever wrote it |
+| Start / submit (`open_documents`) | Write it and hand it up for sign-off | anyone signed in — the policy only checks `created_by = auth.uid()` |
+| File (`documents`) | "This is final, into the archive" | `private.can_file_doc_type` — JSA anyone, incident/medical/uncontrolled pm+hr, disciplinary/separation hr, owner and admin everything |
 
-Effect: the safety coordinator files his own incident report. He still
-cannot file Nic's, and he still cannot approve anyone's. Clerk — the role
-that exists because the clerks type the paperwork up — gets the same.
+So the safety coordinator writes the incident report and sends it; it
+waits in the PM's queue until the PM signs it off. A report the PM does
+not agree with cannot be filed over his head. That is the rule Fonzo
+described, and it is the rule that is running.
 
-## The thing to decide
+The proposed "filing follows whoever wrote it" change from the original
+draft of this document is **rejected** — it would have let safety file
+his own incident report without a PM ever seeing it, which is the exact
+thing this is meant to prevent.
 
-**Should filing follow who wrote it?** Yes or no is enough.
+## Do not re-open this without
 
-- **Yes** → I write one migration, the matrix above, done in a sitting.
-- **No** → tell me which roles should file which kinds and I will write
-  that instead.
-- **Third option worth naming:** leave it alone entirely. It costs
-  nothing today and it only matters when `ARCHIVE_FILING_ENABLED` goes
-  true. If that flag is not flipping before the handover, this can wait.
+A specific case where somebody is genuinely blocked from doing their
+job — not a role matrix that merely looks asymmetric. The asymmetry is
+the point.
 
-## The migration, ready to go
+## One thing still worth knowing
 
-Not applied, and deliberately not saved under `supabase/migrations/` so
-nothing can push it by accident. Say the word and it moves there.
-
-```sql
--- Filing is "the paperwork is done", not "I say this is final".
-create or replace function private.can_file_doc_type(kind text)
-returns boolean
-language sql stable security definer set search_path to 'public'
-as $$
-  select case
-    when exists (select 1 from public.profiles where id = auth.uid() and is_admin) then true
-    when private.my_role() = 'owner' then true
-    when kind = 'jsa' then true
-    when kind in ('incident', 'medicalEvent', 'uncontrolledEvent')
-      then private.my_role() in ('pm', 'hr')
-    when kind in ('disciplinary', 'separation')
-      then private.my_role() = 'hr'
-    else false
-  end;
-$$;
--- ^ unchanged: this stays as the APPROVER test, renamed can_approve_doc_type.
--- The filing policy on public.documents then reads:
---     submitted_by = auth.uid()
---     and (created the document, or private.can_approve_doc_type(doc_type))
--- with "created the document" proven against open_documents.created_by
--- rather than taken on the client's word.
-```
-
-Note the last two lines — this is the part worth doing carefully rather
-than quickly. "Whoever wrote it" has to be proven from a row the database
-already holds, not from something the app sends up, or it is not a rule.
-
-## One more thing the audit did not say
-
-Nobody holds the `pm` role. Two of the six document types list `pm` as an
-approver and no such person exists, so those three kinds are Pat and the
-two owners only. Not a bug — just worth knowing that `pm` is currently a
-rule about nobody.
+Nobody holds the `pm` role. Two of the six document types list `pm` as
+an approver and no such person exists, so incident / medical /
+uncontrolled are Pat (`hr`) and the two owners only. Not a bug, but if
+the intent is that a PM approves incident reports, somebody has to be
+given that role.
