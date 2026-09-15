@@ -78,10 +78,10 @@ function StepNotice({ model, upd, next }) {
           </EmployeeOwned>
           {model.employeeResponseAt && (
             <p className="helperText">
-              {model.employeeName || 'The employee'} wrote this on his own phone
-              on {fmtWhen(model.employeeResponseAt)}. It is his statement, so it
-              cannot be edited here &mdash; and a copy of exactly what he typed is
-              kept separately. If it needs to be redone, send him a new code.
+              {model.employeeName || 'The employee'} wrote this on their own phone
+              on {fmtWhen(model.employeeResponseAt)}. Those are their own words, so they
+              cannot be edited here &mdash; and a copy of exactly what was typed is
+              kept separately. If it has to be redone, send a new code.
             </p>
           )}
         </NumberedSection>
@@ -153,7 +153,7 @@ function today() {
    that settles an argument months later. */
 function fmtWhen(iso) {
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return 'his own device';
+  if (Number.isNaN(d.getTime())) return 'their own device';
   return d.toLocaleString(undefined, {
     month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
   });
@@ -174,13 +174,13 @@ function witnessStatementFor(model) {
 function StepSignatures({ model, upd, prev, next }) {
   const verbal = isVerbalWarning(model);
   return (
-    <StepPanel title="Signatures" intro="Everyone signs here — manager, employee, and a witness who was in the room. Nothing has to be printed to be signed.">
+    <StepPanel title="Signatures" intro="Everyone signs here — management, the employee, and a witness who was in the room. Nothing has to be printed to be signed.">
       {verbal && (
-        <p className="helperText">A verbal warning is a coaching conversation, not a signed notice — the employee doesn&apos;t sign this at all. Document what was said in Notice Details; only the manager signs below.</p>
+        <p className="helperText">A verbal warning is a coaching conversation, not a signed notice — the employee doesn&apos;t sign this at all. Document what was said in Notice Details; only management signs below.</p>
       )}
       <div className="formPairRow">
-        <SignaturePad label="Manager Signature" value={model.managerSignatureData} onChange={data => upd({ managerSignatureData: data, managerSignatureDate: data ? today() : model.managerSignatureDate })} />
-        <Field label="Manager Signature Date" type="date" value={model.managerSignatureDate} onChange={v => upd({ managerSignatureDate: v })} />
+        <SignaturePad label="Management Signature" value={model.managerSignatureData} onChange={data => upd({ managerSignatureData: data, managerSignatureDate: data ? today() : model.managerSignatureDate })} />
+        <Field label="Management Signature Date" type="date" value={model.managerSignatureDate} onChange={v => upd({ managerSignatureDate: v })} />
       </div>
       {/* Deliberately NOT the Supervisor field from Notice Details. That one
           says who the employee works for; this says who is giving the notice
@@ -188,7 +188,7 @@ function StepSignatures({ model, upd, prev, next }) {
           separation form printing the first over the second put the wrong
           man's name on a real record. */}
       <Field
-        label="Manager Name and Title"
+        label="Management Name and Title"
         value={model.managerName}
         onChange={v => upd({ managerName: v })}
         placeholder="Whoever is signing above"
@@ -260,9 +260,9 @@ function StepSignatures({ model, upd, prev, next }) {
           </EmployeeOwned>
           {model.employeeResponseAt && (
             <p className="helperText">
-              Signed by {model.employeeName || 'the employee'} on his own phone on{' '}
-              {fmtWhen(model.employeeResponseAt)}. His signature is his &mdash; nobody
-              here can replace or remove it. Send him a new code if it has to be done
+              Signed by {model.employeeName || 'the employee'} on their own phone on{' '}
+              {fmtWhen(model.employeeResponseAt)}. That signature is theirs &mdash; nobody
+              here can replace or remove it. Send a new code if it has to be done
               again.
             </p>
           )}

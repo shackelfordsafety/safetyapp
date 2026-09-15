@@ -247,7 +247,7 @@ async function main() {
       check(employeeAddSigCount === 0, 'Employee signature pad is not offered once refused/unavailable is toggled on');
 
       // Only the manager signs.
-      await page.locator('.signaturePad', { hasText: 'Manager Signature' }).getByRole('button', { name: 'Add signature' }).click();
+      await page.locator('.signaturePad', { hasText: /Manage(r|ment) Signature/ }).getByRole('button', { name: 'Add signature' }).click();
       const canvas = page.locator('canvas.signatureCanvas').first();
       await canvas.scrollIntoViewIfNeeded();
       const box = await canvas.boundingBox();

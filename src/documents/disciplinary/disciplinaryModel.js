@@ -158,7 +158,7 @@ export const DISCIPLINARY_STEPS = [
      The helper also used to say "employee signs the printed copy", written
      when nothing here was signed on a screen. There is a live signature pad
      for the employee on that step. */
-  { id: 'signatures', label: 'Signature', helper: 'Manager, employee and witness sign' },
+  { id: 'signatures', label: 'Signatures', helper: 'Management, employee and witness sign' },
   { id: 'review', label: 'Review', helper: 'Read the finished notice over before sending it' },
   { id: 'export', label: 'Submit', helper: 'Send it for review, or make a paper copy' },
 ];
@@ -182,7 +182,7 @@ export function getDisciplinaryReadinessChecks(model) {
     { key: 'warningLevel', label: 'Warning level selected', ok: has(model.warningLevel), step: 'notice' },
     { key: 'whatOccurred', label: 'Section 1 — What occurred', ok: has(model.whatOccurred), step: 'notice' },
     { key: 'correctiveActionRequired', label: 'Section 5 — Corrective action required', ok: has(model.correctiveActionRequired), step: 'response' },
-    { key: 'managerSignature', label: 'Manager signature', ok: Boolean(model.managerSignatureData), step: 'signatures' },
+    { key: 'managerSignature', label: 'Management signature', ok: Boolean(model.managerSignatureData), step: 'signatures' },
   ];
 }
 

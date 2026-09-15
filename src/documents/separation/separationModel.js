@@ -274,7 +274,7 @@ export const SEPARATION_STEPS = [
      belongs before signing. A separation is filled in, signed in the room
      with the employee, and only then read back over by the one person left
      holding it -- so its review is the last look before it goes to HR. */
-  { id: 'signatures', label: 'Signature', helper: 'Management, employee and witness sign — HR signs later' },
+  { id: 'signatures', label: 'Signatures', helper: 'Management, employee and witness sign' },
   { id: 'review', label: 'Review', helper: 'Read the finished record over before sending it' },
   { id: 'export', label: 'Submit', helper: 'Send it for review, or make a paper copy' },
 ];

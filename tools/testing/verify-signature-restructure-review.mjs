@@ -99,7 +99,7 @@ async function main() {
       await page.getByRole('button', { name: 'Go to Signatures' }).click();
       await page.waitForSelector('text=Manager signs here');
       check(await page.locator('.signaturePad', { hasText: 'Employee Signature' }).count() === 0, 'No Employee SignaturePad on the Signature step (staff-only capture)');
-      await page.locator('.signaturePad', { hasText: 'Manager Signature' }).getByRole('button', { name: 'Add signature' }).click();
+      await page.locator('.signaturePad', { hasText: /Manage(r|ment) Signature/ }).getByRole('button', { name: 'Add signature' }).click();
       await drawSignature(page);
       await page.screenshot({ path: path.join(dir, '2-signature-step-manager-only.png'), fullPage: true });
 

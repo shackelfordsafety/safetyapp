@@ -147,7 +147,7 @@ function StepReview({ checks, prev, next, onJumpCheck }) {
    blank line, not something authored by the employee. ── */
 function StepSignatures({ model, upd, prev, next }) {
   return (
-    <StepPanel title="Signature" intro="Safety/Supervisor signs here. Leave a name blank to print the employee/supervisor named on Event & Response.">
+    <StepPanel title="Signatures" intro="Safety/Supervisor signs here. Leave a name blank to print the employee/supervisor named on Event & Response.">
       <Field label="Employee Name (printed)" value={model.employeeSignatureName} placeholder={model.employeeName} onChange={v => upd({ employeeSignatureName: v })} />
 
       <div className="formPairRow">

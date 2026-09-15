@@ -21,7 +21,7 @@ function employeeSigNote(model) {
 /* What goes on the ruled line under a signature: the person who signed,
    then their role. Same rule as the separation form, for the same reason --
    a write-up is read back months later by somebody who was not in the room,
-   and "Manager Signature" says what the box is for, not who gave the
+   and "Management Signature" says what the box is for, not who gave the
    notice. Role alone when nobody is named, because an unsigned line still
    has to read as a form.
 
@@ -97,7 +97,7 @@ export async function drawDisciplinaryPdf(model, onProgress) {
       dateValue: fmtDate(model.employeeSignatureDate),
     });
   doc.signatureRow({
-    label: signatureLine('Manager', model.managerName),
+    label: signatureLine('Management', model.managerName),
     image: await doc.embedSignature(model.managerSignatureData),
     dateValue: fmtDate(model.managerSignatureDate),
   });
@@ -157,7 +157,7 @@ export function disciplinaryFacsimileBlocks(model) {
   });
   blocks.push({
     type: 'signatureRow',
-    label: signatureLine('Manager', model.managerName),
+    label: signatureLine('Management', model.managerName),
     dataUrl: model.managerSignatureData,
     dateValue: fmtDate(model.managerSignatureDate),
   });

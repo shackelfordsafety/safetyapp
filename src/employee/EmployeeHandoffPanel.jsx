@@ -4,15 +4,20 @@ import './employee.css';
 
 /* ── "Here is your part" ─────────────────────────────────────────────────
    The step between management finishing their side and the employee doing
-   his. Fonzo, 2026-09-15: "once they finish their part... it gets to a step
+   theirs. Fonzo, 2026-09-15: "once they finish their part... it gets to a step
    in the workflow where it's like, okay, this is what the employee needs to
    do, and it scans a QR code, and it gives them everything he needs to do."
 
-   One code for everything he owes -- read the notice, give a statement,
-   sign -- on his own phone, because handing your iPad to somebody you have
+   Quoted as he said it. The SCREEN, though, says "they" throughout --
+   Fonzo, 2026-09-15: "not everybody's he... I don't want a girl
+   complaining, like, why does it say he blah blah blah. We gotta just be
+   professional and neutral throughout the entire thing."
+
+   One code for everything they owe -- read the notice, give a statement,
+   sign -- on their own phone, because handing your iPad to somebody you have
    just written up is how iPads get thrown.
 
-   It does not block anything. Everything here is optional: if his phone is
+   It does not block anything. Everything here is optional: if their phone is
    dead, or there is no signal in the trailer, the pads on this device still
    work and the notice can still be finished. A handoff that can trap a
    document half-done would be worse than no handoff at all. */
@@ -62,7 +67,7 @@ export default function EmployeeHandoffPanel({ docType, model, employeeName, nee
       const made = await mod.createHandoff({ docType, model, employeeName, needs });
       setHandoff(made);
 
-      /* Polled rather than pushed. He is standing in front of you and this
+      /* Polled rather than pushed. They are standing in front of you and this
          takes a minute; a realtime subscription would be more machinery for
          a wait that somebody is watching anyway. Every four seconds is
          often enough to feel immediate and rare enough to be free. */
@@ -97,44 +102,44 @@ export default function EmployeeHandoffPanel({ docType, model, employeeName, nee
   if (received) {
     return (
       <div className="card empPanel empPanelDone">
-        <div className="cardHeader"><strong>The employee sent his part back</strong></div>
+        <div className="cardHeader"><strong>The employee sent their part back</strong></div>
         <div className="cardBody">
           <p className="empMuted">
             {received.statement
-              ? 'His statement and signature are on the notice now.'
-              : 'His signature is on the notice now. He chose not to give a statement.'}
+              ? 'Their statement and signature are on the notice now.'
+              : 'Their signature is on the notice now. They chose not to give a statement.'}
           </p>
         </div>
       </div>
     );
   }
 
-  /* He has already done his part -- on this screen, or on a previous
+  /* They have already done their part -- on this screen, or on a previous
      sitting that was saved and reopened. Do NOT quietly offer a fresh code
-     here: sending one and having him sign again replaces what he sent the
+     here: sending one and having them sign again replaces what they sent the
      first time, and a signature that the employer can re-take on demand is
      not much better than one the employer can edit. So it says what
      happened, and going round again is a deliberate second tap. */
   if (!handoff && !redoing && respondedAt) {
     const when = new Date(respondedAt);
     const said = Number.isNaN(when.getTime())
-      ? 'on his own phone'
-      : `on his own phone on ${when.toLocaleString(undefined, {
+      ? 'on their own phone'
+      : `on their own phone on ${when.toLocaleString(undefined, {
         month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
       })}`;
     return (
       <div className="card empPanel empPanelDone">
-        <div className="cardHeader"><strong>He has already done his part</strong></div>
+        <div className="cardHeader"><strong>They have already done their part</strong></div>
         <div className="cardBody">
           <p className="empMuted">
-            {employeeName || 'The employee'} sent it back {said}. What he wrote and
+            {employeeName || 'The employee'} sent it back {said}. What they wrote and
             signed is on the notice below and cannot be changed here.
           </p>
           <button type="button" className="btn ghost sm" onClick={() => setRedoing(true)}>
-            Ask him again
+            Ask them again
           </button>
           <p className="empMuted">
-            Only if it genuinely has to be redone. A new code replaces what he sent
+            Only if it genuinely has to be redone. A new code replaces what they sent
             the first time on this notice.
           </p>
         </div>
@@ -146,9 +151,9 @@ export default function EmployeeHandoffPanel({ docType, model, employeeName, nee
     return (
       <div className="card empPanel">
         <div className="cardHeader">
-          <strong>Let the employee do his part on his own phone</strong>
+          <strong>Let the employee do their part on their own phone</strong>
           <p>
-            He scans one code and gets the whole notice to read, a box for his
+            They scan one code and get the whole notice to read, a box for their
             statement, and somewhere to sign. Nothing leaves your hands.
           </p>
         </div>
@@ -158,7 +163,7 @@ export default function EmployeeHandoffPanel({ docType, model, employeeName, nee
             {busy ? 'Making the code…' : 'Show the code'}
           </button>
           <p className="empMuted">
-            Optional. If his phone is dead or there is no signal, he can still sign
+            Optional. If their phone is dead or there is no signal, they can still sign
             on this device below.
           </p>
         </div>
@@ -169,16 +174,16 @@ export default function EmployeeHandoffPanel({ docType, model, employeeName, nee
   return (
     <div className="card empPanel">
       <div className="cardHeader">
-        <strong>Hand him the screen &mdash; or read him the link</strong>
-        <p>Waiting for him to send it back. Leave this open.</p>
+        <strong>Hand over the screen &mdash; or read out the link</strong>
+        <p>Waiting for them to send it back. Leave this open.</p>
       </div>
       <div className="cardBody empQrBody">
         <QrImage url={handoff.url} />
         {/* The link in plain text underneath, because a camera that will not
             focus on a QR code in the sun is not a rare event on a job site.
-            Selectable so it can be texted to him. */}
+            Selectable so it can be texted to them. */}
         <p className="empLink">{handoff.url}</p>
-        <p className="empMuted">The code stops working in two hours, or the moment he sends it.</p>
+        <p className="empMuted">The code stops working in two hours, or the moment they send it.</p>
         <button type="button" className="btn ghost sm" onClick={cancel}>Cancel this code</button>
       </div>
     </div>

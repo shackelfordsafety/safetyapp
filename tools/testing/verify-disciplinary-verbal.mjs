@@ -96,7 +96,7 @@ async function main() {
     check(await refusedToggle.count() === 0, 'No "refused to sign" toggle rendered for a Verbal Warning');
     check(await page.locator('text=coaching conversation').count() > 0, 'Explanatory coaching-conversation note is shown');
 
-    await page.locator('.signaturePad', { hasText: 'Manager Signature' }).getByRole('button', { name: 'Add signature' }).click();
+    await page.locator('.signaturePad', { hasText: /Manage(r|ment) Signature/ }).getByRole('button', { name: 'Add signature' }).click();
     const canvas = page.locator('canvas.signatureCanvas').first();
     await canvas.scrollIntoViewIfNeeded();
     const box = await canvas.boundingBox();

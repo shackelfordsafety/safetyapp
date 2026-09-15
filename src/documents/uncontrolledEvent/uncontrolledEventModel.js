@@ -179,7 +179,7 @@ export const UNCONTROLLED_EVENT_STEPS = [
   { id: 'event', label: 'Event Info & Classification', helper: 'Where/when it happened, classification, and outcome' },
   { id: 'narrative', label: 'Narrative & Notifications', helper: 'What happened, and who was notified' },
   { id: 'review', label: 'Review', helper: 'Check everything before anyone signs' },
-  { id: 'signatures', label: 'Signatures', helper: 'Reported By and Supervisor Review sign' },
+  { id: 'signatures', label: 'Signatures', helper: 'Whoever reported it signs, and the supervisor reviewing it' },
   { id: 'export', label: 'Submit', helper: 'Send it for review, or make a paper copy' },
 ];
 

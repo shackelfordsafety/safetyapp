@@ -39,7 +39,7 @@ const BASE = `http://localhost:${PORT}`;
    does. */
 const SIG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
-const HIS_WORDS = 'I went to my truck for a rain jacket. I did not know that counted as leaving the shelter.';
+const THEIR_WORDS = 'I went to my truck for a rain jacket. I did not know that counted as leaving the shelter.';
 
 const CASES = [
   {
@@ -56,7 +56,7 @@ const CASES = [
       companyPolicyStates: 'Remain in the shelter until the stand-down is lifted.',
       correctiveActionRequired: 'Remain in the shelter until the stand-down is lifted.',
       managerName: 'Alfonso Hernandez - Safety Manager',
-      employeeStatement: HIS_WORDS,
+      employeeStatement: THEIR_WORDS,
       employeeSignatureData: SIG,
       employeeSignatureDate: '2026-09-15',
       employeeResponseAt: '2026-09-15T14:14:00.000Z',
@@ -137,19 +137,19 @@ async function main() {
       console.log(`\n── ${c.doc} ──`);
       const { ctx, page } = await openDraft(browser, c);
 
-      // ── His statement (disciplinary only; separation has no statement) ──
+      // ── Their statement (disciplinary only; separation has no statement) ──
       if (c.draft.employeeStatement) {
         /* Found by its VALUE, not its position: the sections above it are
            free to move around without quietly pointing this at the wrong
            box. */
         const found = await page.locator('textarea').evaluateAll(
           (els, words) => els.findIndex(e => e.value === words),
-          HIS_WORDS,
+          THEIR_WORDS,
         );
-        check('his statement is on the screen', found >= 0);
+        check('their statement is on the screen', found >= 0);
         if (found >= 0) {
           const el = page.locator('textarea').nth(found);
-          check('his statement cannot be typed into', await el.isDisabled());
+          check('their statement cannot be typed into', await el.isDisabled());
 
           /* Not just "the attribute is set" -- actually try to change it,
              the way a manager who wanted it different would. */
@@ -174,7 +174,7 @@ async function main() {
         await page.screenshot({ path: path.join(outDir, `${c.doc}-statement.png`), fullPage: true });
       }
 
-      // ── His signature ───────────────────────────────────────────────────
+      // ── Their signature ───────────────────────────────────────────────────
       await page.locator('.stepNav button', { hasText: c.step }).first().click();
       await page.waitForTimeout(1200);
 
@@ -187,7 +187,7 @@ async function main() {
 
       const pads = page.locator('.signaturePad');
       const empPad = pads.filter({ hasText: /Employee Signature/ }).first();
-      check('his signature is on the notice',
+      check('their signature is on the notice',
         (await empPad.locator('img.signaturePreview').count()) > 0);
       check('it cannot be replaced or removed',
         (await empPad.getByRole('button', { name: /Replace|Remove/ }).count()) === 0);
@@ -200,12 +200,12 @@ async function main() {
       const sigDate = page.locator('.field', { hasText: /Employee Signature Date/i })
         .locator('input').first();
       if (await sigDate.count()) {
-        check('the date he signed cannot be moved', await sigDate.isDisabled());
+        check('the date they signed cannot be moved', await sigDate.isDisabled());
       }
 
       const refuse = page.getByRole('button', { name: /refused or not available/i }).first();
       if (await refuse.count()) {
-        check('he cannot be recorded as refusing after he signed',
+        check('they cannot be recorded as refusing after signing',
           await refuse.isDisabled());
       }
 
@@ -213,7 +213,7 @@ async function main() {
          whole step would stop the notice being finished at all. */
       const mgrPad = pads.filter({ hasText: /Manager Signature|Management Signature/ }).first();
       if (await mgrPad.count()) {
-        check("the manager's own signature is still his to add",
+        check("management's own signature is still theirs to add",
           (await mgrPad.getByRole('button', { name: /Add signature/ }).count()) > 0);
       }
 
@@ -224,8 +224,8 @@ async function main() {
           (await witPad.getByRole('button', { name: /Add signature/ }).count()) > 0);
       }
 
-      check('the screen says when he did it',
-        /on his own phone/i.test(await page.locator('.helperText').allInnerTexts().then(a => a.join(' '))));
+      check('the screen says when they did it',
+        /on their own phone/i.test(await page.locator('.helperText').allInnerTexts().then(a => a.join(' '))));
 
       await page.screenshot({ path: path.join(outDir, `${c.doc}-signature.png`), fullPage: true });
       await ctx.close();

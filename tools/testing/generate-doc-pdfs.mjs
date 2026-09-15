@@ -63,14 +63,21 @@ async function generateOne(browser, { id, key, fixture, label, touch }) {
 
   // Generic step navigation: walk forward until Create Document is reachable.
   for (let step = 0; step < 12; step += 1) {
-    const create = page.getByRole('button', { name: /Create Document|Update the printout/ });
+    const create = page.getByRole('button', { name: /Create Document|Update the printout|Want a paper copy first/ });
     if (await create.count() > 0 && await create.first().isVisible().catch(() => false)) {
       await create.first().click();
       break;
     }
-    const review = page.getByRole('button', { name: 'Go to Review' });
-    if (await review.count() > 0 && await review.first().isVisible().catch(() => false)) {
-      await review.first().click();
+    /* Every "Go to ..." the four documents use, not just Review. The
+       disciplinary and separation put Signatures BEFORE Review as of
+       2026-09-14 (Fonzo: "review should just come after signatures in the
+       workflow"), and this walk was never taught the new button -- so it
+       had been dying at step 1 on two of the four documents ever since,
+       silently taking the PDF evidence for them with it. */
+    const forward = page.getByRole('button', { name: /^Go to (Review|Signatures|Submit)$/ });
+    if (await forward.count() > 0 && await forward.first().isVisible().catch(() => false)) {
+      await forward.first().click();
+      await page.waitForTimeout(400);
       continue;
     }
     const next = page.getByRole('button', { name: 'Next', exact: true });

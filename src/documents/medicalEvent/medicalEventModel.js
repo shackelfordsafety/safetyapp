@@ -153,7 +153,7 @@ export const MEDICAL_EVENT_STEPS = [
   { id: 'condition', label: 'Event & Response', helper: 'Employee info, reported condition, and response taken' },
   { id: 'evaluation', label: 'Evaluation & Classification', helper: 'Medical evaluation, work status, and attachments' },
   { id: 'review', label: 'Review', helper: 'Check everything before anyone signs' },
-  { id: 'signatures', label: 'Signature', helper: 'Safety/Supervisor signs (employee may sign too, if able)' },
+  { id: 'signatures', label: 'Signatures', helper: 'Safety or supervisor signs — the employee can sign too, if able' },
   { id: 'export', label: 'Submit', helper: 'Send it for review, or make a paper copy' },
 ];
 

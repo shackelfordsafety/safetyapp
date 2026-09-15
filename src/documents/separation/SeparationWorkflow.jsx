@@ -177,7 +177,7 @@ function today() {
    settles an argument months later. */
 function fmtWhen(iso) {
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return 'his own device';
+  if (Number.isNaN(d.getTime())) return 'their own device';
   return d.toLocaleString(undefined, {
     month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
   });
@@ -205,15 +205,18 @@ function witnessStatementFor(model) {
    person running the meeting had to scroll past a slot nobody present
    could use, twice, while a man waited to sign.
 
-   So: manager, employee, witness, in the order they actually sign. The HR
-   fields are NOT deleted -- hrSignatureData and hrName still exist on the
-   model, still print, and are still what Pat fills in. They are simply not
-   on the screen of the person holding the meeting. */
+   So: management, employee, witness, in the order they actually sign.
+
+   And that is the entire list. Fonzo, 2026-09-15, having asked her: "I
+   talked to Miss Pat, the HR manager, she said she doesn't need to sign on
+   anything, signing people are only in the field, she's just the approver."
+   The HR fields are still on the model so an old draft loads, but nothing
+   captures them and nothing prints them any more. */
 function StepSignatures({ model, upd, prev, next }) {
   return (
     <StepPanel
       title="Signatures"
-      intro="The three people in the room sign here — you, the employee, and a witness. HR signs later, on their own screen."
+      intro="The three people in the room sign here — you, the employee, and a witness. Nobody else signs a separation."
     >
       <div className="formPairRow">
         <SignaturePad label="Management Signature" value={model.supervisorSignatureData} onChange={data => upd({ supervisorSignatureData: data, supervisorSignatureDate: data ? new Date().toISOString().slice(0, 10) : model.supervisorSignatureDate })} />
@@ -313,9 +316,9 @@ function StepSignatures({ model, upd, prev, next }) {
       <p className="helperText">
         {model.employeeResponseAt ? (
           <>
-            Signed by {model.employeeName || 'the employee'} on his own phone on{' '}
-            {fmtWhen(model.employeeResponseAt)}. His signature is his &mdash; nobody here
-            can replace or remove it. Send him a new code if it has to be done again.
+            Signed by {model.employeeName || 'the employee'} on their own phone on{' '}
+            {fmtWhen(model.employeeResponseAt)}. That signature is theirs &mdash; nobody here
+            can replace or remove it. Send a new code if it has to be done again.
           </>
         ) : (
           <>

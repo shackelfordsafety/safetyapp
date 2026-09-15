@@ -158,24 +158,21 @@ export async function drawSeparationPdf(model, onProgress) {
   if (model.witnessSignatureData || model.witnessName) {
     doc.note(model.witnessStatement || 'I was present when this separation was discussed.');
   }
+  /* THREE BOXES, AND THAT IS THE WHOLE LIST. HR does not sign a separation
+     at all. Fonzo, 2026-09-15, after asking her outright: "I talked to Miss
+     Pat, the HR manager, she said she doesn't need to sign on anything,
+     signing people are only in the field, she's just the approver."
+
+     So the fourth line is gone rather than conditional. It approves in the
+     app -- her name is on the approval, with a timestamp, in the record --
+     and a signature line for somebody who is never going to sign is just a
+     blank that makes a filed form look unfinished.
+
+     hrName / hrSignatureData / hrSignatureDate stay in the data shape (see
+     separationModel) so a draft saved before today still loads. They simply
+     stop being drawn. */
   doc.keepTogether(60);
   doc.multiSignatureRow(await withEmbeddedSignatures(doc, approvalPeople(model)));
-
-  /* HR signs on her own screen when the notice reaches her, which is after
-     this form leaves the trailer. Her line appears once she has actually
-     signed -- an empty fourth box on the copy handed over in the meeting
-     is a box nobody present can fill, and it was the reason the witness got
-     pushed onto a full-width row of its own. */
-  if (model.hrSignatureData) {
-    doc.keepTogether(60);
-    doc.multiSignatureRow([
-      {
-        label: signatureLine('HR / Management', model.hrName),
-        image: await doc.embedSignature(model.hrSignatureData),
-        dateValue: fmtDate(model.hrSignatureDate),
-      },
-    ]);
-  }
 
   return doc.finish();
 }
@@ -246,15 +243,9 @@ export function separationFacsimileBlocks(model) {
     blocks.push({ type: 'note', text: model.witnessStatement || 'I was present when this separation was discussed.' });
   }
   blocks.push({ type: 'multiSignatureRow', items: approvalPeople(model) });
-
-  if (model.hrSignatureData) {
-    blocks.push({
-      type: 'multiSignatureRow',
-      items: [
-        { label: signatureLine('HR / Management', model.hrName), dataUrl: model.hrSignatureData, dateValue: fmtDate(model.hrSignatureDate) },
-      ],
-    });
-  }
+  /* No HR row here either -- HR does not sign, see drawSeparationPdf. This
+     list and the PDF above are supposed to mirror each other block for
+     block, and they have already drifted apart once. */
 
   return blocks;
 }
