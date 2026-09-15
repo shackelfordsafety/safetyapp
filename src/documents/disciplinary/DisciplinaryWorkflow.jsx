@@ -13,12 +13,14 @@ import {
 import { LockedContext } from '../lockedContext';
 import { downloadDraftFile, buildDraftFilename } from '../../shared/draftTransfer';
 
-/* ── Step: Notice Details — employee info, warning level, sections 1-3 ──
-   Section 4 (Employee Statement) is deliberately not here -- it's the
-   employee's own words, in their own hand, on the printed copy (Fonzo,
-   2026-08-29). The PDF still prints "4. EMPLOYEE STATEMENT" with a blank
-   ruled box for exactly that -- see sectionsForModel/employeeStatement in
-   disciplinaryPdfDraw.js/disciplinaryModel.js. */
+/* ── Step: Notice Details — employee info, warning level, sections 1-4 ──
+   Section 4 (Employee Statement) is here again as of 2026-09-15. It was
+   removed on 2026-08-29 so the employee would write it by hand on the
+   printed copy; every other half of that rule has since been reversed and
+   there is no printed copy in the flow any more.
+
+   Left blank it still prints as a ruled box, so writing it by hand is
+   never taken away -- it just stops being the only option. */
 function StepNotice({ model, upd, next }) {
   return (
     <StepPanel title="Notice Details" intro="Basic facts about the employee and what occurred. Enter only what happened — do not decide the outcome here.">
@@ -50,8 +52,23 @@ function StepNotice({ model, upd, next }) {
         <TextAreaField label="What company rule or policy applies?" rows={3} value={model.companyPolicyStates} onChange={v => upd({ companyPolicyStates: v })} voice />
       </NumberedSection>
 
+      {/* Section 4. Typable again as of 2026-09-15 -- see the comment on
+          employeeStatement in disciplinaryModel.js for why it stopped
+          being, and why that reason no longer holds.
+
+          Skipped entirely for a verbal warning, which is a coaching
+          conversation with no formal statement to take down -- the same
+          rule sectionsForModel applies when printing. */}
       {!isVerbalWarning(model) && (
-        <p className="helperText">Section 4 (Employee Statement) prints as blank ruled space below Section 3 — the employee writes it by hand on the printed copy.</p>
+        <NumberedSection number={4} title="Employee Statement" help="The employee's own words. Type what they say, or leave it blank and the notice prints a ruled box for them to write in by hand.">
+          <TextAreaField
+            label="Does the employee want to say anything about this?"
+            rows={4}
+            value={model.employeeStatement}
+            onChange={v => upd({ employeeStatement: v })}
+            voice
+          />
+        </NumberedSection>
       )}
 
       <StepFooter hasNext onNext={next} />

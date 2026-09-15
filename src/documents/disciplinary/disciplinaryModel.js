@@ -49,18 +49,24 @@ export function emptyDisciplinary() {
     // Warning level (single-select)
     warningLevel: '', // '' | 'verbal' | 'written' | 'secondWritten' | 'final'
 
-    // Seven numbered sections, verbatim order from the reference form.
-    // Section 4 (Employee Statement) is the employee's own words, in their
-    // own hand -- the app doesn't offer a way to type it in (Fonzo,
-    // 2026-08-29: "the only thing i wanted digitized is the superintendent,
-    // foreman, safety parts... let everyone else fill out what's required
-    // from them on the paper printout"). employeeStatement stays in the
-    // shape only so a pre-existing draft that already has one (typed before
-    // this decision) keeps printing it rather than silently losing it.
+    /* Seven numbered sections, verbatim order from the reference form.
+
+       Section 4 (Employee Statement) was made un-editable on 2026-08-29,
+       when only staff signatures were digitized: "let everyone else fill
+       out what's required from them on the paper printout." Every other
+       part of that rule has since been reversed -- the employee signs on
+       screen, the witness signs on screen, and Fonzo, 2026-09-14: "What
+       printed copy? There's no printed copy, but it's all digital."
+
+       So it is typable again (2026-09-15, Fonzo: "theres not a employee
+       statement box in the workflow on discipline forms"). It stays
+       OPTIONAL: left empty, the notice still prints section 4 as a blank
+       ruled box for a man who would rather write it himself, which is the
+       behaviour that has been shipping and should not be taken away. */
     whatOccurred: '', // 1. What occurred
     earlierWarnings: '', // 2. Earlier verbal or written warnings/discussions on this issue
     companyPolicyStates: '', // 3. Company policy states
-    employeeStatement: '', // 4. Employee statement -- legacy field, no longer editable in-app, see above
+    employeeStatement: '', // 4. Employee statement -- typed here, or left blank to be handwritten
     correctiveActionRequired: '', // 5. Corrective action that must be taken by the employee
     companyWill: '', // 6. The company will
     ifNotCorrected: '', // 7. If behavior is not corrected / performance does not improve
