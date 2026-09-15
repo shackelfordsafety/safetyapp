@@ -2,7 +2,7 @@ import { lazy, Suspense, useRef } from 'react';
 import {
   DISCIPLINARY_STEPS, WARNING_LEVELS,
   getDisciplinaryReadinessChecks, isDisciplinaryReady, isDisciplinaryPrintFinal, isVerbalWarning,
-  disciplinaryStepStatus,
+  disciplinaryStepStatus, employeeSignMethod, EMPLOYEE_SIGN_METHODS,
 } from './disciplinaryModel';
 import { disciplinaryFacsimileBlocks } from './disciplinaryPdfDraw';
 import {
@@ -173,6 +173,7 @@ function witnessStatementFor(model) {
 
 function StepSignatures({ model, upd, prev, next }) {
   const verbal = isVerbalWarning(model);
+  const method = employeeSignMethod(model);
   return (
     <StepPanel title="Signatures" intro="Everyone signs here — management, the employee, and a witness who was in the room. Nothing has to be printed to be signed.">
       {verbal && (
@@ -202,52 +203,83 @@ function StepSignatures({ model, upd, prev, next }) {
           of the rest of this belongs on screen for one. */}
       {!verbal && (
         <>
-          {/* His part, on his phone. Sits above the pads deliberately: this
-              is the way it should normally go, and the pads below are the
-              fallback for a dead phone or no signal -- not the other way
-              round. Everything below still works if he never scans it. */}
-          <Suspense fallback={null}>
-            <EmployeeHandoffPanel
-              docType="disciplinary"
-              model={model}
-              employeeName={model.employeeName}
-              needs={['statement', 'signature']}
-              respondedAt={model.employeeResponseAt}
-              onReceived={answer => upd({
-                /* His words go in section 4 only if he gave any -- an empty
-                   statement must not wipe one typed for him earlier. */
-                ...(answer.statement ? { employeeStatement: answer.statement } : {}),
-                ...(answer.signatureData
-                  ? {
-                    employeeSignatureData: answer.signatureData,
-                    employeeSignatureDate: today(),
-                    employeeRefusedToSign: false,
-                  }
-                  : {}),
-                /* The stamp that makes all of the above his, and read-only
-                   from here on. Set even if he sent nothing back but a
-                   signature -- he still did his part on his own device. */
-                employeeResponseAt: answer.respondedAt || new Date().toISOString(),
-              })}
-            />
-          </Suspense>
-
-          {/* Everything the employee himself did, sealed once it came off
-              his phone. The toggle is in here too: flipping it to "refused"
-              afterwards would print "Refused / Unavailable to Sign" over a
-              man who demonstrably did sign. */}
+          {/* ONE QUESTION, THEN ONE ROAD. The QR panel and the signature
+              pads used to sit on screen together, so it read as though the
+              employee was going to scan a code AND sign the iPad. Fonzo:
+              "give people forks in the road to where they can make a
+              decision and stick with it. But they can also go back if
+              needed." The question stays put and stays changeable; only the
+              chosen path appears under it. */}
           <EmployeeOwned when={model.employeeResponseAt}>
             <SegmentedToggle
-              label="Is the employee signing this?"
-              value={model.employeeRefusedToSign ? 'no' : 'yes'}
-              onChange={v => upd({ employeeRefusedToSign: v === 'no' })}
-              options={[
-                { value: 'yes', label: 'Yes', tone: 'yes' },
-                { value: 'no', label: 'No — refused or not available', tone: 'no' },
-              ]}
+              label="How is the employee signing?"
+              value={method}
+              onChange={v => upd({ employeeSignMethod: v, employeeRefusedToSign: v === 'none' })}
+              options={EMPLOYEE_SIGN_METHODS}
             />
+          </EmployeeOwned>
 
-            {!model.employeeRefusedToSign && (
+          {!method && (
+            <p className="helperText">
+              Pick one and the rest of this step follows it. You can change it
+              afterwards.
+            </p>
+          )}
+
+          {method === 'phone' && (
+            <Suspense fallback={null}>
+              <EmployeeHandoffPanel
+                docType="disciplinary"
+                model={model}
+                employeeName={model.employeeName}
+                needs={['statement', 'signature']}
+                respondedAt={model.employeeResponseAt}
+                onReceived={answer => upd({
+                  /* Their words go in section 4 only if they gave any -- an
+                     empty statement must not wipe one typed for them
+                     earlier. */
+                  ...(answer.statement ? { employeeStatement: answer.statement } : {}),
+                  ...(answer.signatureData
+                    ? {
+                      employeeSignatureData: answer.signatureData,
+                      employeeSignatureDate: today(),
+                      employeeRefusedToSign: false,
+                    }
+                    : {}),
+                  /* The stamp that makes all of the above theirs, and
+                     read-only from here on. Set even if nothing came back
+                     but a signature -- they still did their part on their
+                     own device. */
+                  employeeResponseAt: answer.respondedAt || new Date().toISOString(),
+                })}
+              />
+            </Suspense>
+          )}
+
+          {/* What came back off the phone, shown but sealed. */}
+          {method === 'phone' && model.employeeResponseAt && (
+            <>
+              <EmployeeOwned when>
+                <div className="formPairRow">
+                  <SignaturePad
+                    label={model.employeeName ? `${model.employeeName} — Employee Signature` : 'Employee Signature'}
+                    value={model.employeeSignatureData}
+                    onChange={() => {}}
+                  />
+                  <Field label="Employee Signature Date" type="date" value={model.employeeSignatureDate} onChange={() => {}} />
+                </div>
+              </EmployeeOwned>
+              <p className="helperText">
+                Signed by {model.employeeName || 'the employee'} on their own phone on{' '}
+                {fmtWhen(model.employeeResponseAt)}. That signature is theirs &mdash; nobody
+                here can replace or remove it. Send a new code if it has to be done
+                again.
+              </p>
+            </>
+          )}
+
+          {method === 'device' && (
+            <>
               <div className="formPairRow">
                 <SignaturePad
                   label={model.employeeName ? `${model.employeeName} — Employee Signature` : 'Employee Signature'}
@@ -256,20 +288,21 @@ function StepSignatures({ model, upd, prev, next }) {
                 />
                 <Field label="Employee Signature Date" type="date" value={model.employeeSignatureDate} onChange={v => upd({ employeeSignatureDate: v })} />
               </div>
-            )}
-          </EmployeeOwned>
-          {model.employeeResponseAt && (
+              <p className="helperText">
+                Signing acknowledges <strong>receipt</strong> of this notice. It does not mean the
+                employee agrees with it, and the printed notice says so.
+              </p>
+            </>
+          )}
+
+          {method === 'none' && (
             <p className="helperText">
-              Signed by {model.employeeName || 'the employee'} on their own phone on{' '}
-              {fmtWhen(model.employeeResponseAt)}. That signature is theirs &mdash; nobody
-              here can replace or remove it. Send a new code if it has to be done
-              again.
+              The notice will print <strong>Refused / Unavailable to Sign</strong> on the
+              employee&rsquo;s line, so the record says why it is empty. The witness below
+              is what stands in its place.
+              {model.employeeSignatureData ? ' There is a signature saved on this notice from earlier — it will not print while this is selected.' : ''}
             </p>
           )}
-          <p className="helperText">
-            Signing acknowledges <strong>receipt</strong> of this notice. It does not mean the
-            employee agrees with it, and the printed notice says so.
-          </p>
 
           {/* The witness. An employee refusing to sign a write-up is the
               normal case, and a blank line proves nothing about whether he

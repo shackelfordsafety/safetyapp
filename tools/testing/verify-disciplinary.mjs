@@ -106,9 +106,18 @@ async function main() {
       // to .signaturePadActions/.signaturePad with an exact "Save" match —
       // the builder header's own "Save Now" button also contains the
       // substring "Save", which a loose hasText match would collide with.
+      /* The step now ASKS how the employee is signing before showing any
+         way to do it -- Fonzo, 2026-09-15: "give people forks in the road
+         to where they can make a decision and stick with it." Answering "On
+         this device" is what puts the employee's pad on screen, so the
+         answer is part of the workflow this script drives, not setup around
+         it. Without it there are two pads, not three. */
+      await page.getByRole('button', { name: 'On this device', exact: true }).first().click();
+      await page.waitForTimeout(400);
+
       const sigButtons = page.locator('.signaturePad button', { hasText: 'Add signature' });
       const sigCount = await sigButtons.count();
-      check(sigCount === 3, `Manager, employee and witness pads all present (found ${sigCount})`);
+      check(sigCount === 3, `Management, employee and witness pads all present (found ${sigCount})`);
       for (let i = 0; i < sigCount; i += 1) {
         await page.locator('.signaturePad button', { hasText: 'Add signature' }).first().click();
         const canvas = page.locator('canvas.signatureCanvas').first();
@@ -153,10 +162,18 @@ async function main() {
       await page.waitForSelector('.pdfReadyPanel', { timeout: 30000 });
       const headline = await page.locator('.pdfReadyHeadline').innerText();
       console.log(`  PDF ready: ${headline}`);
-      /* Two pages now, not one: the witness signature block Fonzo asked
-         for on 2026-09-11 pushes the signature section onto its own page.
-         Expected, not a layout fault. */
-      check(/^2 pages$/.test(headline.trim()), `Notice plus its signature page (got "${headline.trim()}")`);
+      /* BACK TO ONE PAGE as of 2026-09-15, and that is the improvement,
+         not a regression.
+
+         It went to two on 2026-09-11 when the witness arrived: three
+         signatures stacked full-width down the page did not fit under the
+         seven sections. They are now drawn three across, matching the
+         separation form -- Fonzo: "make disciplinary match separation" --
+         and a whole page of paper came back.
+
+         Asserted rather than deleted so the day it becomes two again,
+         somebody has to come here and say why. */
+      check(/^1 page$/.test(headline.trim()), `The whole notice on one page (got "${headline.trim()}")`);
 
       const { pdf, suggestedName, savedTo } = await downloadGeneratedPdf(page, path.join(outDir, 'ui-workflow-generated.pdf'));
       console.log('  Saved PDF ->', savedTo);
@@ -168,7 +185,8 @@ async function main() {
       check(/_DRAFT/.test(suggestedName), `Unapproved export is named _DRAFT (got "${suggestedName}")`);
       const contract = await checkPdfContract(pdf, {
         label: 'ui-workflow',
-        pages: 2,
+        // One page again since the signatures went three-across, 2026-09-15.
+        pages: 1,
         draft: false,
         mustContain: [
           'Jordan Blake', 'Casey Renn', 'Laborer',
@@ -180,7 +198,7 @@ async function main() {
       });
       contract.forEach(r => check(r.ok, r.label));
       // The page carries the company logo plus both signatures the test drew.
-      check(pdf.pages[0].images.length === 3, `Logo + both drawn signatures embedded in the PDF (found ${pdf.pages[0].images.length} images)`);
+      check(pdf.pages[0].images.length === 4, `Logo plus all three drawn signatures embedded in the PDF (found ${pdf.pages[0].images.length} images)`);
 
       // Reload and confirm the draft (now completed) persisted.
       await page.reload({ waitUntil: 'networkidle' });
@@ -238,10 +256,12 @@ async function main() {
       // The refused toggle lives on the signatures step alongside the pads.
       await page.getByRole('tab', { name: /Signature/i }).first().click();
       await page.waitForTimeout(400);
-      /* Asked as a plain question now -- "Is the employee signing this?"
-         with Yes / "No — refused or not available" -- rather than a
-         negative toggle a foreman had to read twice. */
-      await page.getByRole('button', { name: /No — refused or not available/ }).first().click();
+      /* Now one fork with three ways out -- "How is the employee signing?"
+         answered with their own phone, this device, or not at all -- rather
+         than a yes/no toggle sitting next to a QR code that was also on
+         screen. Fonzo, 2026-09-15, looking at exactly that: "don't just put
+         it all out there for somebody to figure out." */
+      await page.getByRole('button', { name: 'They are not signing', exact: true }).first().click();
       await page.waitForTimeout(300);
       const employeeAddSigCount = await page.locator('.signaturePad', { hasText: 'Employee Signature' }).getByRole('button', { name: 'Add signature' }).count();
       check(employeeAddSigCount === 0, 'Employee signature pad is not offered once refused/unavailable is toggled on');

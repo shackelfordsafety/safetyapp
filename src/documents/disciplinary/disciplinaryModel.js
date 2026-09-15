@@ -76,6 +76,10 @@ export function emptyDisciplinary() {
     // line for the employee to sign by hand. employeeRefusedToSign/
     // employeeSignatureData/employeeSignatureDate stay in the shape only so
     // a pre-existing draft that already captured one keeps printing it.
+    /* '' | 'phone' | 'device' | 'none' -- see employeeSignMethod() below.
+       employeeRefusedToSign is kept in step with it because the printed
+       form reads that flag, not this one. */
+    employeeSignMethod: '',
     employeeRefusedToSign: false,
     employeeSignatureData: null,
     employeeSignatureDate: '',
@@ -229,3 +233,35 @@ export function buildDisciplinaryExportName(model) {
   const draftSuffix = isDisciplinaryPrintFinal(model) ? '' : '_DRAFT';
   return `${name}_DisciplinaryNotice_${date}${draftSuffix}`;
 }
+
+/* HOW IS THE EMPLOYEE DOING THEIR PART? A fork, not a pile of options.
+
+   Fonzo, 2026-09-15, looking at a screen that showed the QR code AND the
+   signature pads at the same time: "if we ever have options for anything,
+   we gotta make sure to ask, like, hey, what would you like to do? Are they
+   gonna sign on their phone, or are they gonna sign this device? Don't just
+   put it all out there for somebody to figure out, because it just looks
+   like they're scanning it there and then they're also signing the iPad.
+   Kinda give people forks in the road to where they can make a decision and
+   stick with it. But they can also go back if needed."
+
+   '' means nobody has been asked yet, and nothing below the question is on
+   screen until they answer. The answer is always still there to change --
+   a fork, not a trapdoor -- except once the employee has actually answered
+   on their phone, which is theirs and sealed (see EmployeeOwned).
+
+   Derived rather than required, so a notice saved before this question
+   existed opens on the path it was already taking. */
+export function employeeSignMethod(model) {
+  if (model?.employeeSignMethod) return model.employeeSignMethod;
+  if (model?.employeeResponseAt) return 'phone';
+  if (model?.employeeRefusedToSign) return 'none';
+  if (model?.employeeSignatureData) return 'device';
+  return '';
+}
+
+export const EMPLOYEE_SIGN_METHODS = [
+  { value: 'phone', label: 'On their own phone' },
+  { value: 'device', label: 'On this device' },
+  { value: 'none', label: 'They are not signing', tone: 'no' },
+];

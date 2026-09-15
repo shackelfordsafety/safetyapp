@@ -162,9 +162,13 @@ export default function EmployeeHandoffPanel({ docType, model, employeeName, nee
           <button type="button" className="btn primary" onClick={start} disabled={busy}>
             {busy ? 'Making the code…' : 'Show the code'}
           </button>
+          {/* Points back at the fork above rather than "the pad below" --
+              there is no longer a pad below, because choosing this path is
+              what put this panel here. Saying otherwise sent people looking
+              for a control that is not on screen. */}
           <p className="empMuted">
-            Optional. If their phone is dead or there is no signal, they can still sign
-            on this device below.
+            If their phone is dead or there is no signal, switch to
+            <strong> On this device</strong> above and nothing is lost.
           </p>
         </div>
       </div>

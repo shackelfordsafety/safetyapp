@@ -3,7 +3,7 @@ import {
   SEPARATION_STEPS, SEPARATION_TYPES, SEPARATION_REASON_GROUPS,
   REHIRE_STATUSES, PROPERTY_RETURNED_OPTIONS, ACCESS_REMOVED_OPTIONS,
   getSeparationReadinessChecks, isSeparationReady, isSeparationPrintFinal, expensesAnswer,
-  separationStepStatus,
+  separationStepStatus, employeeSignMethod, EMPLOYEE_SIGN_METHODS,
 } from './separationModel';
 import { separationFacsimileBlocks } from './separationPdfDraw';
 import {
@@ -213,6 +213,7 @@ function witnessStatementFor(model) {
    The HR fields are still on the model so an old draft loads, but nothing
    captures them and nothing prints them any more. */
 function StepSignatures({ model, upd, prev, next }) {
+  const method = employeeSignMethod(model);
   return (
     <StepPanel
       title="Signatures"
@@ -238,71 +239,81 @@ function StepSignatures({ model, upd, prev, next }) {
         signature.
       </p>
 
-      {/* His part, on his own phone. Sits above the toggle and the pad
-          deliberately: this is the way it should normally go, and
-          everything below is the fallback for a dead phone or no signal.
-          Nothing here blocks anything -- a separation can still be
-          finished on this device if he never scans it.
+      {/* ONE QUESTION, THEN ONE ROAD. The QR panel and the signature pad
+          used to sit on screen together, which read as though the employee
+          was going to scan a code AND sign the iPad. Fonzo, 2026-09-15:
+          "give people forks in the road to where they can make a decision
+          and stick with it. But they can also go back if needed."
 
-          A separation asks him for a signature only. There is no employee
-          statement on this form the way there is on a disciplinary, and
-          inventing a box for one would take words down that the printed
-          form has nowhere to put. */}
-      <Suspense fallback={null}>
-        <EmployeeHandoffPanel
-          docType="separation"
-          model={model}
-          employeeName={model.employeeName}
-          needs={['signature']}
-          respondedAt={model.employeeResponseAt}
-          onReceived={answer => (answer.signatureData ? upd({
-            employeeSignatureData: answer.signatureData,
-            employeeSignatureDate: today(),
-            employeeRefusedToSign: false,
-            /* The stamp that seals it. See EmployeeOwned below. */
-            employeeResponseAt: answer.respondedAt || new Date().toISOString(),
-          }) : null)}
-        />
-      </Suspense>
+          The question stays put and stays changeable; only the chosen path
+          appears under it. It also replaces the old "is the employee
+          available to sign?" toggle -- that was the same decision asked
+          half-way, in a place where "no" and "on their phone" could somehow
+          both be true at once.
 
-      {/* The printed form has always been able to say "Refused /
-          Unavailable to Sign" in place of the employee's line -- see
-          separationPdfDraw -- and there has never been a way to switch it
-          on. Fonzo, 2026-09-11, after HR hit this on a real separation:
-          "if employee is not able to sign, should have a employee not
-          available button". It was built and unreachable. */}
-      {/* Re-worded twice on 2026-09-14, both times because it described a
-          form that no longer exists. It asked "Is the employee signing the
-          PRINTED copy?" and offered "Yes -- leave a blank line", wording
-          from when nothing here was signed on a screen. Fonzo: "What
-          printed copy? There's no printed copy, but it's all digital."
-
-          There is a live pad directly underneath. The only question worth
-          asking is whether the man is standing there to use it. */}
-      {/* Sealed once he signed on his own phone. The toggle is inside the
-          seal as well: switching it to "refused" afterwards would print
-          "Refused / Unavailable to Sign" over a man who did sign. */}
+          Sealed once they have signed on their phone: switching this
+          afterwards would print "Refused / Unavailable to Sign" over
+          somebody who demonstrably did sign. */}
       <EmployeeOwned when={model.employeeResponseAt}>
         <SegmentedToggle
-          label="Is the employee available to sign?"
-          value={model.employeeRefusedToSign ? 'no' : 'yes'}
-          onChange={v => upd({ employeeRefusedToSign: v === 'no' })}
-          options={[
-            { value: 'yes', label: 'Yes', tone: 'yes' },
-            { value: 'no', label: 'No — refused or not available', tone: 'no' },
-          ]}
+          label="How is the employee signing?"
+          value={method}
+          onChange={v => upd({ employeeSignMethod: v, employeeRefusedToSign: v === 'none' })}
+          options={EMPLOYEE_SIGN_METHODS}
         />
-        {!model.employeeResponseAt && (
-          <p className="helperText">
-            Choosing &ldquo;no&rdquo; prints <strong>Refused / Unavailable to Sign</strong> on the
-            employee&apos;s line instead of leaving it blank, so the record says why it is
-            empty &mdash; and the witness below is what stands in its place.
-          </p>
-        )}
+      </EmployeeOwned>
 
-        {/* Employee signature. Acknowledges receipt, not agreement -- the
-            printed form says so in as many words, and so does this. */}
-        {!model.employeeRefusedToSign && (
+      {!method && (
+        <p className="helperText">
+          Pick one and the rest of this step follows it. You can change it afterwards.
+        </p>
+      )}
+
+      {/* A separation asks the employee for a signature only. There is no
+          employee statement on this form the way there is on a disciplinary,
+          and inventing a box for one would take words down that the printed
+          form has nowhere to put. */}
+      {method === 'phone' && (
+        <Suspense fallback={null}>
+          <EmployeeHandoffPanel
+            docType="separation"
+            model={model}
+            employeeName={model.employeeName}
+            needs={['signature']}
+            respondedAt={model.employeeResponseAt}
+            onReceived={answer => (answer.signatureData ? upd({
+              employeeSignatureData: answer.signatureData,
+              employeeSignatureDate: today(),
+              employeeRefusedToSign: false,
+              /* The stamp that seals it. See EmployeeOwned. */
+              employeeResponseAt: answer.respondedAt || new Date().toISOString(),
+            }) : null)}
+          />
+        </Suspense>
+      )}
+
+      {method === 'phone' && model.employeeResponseAt && (
+        <>
+          <EmployeeOwned when>
+            <div className="formPairRow">
+              <SignaturePad
+                label={model.employeeName ? `${model.employeeName} — Employee Signature` : 'Employee Signature'}
+                value={model.employeeSignatureData}
+                onChange={() => {}}
+              />
+              <Field label="Employee Signature Date" type="date" value={model.employeeSignatureDate} onChange={() => {}} />
+            </div>
+          </EmployeeOwned>
+          <p className="helperText">
+            Signed by {model.employeeName || 'the employee'} on their own phone on{' '}
+            {fmtWhen(model.employeeResponseAt)}. That signature is theirs &mdash; nobody here
+            can replace or remove it. Send a new code if it has to be done again.
+          </p>
+        </>
+      )}
+
+      {method === 'device' && (
+        <>
           <div className="formPairRow">
             <SignaturePad
               label={model.employeeName ? `${model.employeeName} — Employee Signature` : 'Employee Signature'}
@@ -311,22 +322,21 @@ function StepSignatures({ model, upd, prev, next }) {
             />
             <Field label="Employee Signature Date" type="date" value={model.employeeSignatureDate} onChange={v => upd({ employeeSignatureDate: v })} />
           </div>
-        )}
-      </EmployeeOwned>
-      <p className="helperText">
-        {model.employeeResponseAt ? (
-          <>
-            Signed by {model.employeeName || 'the employee'} on their own phone on{' '}
-            {fmtWhen(model.employeeResponseAt)}. That signature is theirs &mdash; nobody here
-            can replace or remove it. Send a new code if it has to be done again.
-          </>
-        ) : (
-          <>
+          <p className="helperText">
             Signing acknowledges <strong>receipt</strong> of this notice. It does not mean the
             employee agrees with it, and the printed form says so.
-          </>
-        )}
-      </p>
+          </p>
+        </>
+      )}
+
+      {method === 'none' && (
+        <p className="helperText">
+          The form will print <strong>Refused / Unavailable to Sign</strong> on the
+          employee&rsquo;s line instead of leaving it blank, so the record says why it is
+          empty &mdash; and the witness below is what stands in its place.
+          {model.employeeSignatureData ? ' There is a signature saved on this form from earlier — it will not print while this is selected.' : ''}
+        </p>
+      )}
 
       {/* The witness. Fonzo, 2026-09-11: "if the employee doesn't sign, the
           witness was there." Another Shackelford person who was in the

@@ -33,6 +33,65 @@ function signatureLine(role, name) {
   return who ? `${who} — ${role}` : role;
 }
 
+/* THE THREE PEOPLE IN THE ROOM, laid out exactly like the separation form.
+   Fonzo, 2026-09-15: "make disciplinary match separation."
+
+   Until now these two forms printed signatures two different ways -- this
+   one stacked them full-width down the page with the date off in its own
+   right-hand column, while the separation put three side by side with the
+   date under the name. Both obeyed his earlier rule that the name goes
+   under the signature, and they still looked like paperwork from two
+   different companies.
+
+   The witness box prints whether or not anybody signed it, the way the
+   separation's always has. An employee refusing to sign a write-up is the
+   normal case, not the edge one, and a blank line that was there to be used
+   says something a line that was never offered does not.
+
+   ONE definition, shared by the real PDF and the Review facsimile below,
+   so the two cannot drift apart. */
+function approvalPeople(model) {
+  const empNote = employeeSigNote(model);
+  return [
+    empNote
+      ? { label: signatureLine('Employee', model.employeeName), note: empNote }
+      : {
+        label: signatureLine('Employee', model.employeeName),
+        dataUrl: model.employeeSignatureData,
+        dateValue: fmtDate(model.employeeSignatureDate),
+      },
+    {
+      label: signatureLine('Management', model.managerName),
+      dataUrl: model.managerSignatureData,
+      dateValue: fmtDate(model.managerSignatureDate),
+    },
+    {
+      label: signatureLine('Witness', model.witnessName),
+      dataUrl: model.witnessSignatureData,
+      dateValue: fmtDate(model.witnessSignatureDate),
+    },
+  ];
+}
+
+/* The PDF draws embedded images; the facsimile renders data URLs. Same
+   items, one conversion. Mirrors the separation's helper of the same name. */
+async function withEmbeddedSignatures(doc, items) {
+  return Promise.all(items.map(async (it) => (it.dataUrl
+    ? { ...it, image: await doc.embedSignature(it.dataUrl) }
+    : it)));
+}
+
+/* A verbal warning is the one exception to the three boxes. Nobody signs it
+   but the manager -- there is no employee signature and no witness, and
+   printing two boxes that say so would be louder than the notice. */
+function verbalOnlyRow(model) {
+  return {
+    label: signatureLine('Management', model.managerName),
+    dataUrl: model.managerSignatureData,
+    dateValue: fmtDate(model.managerSignatureDate),
+  };
+}
+
 const FORM_TITLE = 'EMPLOYEE DISCIPLINARY NOTICE FORM';
 
 /* Section wording is the paper form's own, verbatim — see the 2026-08-12
@@ -88,37 +147,26 @@ export async function drawDisciplinaryPdf(model, onProgress) {
 
   doc.space(8);
   doc.grayBar('Signatures');
-  const empNote = employeeSigNote(model);
-  doc.signatureRow(empNote
-    ? { label: signatureLine('Employee', model.employeeName), note: empNote }
-    : {
-      label: signatureLine('Employee', model.employeeName),
-      image: await doc.embedSignature(model.employeeSignatureData),
-      dateValue: fmtDate(model.employeeSignatureDate),
-    });
-  doc.signatureRow({
-    label: signatureLine('Management', model.managerName),
-    image: await doc.embedSignature(model.managerSignatureData),
-    dateValue: fmtDate(model.managerSignatureDate),
-  });
 
-  /* The witness, and what they witnessed. Only printed when somebody signed
-     as one -- an empty witness line on a notice that did not need one just
-     raises a question.
+  if (isVerbalWarning(model)) {
+    doc.keepTogether(60);
+    doc.multiSignatureRow(await withEmbeddedSignatures(doc, [verbalOnlyRow(model)]));
+    return doc.finish();
+  }
 
-     The statement carries the weight, not the signature. An employee
-     refusing to sign a write-up is the normal case, and a blank line proves
-     nothing about whether he was ever told; this says somebody was there
-     and what happened. Stored on the record at the moment of signing so it
-     cannot drift if the form is edited afterwards. */
+  doc.note('Employee signature acknowledges receipt and does not necessarily indicate agreement.');
+
+  /* What the witness witnessed, ABOVE the boxes -- context for the row, not
+     a heading for a row of its own. The statement carries the weight, not
+     the signature: a blank employee line proves nothing about whether the
+     notice was ever given, and this says somebody was there and what
+     happened. Stored on the record at the moment of signing so it cannot
+     drift if the form is edited afterwards. */
   if (model.witnessSignatureData || model.witnessName) {
     doc.note(model.witnessStatement || 'I was present when this was discussed.');
-    doc.signatureRow({
-      label: signatureLine('Witness', model.witnessName),
-      image: await doc.embedSignature(model.witnessSignatureData),
-      dateValue: fmtDate(model.witnessSignatureDate),
-    });
   }
+  doc.keepTogether(60);
+  doc.multiSignatureRow(await withEmbeddedSignatures(doc, approvalPeople(model)));
 
   return doc.finish();
 }
@@ -147,35 +195,22 @@ export function disciplinaryFacsimileBlocks(model) {
   }
 
   blocks.push({ type: 'grayBar', text: 'Signatures' });
-  const empNote = employeeSigNote(model);
-  blocks.push({
-    type: 'signatureRow',
-    label: signatureLine('Employee', model.employeeName),
-    ...(empNote
-      ? { note: empNote }
-      : { dataUrl: model.employeeSignatureData, dateValue: fmtDate(model.employeeSignatureDate) }),
-  });
-  blocks.push({
-    type: 'signatureRow',
-    label: signatureLine('Management', model.managerName),
-    dataUrl: model.managerSignatureData,
-    dateValue: fmtDate(model.managerSignatureDate),
-  });
 
-  /* The witness, which the PDF above has printed all along and this preview
-     did not. Exactly the drift the separation form had: Review promised a
-     form without a witness on it while the printed copy carried one. The
-     comment at the top of this function says to keep the two in step; this
-     is that being true rather than being asserted. */
+  /* Same call sequence as drawDisciplinaryPdf above, block for block --
+     verbal's single row, the receipt note, the witness statement, then one
+     three-across row. Sharing approvalPeople() is what keeps them honest:
+     this preview and the printed copy had already drifted apart once, when
+     the witness printed on paper and was missing here. */
+  if (isVerbalWarning(model)) {
+    blocks.push({ type: 'multiSignatureRow', items: [verbalOnlyRow(model)] });
+    return blocks;
+  }
+
+  blocks.push({ type: 'note', text: 'Employee signature acknowledges receipt and does not necessarily indicate agreement.' });
   if (model.witnessSignatureData || model.witnessName) {
     blocks.push({ type: 'note', text: model.witnessStatement || 'I was present when this was discussed.' });
-    blocks.push({
-      type: 'signatureRow',
-      label: signatureLine('Witness', model.witnessName),
-      dataUrl: model.witnessSignatureData,
-      dateValue: fmtDate(model.witnessSignatureDate),
-    });
   }
+  blocks.push({ type: 'multiSignatureRow', items: approvalPeople(model) });
 
   return blocks;
 }
