@@ -1,0 +1,147 @@
+/* ── The employee's page ──
+   Read on a phone, once, by somebody who has just been written up or let
+   go and has no account and no reason to ever see this app again. One
+   column, big text, nothing to learn.
+
+   Deliberately plain. Every other screen in this app is for people doing a
+   job; this one is for a person being told something, and it should not
+   feel like a product. */
+
+.empWrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding-inline: 14px;
+  padding-block: 18px 40px;
+  display: grid;
+  gap: 12px;
+  background: var(--bg);
+  min-height: 100vh;
+  /* Cards keep their own height instead of being stretched to fill the
+     screen. Without this the one-line "Sent" card became a phone-tall
+     white box with a sentence floating at the top of it. */
+  align-content: start;
+}
+
+.empCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.empTitle {
+  margin: 0 0 6px;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.empHeading {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+
+.empMuted {
+  margin: 0;
+  color: var(--text-2, var(--muted));
+  font-size: 15px;
+  line-height: 1.5;
+}
+.empMuted + .empTextarea,
+.empMuted + .signaturePad { margin-top: 10px; }
+
+/* The notice itself. It gets its own scroll so a long write-up cannot push
+   the signature so far down the page that somebody signs without reaching
+   it -- the whole point is that he read it. */
+.empDoc {
+  padding: 10px;
+  max-height: 62vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.empTextarea {
+  width: 100%;
+  min-height: 130px;
+  padding: 12px 13px;
+  font: inherit;
+  /* 16px or iOS zooms the page the moment it is focused. */
+  font-size: 16px;
+  line-height: 1.5;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-input, var(--line));
+  border-radius: var(--radius-sm);
+  resize: vertical;
+}
+.empTextarea:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+.empSubmit { display: grid; gap: 10px; justify-items: stretch; }
+/* Thumb-sized. He is standing up, holding the phone in one hand. */
+.empSend { min-height: 56px; font-size: 17px; }
+
+.empError {
+  margin: 0;
+  color: var(--accent-text, var(--accent));
+  font-weight: 600;
+}
+
+.empDone { text-align: center; }
+.empDone .empTitle { color: var(--good); }
+
+/* ── The management side: the code you hand over ── */
+.empPanel { margin-top: 14px; }
+.empQrBody { display: grid; gap: 12px; justify-items: center; text-align: center; }
+.empQr {
+  width: min(280px, 70vw);
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  padding: 8px;
+}
+.empQrPlaceholder {
+  width: min(280px, 70vw);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--border-obj, var(--line));
+  border-radius: var(--radius-sm);
+  color: var(--text-3, var(--muted));
+  font-size: 14px;
+}
+.empPanelDone { border-color: var(--good-border, var(--good)); }
+.empPanelDone .cardHeader strong { color: var(--good); }
+
+/* The link spelled out under the code. Long and ugly on purpose -- it is a
+   random secret, not a pretty URL -- so it wraps anywhere and stays small. */
+.empLink {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-3, var(--muted));
+  word-break: break-all;
+  user-select: all;
+  max-width: 100%;
+}
+
+/* The form's header table puts four cells on one line -- label, value,
+   label, value -- which is right on paper and on an iPad, and on a phone
+   squeezes "Employee Name" down to a column narrow enough to break the
+   word in half. He is reading an accusation against him; it should not
+   look like a broken web page.
+
+   Scoped to this page on purpose. The same facsimile on the Review step is
+   seen on a desktop or an iPad, where the four-across row is correct and
+   matches what prints. */
+@media (max-width: 560px) {
+  .empDoc .facsimileInfoRow.quad { flex-wrap: wrap; }
+  .empDoc .facsimileInfoRow.quad .facsimileInfoCellLabel { flex: 0 0 34%; }
+  .empDoc .facsimileInfoRow.quad .facsimileInfoCellValue { flex: 1 1 66%; }
+  /* The second pair now sits on its own line, so it needs the rule between
+     rows that the flex row was providing. */
+  .empDoc .facsimileInfoRow.quad .facsimileInfoCellLabel:nth-child(3),
+  .empDoc .facsimileInfoRow.quad .facsimileInfoCellValue:nth-child(4) {
+    border-top: 1px solid #d8d8d8;
+  }
+}

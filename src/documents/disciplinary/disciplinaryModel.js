@@ -79,6 +79,16 @@ export function emptyDisciplinary() {
     employeeRefusedToSign: false,
     employeeSignatureData: null,
     employeeSignatureDate: '',
+    /* When the employee sent his part back from his own phone. Its presence
+       is what makes his statement and his signature read-only on this
+       screen -- see EmployeeOwned in FormPrimitives.jsx, and Fonzo's
+       reason for it: "make sure everything the employee does can't be
+       changed by the employer, for legal reasons."
+
+       Null for a notice where he signed on the manager's device instead.
+       That case cannot be locked and should not pretend to be: the iPad
+       was in management's hands the whole time. */
+    employeeResponseAt: '',
     /* WHO IS GIVING THE NOTICE, which is not `supervisor` above.
        `supervisor` describes who the employee works for. This is the
        manager holding the meeting and putting his name to it -- often not

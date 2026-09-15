@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { lazy, Suspense, useRef } from 'react';
 import {
   SEPARATION_STEPS, SEPARATION_TYPES, SEPARATION_REASON_GROUPS,
   REHIRE_STATUSES, PROPERTY_RETURNED_OPTIONS, ACCESS_REMOVED_OPTIONS,
@@ -9,10 +9,12 @@ import { separationFacsimileBlocks } from './separationPdfDraw';
 import {
   Field, TextAreaField, SegmentedToggle, ChipGroup, StepPanel, StepFooter,
   BuilderHeader, StepNav, ReviewExportPanel, ReadinessChecklist, SignaturePad, DocFacsimile,
-  useIsTouchPrimary, useElementWidth,
+  useIsTouchPrimary, useElementWidth, EmployeeOwned,
 } from '../FormPrimitives';
 import { LockedContext } from '../lockedContext';
 import { downloadDraftFile, buildDraftFilename } from '../../shared/draftTransfer';
+
+const EmployeeHandoffPanel = lazy(() => import('../../employee/EmployeeHandoffPanel'));
 
 function toggleInList(list, item) {
   return (list || []).includes(item) ? list.filter(x => x !== item) : [...(list || []), item];
@@ -170,6 +172,17 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
+/* When the employee sent his signature back, said the way a person says
+   it. Date and time both -- "he signed at 2:14" is the kind of detail that
+   settles an argument months later. */
+function fmtWhen(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return 'his own device';
+  return d.toLocaleString(undefined, {
+    month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
+  });
+}
+
 /* What the witness is actually attesting to. A signature under the word
    "Witness" proves nothing on its own -- it has to say what was witnessed,
    or it is worth nothing the day somebody disputes the separation. */
@@ -222,6 +235,33 @@ function StepSignatures({ model, upd, prev, next }) {
         signature.
       </p>
 
+      {/* His part, on his own phone. Sits above the toggle and the pad
+          deliberately: this is the way it should normally go, and
+          everything below is the fallback for a dead phone or no signal.
+          Nothing here blocks anything -- a separation can still be
+          finished on this device if he never scans it.
+
+          A separation asks him for a signature only. There is no employee
+          statement on this form the way there is on a disciplinary, and
+          inventing a box for one would take words down that the printed
+          form has nowhere to put. */}
+      <Suspense fallback={null}>
+        <EmployeeHandoffPanel
+          docType="separation"
+          model={model}
+          employeeName={model.employeeName}
+          needs={['signature']}
+          respondedAt={model.employeeResponseAt}
+          onReceived={answer => (answer.signatureData ? upd({
+            employeeSignatureData: answer.signatureData,
+            employeeSignatureDate: today(),
+            employeeRefusedToSign: false,
+            /* The stamp that seals it. See EmployeeOwned below. */
+            employeeResponseAt: answer.respondedAt || new Date().toISOString(),
+          }) : null)}
+        />
+      </Suspense>
+
       {/* The printed form has always been able to say "Refused /
           Unavailable to Sign" in place of the employee's line -- see
           separationPdfDraw -- and there has never been a way to switch it
@@ -236,36 +276,53 @@ function StepSignatures({ model, upd, prev, next }) {
 
           There is a live pad directly underneath. The only question worth
           asking is whether the man is standing there to use it. */}
-      <SegmentedToggle
-        label="Is the employee available to sign?"
-        value={model.employeeRefusedToSign ? 'no' : 'yes'}
-        onChange={v => upd({ employeeRefusedToSign: v === 'no' })}
-        options={[
-          { value: 'yes', label: 'Yes', tone: 'yes' },
-          { value: 'no', label: 'No — refused or not available', tone: 'no' },
-        ]}
-      />
-      <p className="helperText">
-        Choosing &ldquo;no&rdquo; prints <strong>Refused / Unavailable to Sign</strong> on the
-        employee&apos;s line instead of leaving it blank, so the record says why it is
-        empty &mdash; and the witness below is what stands in its place.
-      </p>
+      {/* Sealed once he signed on his own phone. The toggle is inside the
+          seal as well: switching it to "refused" afterwards would print
+          "Refused / Unavailable to Sign" over a man who did sign. */}
+      <EmployeeOwned when={model.employeeResponseAt}>
+        <SegmentedToggle
+          label="Is the employee available to sign?"
+          value={model.employeeRefusedToSign ? 'no' : 'yes'}
+          onChange={v => upd({ employeeRefusedToSign: v === 'no' })}
+          options={[
+            { value: 'yes', label: 'Yes', tone: 'yes' },
+            { value: 'no', label: 'No — refused or not available', tone: 'no' },
+          ]}
+        />
+        {!model.employeeResponseAt && (
+          <p className="helperText">
+            Choosing &ldquo;no&rdquo; prints <strong>Refused / Unavailable to Sign</strong> on the
+            employee&apos;s line instead of leaving it blank, so the record says why it is
+            empty &mdash; and the witness below is what stands in its place.
+          </p>
+        )}
 
-      {/* Employee signature. Acknowledges receipt, not agreement -- the
-          printed form says so in as many words, and so does this. */}
-      {!model.employeeRefusedToSign && (
-        <div className="formPairRow">
-          <SignaturePad
-            label={model.employeeName ? `${model.employeeName} — Employee Signature` : 'Employee Signature'}
-            value={model.employeeSignatureData}
-            onChange={data => upd({ employeeSignatureData: data, employeeSignatureDate: data ? today() : model.employeeSignatureDate })}
-          />
-          <Field label="Employee Signature Date" type="date" value={model.employeeSignatureDate} onChange={v => upd({ employeeSignatureDate: v })} />
-        </div>
-      )}
+        {/* Employee signature. Acknowledges receipt, not agreement -- the
+            printed form says so in as many words, and so does this. */}
+        {!model.employeeRefusedToSign && (
+          <div className="formPairRow">
+            <SignaturePad
+              label={model.employeeName ? `${model.employeeName} — Employee Signature` : 'Employee Signature'}
+              value={model.employeeSignatureData}
+              onChange={data => upd({ employeeSignatureData: data, employeeSignatureDate: data ? today() : model.employeeSignatureDate })}
+            />
+            <Field label="Employee Signature Date" type="date" value={model.employeeSignatureDate} onChange={v => upd({ employeeSignatureDate: v })} />
+          </div>
+        )}
+      </EmployeeOwned>
       <p className="helperText">
-        Signing acknowledges <strong>receipt</strong> of this notice. It does not mean the
-        employee agrees with it, and the printed form says so.
+        {model.employeeResponseAt ? (
+          <>
+            Signed by {model.employeeName || 'the employee'} on his own phone on{' '}
+            {fmtWhen(model.employeeResponseAt)}. His signature is his &mdash; nobody here
+            can replace or remove it. Send him a new code if it has to be done again.
+          </>
+        ) : (
+          <>
+            Signing acknowledges <strong>receipt</strong> of this notice. It does not mean the
+            employee agrees with it, and the printed form says so.
+          </>
+        )}
       </p>
 
       {/* The witness. Fonzo, 2026-09-11: "if the employee doesn't sign, the

@@ -1,6 +1,6 @@
 import { useId, useRef, useLayoutEffect, useEffect, useState } from 'react';
 import SignaturePad from '../incident/SignaturePad';
-import { useLocked } from './lockedContext';
+import { LockedContext, useLocked } from './lockedContext';
 import SpeakButton from '../voice/SpeakButton';
 import FileToArchiveButton from '../archive/FileToArchiveButton';
 import SubmitArea from '../open/SubmitArea';
@@ -683,3 +683,36 @@ function FacsimileBlock({ block }) {
 }
 
 export { SignaturePad };
+
+/* ── The employee's own words and mark ───────────────────────────────────
+   Fonzo, 2026-09-15: "make sure everything the employee does can't be
+   changed by the employer, for legal reasons."
+
+   He is right, and the first version of the handoff got this wrong. His
+   statement came back into an ordinary text box and his signature came
+   back onto an ordinary pad, with Replace and Remove sitting underneath
+   it. A statement the employer can retype is worth less than no statement
+   at all, because it still reads as the man's own words.
+
+   So: once it arrives from his phone, it is his. Wrap it in this and the
+   fields inside go read-only for good -- same lock a finished document
+   already uses, so there is no second mechanism to keep working.
+
+   What it does NOT do is lock the whole step. Everything around it stays
+   editable, because the rest of the notice is genuinely management's to
+   write. And it never unlocks a document that was already locked for
+   being finished: the outer lock is read and OR-ed, never replaced.
+
+   The database is the real anchor underneath this. employee_requests has
+   no update policy at all and cannot be deleted once answered, so the
+   copy of what he actually typed and drew survives whatever happens to
+   the draft on anybody's iPad. This is the part of that promise the
+   screen is responsible for. */
+export function EmployeeOwned({ when, children }) {
+  const alreadyLocked = useLocked();
+  return (
+    <LockedContext.Provider value={alreadyLocked || Boolean(when)}>
+      {children}
+    </LockedContext.Provider>
+  );
+}

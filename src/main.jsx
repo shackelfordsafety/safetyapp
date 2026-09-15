@@ -6334,17 +6334,42 @@ function crewBoardOwnerFromHash() {
   return m ? m[1] : null;
 }
 
+/* The same idea for an employee being written up or let go: #/me/<token>.
+
+   A separate route rather than a second kind of board, because the two are
+   not the same thing. A crew board address is permanent and derived from a
+   superintendent's account -- fine for hazards. This carries an accusation
+   against a named person, so the address is a random one-time token that
+   dies in two hours or the moment it is used. See the employee_handoff
+   migration for why that distinction is not optional. */
+function employeeTokenFromHash() {
+  const m = /^#\/me\/([A-Za-z0-9_-]{16,})$/.exec(window.location.hash || '');
+  return m ? m[1] : null;
+}
+
 const CrewSignIn = lazy(() => loadModule(() => import('./crew/CrewSignIn')));
+const EmployeeHandoff = lazy(() => loadModule(() => import('./employee/EmployeeHandoff')));
 
 function Root() {
   const [boardOwnerId, setBoardOwnerId] = useState(crewBoardOwnerFromHash);
+  const [employeeToken, setEmployeeToken] = useState(employeeTokenFromHash);
 
   useEffect(() => {
-    const onHash = () => setBoardOwnerId(crewBoardOwnerFromHash());
+    const onHash = () => {
+      setBoardOwnerId(crewBoardOwnerFromHash());
+      setEmployeeToken(employeeTokenFromHash());
+    };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
+  if (employeeToken) {
+    return (
+      <Suspense fallback={null}>
+        <EmployeeHandoff token={employeeToken} />
+      </Suspense>
+    );
+  }
   if (boardOwnerId) {
     return (
       <Suspense fallback={null}>

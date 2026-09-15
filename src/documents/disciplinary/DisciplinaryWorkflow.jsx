@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { lazy, Suspense, useRef } from 'react';
 import {
   DISCIPLINARY_STEPS, WARNING_LEVELS,
   getDisciplinaryReadinessChecks, isDisciplinaryReady, isDisciplinaryPrintFinal, isVerbalWarning,
@@ -8,10 +8,14 @@ import { disciplinaryFacsimileBlocks } from './disciplinaryPdfDraw';
 import {
   Field, TextAreaField, SegmentedToggle, StepPanel, NumberedSection, StepFooter,
   BuilderHeader, StepNav, ReviewExportPanel, ReadinessChecklist, SignaturePad, DocFacsimile,
-  useIsTouchPrimary, useElementWidth,
+  useIsTouchPrimary, useElementWidth, EmployeeOwned,
 } from '../FormPrimitives';
 import { LockedContext } from '../lockedContext';
 import { downloadDraftFile, buildDraftFilename } from '../../shared/draftTransfer';
+
+/* Lazy like everything that talks to the cloud: a manager filling this in
+   with no signal never downloads the handoff machinery. */
+const EmployeeHandoffPanel = lazy(() => import('../../employee/EmployeeHandoffPanel'));
 
 /* ── Step: Notice Details — employee info, warning level, sections 1-4 ──
    Section 4 (Employee Statement) is here again as of 2026-09-15. It was
@@ -61,13 +65,25 @@ function StepNotice({ model, upd, next }) {
           rule sectionsForModel applies when printing. */}
       {!isVerbalWarning(model) && (
         <NumberedSection number={4} title="Employee Statement" help="The employee's own words. Type what they say, or leave it blank and the notice prints a ruled box for them to write in by hand.">
-          <TextAreaField
-            label="Does the employee want to say anything about this?"
-            rows={4}
-            value={model.employeeStatement}
-            onChange={v => upd({ employeeStatement: v })}
-            voice
-          />
+          {/* If he wrote it himself on his own phone, it stops being
+              something anybody here can retype. See EmployeeOwned. */}
+          <EmployeeOwned when={model.employeeResponseAt}>
+            <TextAreaField
+              label="Does the employee want to say anything about this?"
+              rows={4}
+              value={model.employeeStatement}
+              onChange={v => upd({ employeeStatement: v })}
+              voice
+            />
+          </EmployeeOwned>
+          {model.employeeResponseAt && (
+            <p className="helperText">
+              {model.employeeName || 'The employee'} wrote this on his own phone
+              on {fmtWhen(model.employeeResponseAt)}. It is his statement, so it
+              cannot be edited here &mdash; and a copy of exactly what he typed is
+              kept separately. If it needs to be redone, send him a new code.
+            </p>
+          )}
         </NumberedSection>
       )}
 
@@ -132,6 +148,17 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
+/* When the employee sent his part back, said the way a person says it.
+   Date and time both, because "he signed it at 2:14" is the kind of detail
+   that settles an argument months later. */
+function fmtWhen(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return 'his own device';
+  return d.toLocaleString(undefined, {
+    month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
+  });
+}
+
 /* What the witness is actually attesting to. Same reasoning as separation:
    a name under the word "Witness" proves nothing on its own -- it has to
    say what was witnessed, or it is worth nothing the day somebody disputes
@@ -175,25 +202,69 @@ function StepSignatures({ model, upd, prev, next }) {
           of the rest of this belongs on screen for one. */}
       {!verbal && (
         <>
-          <SegmentedToggle
-            label="Is the employee signing this?"
-            value={model.employeeRefusedToSign ? 'no' : 'yes'}
-            onChange={v => upd({ employeeRefusedToSign: v === 'no' })}
-            options={[
-              { value: 'yes', label: 'Yes', tone: 'yes' },
-              { value: 'no', label: 'No — refused or not available', tone: 'no' },
-            ]}
-          />
+          {/* His part, on his phone. Sits above the pads deliberately: this
+              is the way it should normally go, and the pads below are the
+              fallback for a dead phone or no signal -- not the other way
+              round. Everything below still works if he never scans it. */}
+          <Suspense fallback={null}>
+            <EmployeeHandoffPanel
+              docType="disciplinary"
+              model={model}
+              employeeName={model.employeeName}
+              needs={['statement', 'signature']}
+              respondedAt={model.employeeResponseAt}
+              onReceived={answer => upd({
+                /* His words go in section 4 only if he gave any -- an empty
+                   statement must not wipe one typed for him earlier. */
+                ...(answer.statement ? { employeeStatement: answer.statement } : {}),
+                ...(answer.signatureData
+                  ? {
+                    employeeSignatureData: answer.signatureData,
+                    employeeSignatureDate: today(),
+                    employeeRefusedToSign: false,
+                  }
+                  : {}),
+                /* The stamp that makes all of the above his, and read-only
+                   from here on. Set even if he sent nothing back but a
+                   signature -- he still did his part on his own device. */
+                employeeResponseAt: answer.respondedAt || new Date().toISOString(),
+              })}
+            />
+          </Suspense>
 
-          {!model.employeeRefusedToSign && (
-            <div className="formPairRow">
-              <SignaturePad
-                label={model.employeeName ? `${model.employeeName} — Employee Signature` : 'Employee Signature'}
-                value={model.employeeSignatureData}
-                onChange={data => upd({ employeeSignatureData: data, employeeSignatureDate: data ? today() : model.employeeSignatureDate })}
-              />
-              <Field label="Employee Signature Date" type="date" value={model.employeeSignatureDate} onChange={v => upd({ employeeSignatureDate: v })} />
-            </div>
+          {/* Everything the employee himself did, sealed once it came off
+              his phone. The toggle is in here too: flipping it to "refused"
+              afterwards would print "Refused / Unavailable to Sign" over a
+              man who demonstrably did sign. */}
+          <EmployeeOwned when={model.employeeResponseAt}>
+            <SegmentedToggle
+              label="Is the employee signing this?"
+              value={model.employeeRefusedToSign ? 'no' : 'yes'}
+              onChange={v => upd({ employeeRefusedToSign: v === 'no' })}
+              options={[
+                { value: 'yes', label: 'Yes', tone: 'yes' },
+                { value: 'no', label: 'No — refused or not available', tone: 'no' },
+              ]}
+            />
+
+            {!model.employeeRefusedToSign && (
+              <div className="formPairRow">
+                <SignaturePad
+                  label={model.employeeName ? `${model.employeeName} — Employee Signature` : 'Employee Signature'}
+                  value={model.employeeSignatureData}
+                  onChange={data => upd({ employeeSignatureData: data, employeeSignatureDate: data ? today() : model.employeeSignatureDate })}
+                />
+                <Field label="Employee Signature Date" type="date" value={model.employeeSignatureDate} onChange={v => upd({ employeeSignatureDate: v })} />
+              </div>
+            )}
+          </EmployeeOwned>
+          {model.employeeResponseAt && (
+            <p className="helperText">
+              Signed by {model.employeeName || 'the employee'} on his own phone on{' '}
+              {fmtWhen(model.employeeResponseAt)}. His signature is his &mdash; nobody
+              here can replace or remove it. Send him a new code if it has to be done
+              again.
+            </p>
           )}
           <p className="helperText">
             Signing acknowledges <strong>receipt</strong> of this notice. It does not mean the

@@ -131,6 +131,14 @@ export function emptySeparation() {
     employeeRefusedToSign: false,
     employeeSignatureData: null,
     employeeSignatureDate: '',
+    /* When the employee sent his signature back from his own phone. Its
+       presence makes that signature read-only here -- see EmployeeOwned in
+       FormPrimitives.jsx. Fonzo, 2026-09-15: "make sure everything the
+       employee does can't be changed by the employer, for legal reasons."
+
+       Empty for a separation he signed on the manager's device, which
+       cannot honestly be locked. */
+    employeeResponseAt: '',
     /* WHO IS SIGNING, which is not the same person as `supervisor` above.
        `supervisor` is an info field describing who the employee WORKED for.
        This is the manager who ran the separation and is putting his name to

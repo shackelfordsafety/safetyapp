@@ -57,6 +57,7 @@ const CORE = [
   ['verify-view-as-wording.mjs', 'the app names roles, never people'],
   ['verify-simulator.mjs', 'the simulator fills documents and stays hidden otherwise'],
   ['verify-conditional-fields.mjs', 'fields appear and hide when they should'],
+  ['verify-employee-parts-are-his.mjs', "the employer cannot change what the employee wrote or signed"],
 ];
 
 /* Need a real account. Run by hand before anything that touches the
@@ -73,6 +74,10 @@ const BY_HAND = [
   ['verify-publish-hands-off.mjs', 'publishing takes the JSA off the device'],
   ['verify-last-jsa-across-devices.mjs', '"same info as last time?" follows you'],
   ['simulate-review-chain.mjs', 'the whole review chain, two real accounts'],
+  /* SDC_TEST_EMAIL / SDC_TEST_PASSWORD. Creating the QR code is an
+     authenticated write, so without an account this one says NOT TESTED
+     and proves nothing -- which is the point of it saying so out loud. */
+  ['verify-employee-handoff.mjs', 'the employee can do his part on his own phone'],
 ];
 
 const DONE = new RegExp([
