@@ -6,7 +6,8 @@ iPad in a job trailer, printed or sent for review, and filed where they cannot
 be quietly edited later.
 
 Built by Alfonso "Fonzo" Hernandez (safety) with Claude. If you have just
-inherited this, read this page first and then `CLAUDE.md`.
+inherited this, read **`HANDOVER.md`** first — what has to change hands, and
+what to do if you want to stop using it — then this page, then `CLAUDE.md`.
 
 ---
 
@@ -17,7 +18,7 @@ Read this honestly before you invest a week in it.
 **What it genuinely does today, in production, with real crews:** a
 superintendent writes the morning JSA on his phone, publishes it to a board,
 and the crew scans one QR code on the trailer door and signs on their own
-phones. 103 real signatures have gone through it. The signed JSA files itself
+phones. 371 real signatures have gone through it. The signed JSA files itself
 to a permanent archive the next time somebody opens the app.
 
 **What it is not:** a product. There is one safety person using it, no
@@ -36,7 +37,7 @@ paper forms very precisely, which took months. Everything else is replaceable.
 npm install
 npm run dev        # http://localhost:5173
 npm run build      # -> dist/
-npm run check      # the 16 checks that matter (see below)
+npm run check      # the 22 checks that matter (see below)
 ```
 
 You need Node 20+. No other setup: the app runs entirely in the browser and
@@ -56,7 +57,7 @@ so it is safe to hand to somebody to poke at.
 
 ## How it is built
 
-**One React app, no router, no state library.** `src/main.jsx` is ~5,900 lines
+**One React app, no router, no state library.** `src/main.jsx` is ~6,400 lines
 and holds the root component, all navigation state, the JSA's own workflow, and
 the hazard/control/task libraries. This is not an accident anybody is proud of,
 but splitting it has repeatedly broken printing, so it is done carefully or not
@@ -72,8 +73,8 @@ src/
   archive/            Records — the permanent, append-only filing cabinet
   sync/               templates and settings following an account between devices
   sim/                the simulator (only with ?sim=1)
-supabase/migrations/  23 migrations; the database can be rebuilt from these
-tools/testing/        67 check scripts; 16 of them are the ones that matter
+supabase/migrations/  24 migrations; the database can be rebuilt from these
+tools/testing/        115 scripts; the 22 that matter are wired into `npm run check`
 ```
 
 **Two halves, and the split is the whole design.**
@@ -115,25 +116,31 @@ repo and must never be.
 
 ## `npm run check`
 
-Sixteen checks, named by what goes wrong rather than by filename:
+Twenty-two checks, named by what goes wrong rather than by filename:
 
-> the last thing you typed is not lost when you leave · a document you got rid
-> of stays gone · signing out takes the paperwork off the device · the phone
-> shows what the paper says · submitting hands the document over properly · no
-> document can be finished by the person who wrote it · a whole document end to
-> end into a real PDF · the sign-in sheet says who signed · the 5PM/5AM typo is
-> caught and real night shifts are not · templates are not lost when two
-> devices meet · an old device cannot overwrite newer settings · everything the
-> outside tester found stays fixed · the site-type hazard packs are intact ·
-> the app names roles never people · the simulator stays hidden unless asked
-> for · fields appear and hide when they should
+> the last thing you typed is not lost when you leave · a document you got
+> rid of stays gone · signing out takes the paperwork off the device · the
+> phone shows what the paper says · submitting hands the document over
+> properly · no document can be finished by the person who wrote it · a
+> whole document, end to end, into a real PDF · the sign-in sheet says who
+> signed · the 5PM/5AM typo is caught, real night shifts are not · templates
+> are not lost when two devices meet · an old device cannot overwrite newer
+> settings · everything the outside tester found stays fixed · the site-type
+> hazard packs are intact · picking a job never blocks one being typed in by
+> hand · a bad value saved on the device cannot kill the app · typing a
+> hazard and pausing does not kill the app · a drawn signature cannot be
+> walked away from · speaking into a field does not kill the app · the app
+> names roles, never people · the simulator fills documents and stays hidden
+> otherwise · fields appear and hide when they should · the employer cannot
+> change what the employee wrote or signed
 
-The other 51 scripts in `tools/testing/` are evidence, not a suite — each was
+The other scripts in `tools/testing/` are evidence, not a suite — each was
 written to prove one change when it was made. Several exercise screens that no
 longer exist. `npm run check:all` runs everything if you want it; expect noise.
 
-Three more need a real login and are run by hand — publishing, the
-"same info as last time?" sync, and the whole review chain with two accounts.
+Four more need a real login and are run by hand — publishing, the
+"same info as last time?" sync, the whole review chain with two accounts, and
+the employee doing their own part on their own phone.
 `core-checks.mjs` prints the commands.
 
 ---
@@ -144,15 +151,23 @@ Three more need a real login and are run by hand — publishing, the
   render what the live DOM says, and the difference is not always measurable
   from the DOM either. Never certify a print change from the preview — extract
   the real raster from a generated PDF. `CLAUDE.md` has the full history.
-- **No error boundaries in most of the app.** A wrong-shaped value out of
-  `localStorage` can blank the screen.
-- **The app is a 1.1 MB download,** and 705 KB of that is the PDF machinery,
-  loaded even when nobody prints. Lazy-loading it is the single biggest
-  available win for crews on bad signal.
+- **One error boundary, at the root** (`src/shared/ErrorBoundary.jsx`). It
+  catches a crash, shows something a human can act on, and from the second
+  reload offers to set the saved drafts aside — because a wrong-shaped value in
+  `localStorage` crashes on every render and would otherwise brick the device
+  for that user. It never deletes; it renames to a timestamped backup key.
+  There are no per-section boundaries, so one bad value still takes down the
+  whole screen — just visibly, instead of white.
+- **The PDF machinery no longer ships to everybody** — pdf-lib (438 KB) and
+  html2canvas (201 KB) are split out and fetched only when somebody actually
+  prints, and the login-only half is split out again. What a crew downloads to
+  read a JSA is the 482 KB entry chunk (140 KB gzipped). Further shrinking it
+  means breaking up `main.jsx`, which is the one thing that keeps breaking
+  printing — weigh that carefully.
 - **The archive loads every row into the browser** and searches client-side. It
   pages through the whole thing now, but it will want real server-side search
   before it holds years of paperwork.
-- **19 row-level-security policies re-check who you are for every row.** Fine
+- **28 row-level-security policies re-check who you are for every row.** Fine
   at today's size, slow at thousands.
 
 ## Not built yet
@@ -169,9 +184,10 @@ needs a real "there is a newer version, which do you want" conversation.
 Commit messages are long on purpose and explain *why*, not what. `git log` is
 the real documentation. Beyond that:
 
+- `HANDOVER.md` — who owns what, and what to transfer
 - `CLAUDE.md` — how to work in this repo, and the hard-won gotchas
 - `reports/audits/` — outside review, database security audit, wording audit
 - `reports/plans/` — what was going to be built next
 - `CHANGELOG.md` — older history
 
-268 commits, last one 2026-09-12.
+301 commits, last one 2026-09-15.

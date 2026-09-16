@@ -1,1 +1,14 @@
-Upload the contents of this folder to the GitHub repo root. Do not upload node_modules, dist, or package-lock.json. This is v1.0.4-safe-upgrade built from the stable v1.0.3 rollback base.
+Deploying is: push to `main`.
+
+GitHub Actions then builds the app and publishes it to GitHub Pages at
+https://shackelfordsafety.github.io/safetyapp/ — see
+.github/workflows/deploy-pages.yml. There is no review gate and no staging
+step, so run `npm run check` before you push. It is the only safety net here.
+
+Do not hand-upload a zip through the GitHub web interface. That is how this
+repo was updated in 2026 before it had a build pipeline, and the old version of
+this file described that process. It is no longer how anything works, and it
+will clobber the lockfile: package-lock.json IS committed and IS required for
+the CI build to resolve dependencies the same way twice.
+
+See README.md, and HANDOVER.md for who owns the accounts involved.
