@@ -20,7 +20,10 @@ and it will keep serving that page whether or not anybody touches it again.
 The records that have already been filed cannot be deleted from inside the
 app, by design, so they are not at risk either.
 
-There are still four things to hand over. Two are already done.
+There are four keys to hand over, and because they all sit on Fonzo's
+Shackelford email address, the company can take every one of them without his
+help. The section below says how, and names the single thing that is easier to
+sort out before he leaves than after.
 
 ---
 
@@ -29,12 +32,25 @@ There are still four things to hand over. Two are already done.
 Four accounts exist outside the app itself. Think of them as the keys to the
 building, separate from the keys people use to get into their own office.
 
-| What | Who holds it now | What to do |
+**The accounts are registered to Fonzo's Shackelford email address, not a
+personal one.** That is the important part: the company already controls that
+mailbox, so it can reset the password on any of these itself. Nothing here
+depends on Fonzo being reachable, or willing.
+
+| What | Where it stands | What to do |
 | --- | --- | --- |
-| **GitHub** — where the code lives and where the website is published from | The company org `shackelfordsafety`. Both `fonzohdz` (Fonzo's personal) and `schsafety` (the company account) are full owners. | ✅ **Already safe.** Remove `fonzohdz` from the org whenever you like. `schsafety` keeps everything. |
-| **Supabase** — the database holding the filed records and signatures | An org called "Shackelford Safety", project "SCH Safety App". | ⚠️ **Check one thing:** log in as the company account and confirm it is an *Owner* of that org, not just a member. If Fonzo's personal email is the only owner, add the company account as an owner **before** removing him. |
-| **The seven logins inside the app** — two owners, safety, HR, a clerk, two foremen | Wherever Fonzo kept the password list. | Get that list from him. Anybody who has left should have their password changed from the Supabase dashboard. |
-| **Cloudflare preview** (`safetyapp.fonzohdz.workers.dev`) | Fonzo's personal Cloudflare account. | ❌ **Let it die.** It is only a scratch copy of the `testing` branch for trying things out. The real site does not use it and does not care. |
+| **GitHub** — where the code lives and where the website is published from | The company org `shackelfordsafety`. Both `fonzohdz` and the company account `schsafety` are full owners. | ✅ **Nothing.** `schsafety` already owns everything. Remove `fonzohdz` from the org whenever you like. |
+| **Supabase** — the database holding the filed records and signatures | An org called "Shackelford Safety", project "SCH Safety App". | ✅ **Reset the password** from the work mailbox and sign in. While you are in there, confirm a company login is an *Owner* of the org, not just a member. |
+| **The seven logins inside the app** — two owners, safety, HR, a clerk, two foremen | Managed from inside the Supabase dashboard. | Change the password on any account belonging to somebody who has left. You do not need the old passwords to do this. |
+| **Cloudflare preview** (`safetyapp.fonzohdz.workers.dev`) | A personal account. | ❌ **Let it die.** It is only a scratch copy of the `testing` branch. The real site does not use it and does not care. |
+
+### The one thing a password reset does not fix
+
+If any of these accounts has **two-factor authentication** — a code from an app
+or a text message — pointed at Fonzo's personal phone, resetting the password
+is not enough to get in. That is worth ten minutes of his time before his last
+day, and is the only part of this that gets harder after he is gone. Everything
+else on this page can be done at any point in the future.
 
 There is also a **service key** in the Supabase dashboard — a master password
 for the database that is deliberately *not* stored anywhere in the code. Treat
