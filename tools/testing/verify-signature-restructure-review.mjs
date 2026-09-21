@@ -103,7 +103,7 @@ async function main() {
       await drawSignature(page);
       await page.screenshot({ path: path.join(dir, '2-signature-step-manager-only.png'), fullPage: true });
 
-      await page.getByRole('button', { name: 'Go to Finish & Export' }).click();
+      await page.getByRole('button', { name: 'Go to Submit' }).click();
       await page.waitForSelector('text=Readiness');
       await page.locator('.reviewPrimaryAction button').first().click();
       await page.waitForSelector('.pdfReadyPanel', { timeout: 30000 });
@@ -167,7 +167,7 @@ async function main() {
       await page.getByRole('textbox', { name: 'HR / Management Name', exact: true }).fill('B. Alvarez (HR)');
       await page.screenshot({ path: path.join(dir, '2-signature-step-supervisor-only.png'), fullPage: true });
 
-      await page.getByRole('button', { name: 'Go to Finish & Export' }).click();
+      await page.getByRole('button', { name: 'Go to Submit' }).click();
       await page.waitForSelector('text=Readiness');
       await page.locator('.reviewPrimaryAction button').first().click();
       await page.waitForSelector('.pdfReadyPanel', { timeout: 30000 });
@@ -223,7 +223,7 @@ async function main() {
       await drawSignature(page);
       await page.screenshot({ path: path.join(dir, '2-signature-step-supervisor-only.png'), fullPage: true });
 
-      await page.getByRole('button', { name: 'Go to Finish & Export' }).click();
+      await page.getByRole('button', { name: 'Go to Submit' }).click();
       await page.waitForSelector('text=Readiness');
       await page.locator('.reviewPrimaryAction button').first().click();
       await page.waitForSelector('.pdfReadyPanel', { timeout: 30000 });
@@ -274,7 +274,7 @@ async function main() {
       await drawSignature(page);
       await page.screenshot({ path: path.join(dir, '2-signatures-step-both-staff.png'), fullPage: true });
 
-      await page.getByRole('button', { name: 'Go to Finish & Export' }).click();
+      await page.getByRole('button', { name: 'Go to Submit' }).click();
       await page.waitForSelector('text=Readiness');
       await page.locator('.reviewPrimaryAction button').first().click();
       await page.waitForSelector('.pdfReadyPanel', { timeout: 30000 });

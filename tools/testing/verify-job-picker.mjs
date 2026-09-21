@@ -189,47 +189,16 @@ async function main() {
       await context.close();
     }
 
-    // -- 4. Settings: the office keeps the list, the field does not ------
-    for (const who of [
-      { label: 'the office', canAdd: true, suggested: [{ jobNumber: '25-119', count: 3 }, { jobNumber: '24-88', count: 1 }] },
-      { label: 'a superintendent', canAdd: false, suggested: [] },
-    ]) {
-      const context = await browser.newContext({ viewport: { width: 1180, height: 1000 }, hasTouch: true });
-      await context.addInitScript(() => {
-        localStorage.setItem('sb-test-auth-token', JSON.stringify({ user: { email: 'someone@example.com', id: 'u1' } }));
-      });
-      await context.route(/\/assets\/jobsStore-.*\.js$/, r => r.fulfill({
-        status: 200,
-        contentType: 'application/javascript',
-        body: `
-          export async function listJobs() { return { jobs: ${JSON.stringify(JOBS)}, mine: ${JSON.stringify(MINE)}, stale: false, signedIn: true }; }
-          export async function setMine() {}
-          export async function createJob() { return { id: 'new' }; }
-          export async function canAddJobs() { return ${who.canAdd}; }
-          export async function jobNumbersNotOnTheList() { return ${JSON.stringify(who.suggested)}; }
-          export const JOBS_CACHE_KEY = 'sdc.jobs.v1';
-        `,
-      }));
-      const page = await context.newPage();
-      const errors = [];
-      page.on('pageerror', e => errors.push(String(e)));
-      await page.goto(BASE, { waitUntil: 'networkidle' });
-      await page.waitForTimeout(500);
-      await page.getByRole('button', { name: /^Settings$/ }).first().click();
-      await page.waitForTimeout(900);
+    /* Section 4 used to drive Settings, where the company job list and its
+       office-only add form lived. That whole screen was removed in 2026-09,
+       so the three list assertions went red and -- worse -- the two
+       "a superintendent cannot add a job" ones kept PASSING vacuously,
+       0 === 0 against a card that was not on the page at all.
 
-      check(`${who.label}: the job list is on Settings`,
-        (await page.locator('.jobsAdminRow').count()) === JOBS.length);
-      check(`${who.label}: ${who.canAdd ? 'can' : 'cannot'} add a job`,
-        (await page.locator('.jobsAdd').count()) === (who.canAdd ? 1 : 0));
-      check(`${who.label}: ${who.canAdd ? 'is offered' : 'is not offered'} job numbers already in use`,
-        (await page.locator('.jobSuggestChip').count()) === who.suggested.length);
-      check(`${who.label}: their own jobs are marked as theirs`,
-        (await page.getByRole('button', { name: 'One of mine' }).count()) === MINE.length);
-      check(`${who.label}: no page errors`, errors.length === 0, errors.join(' | '));
-      await page.screenshot({ path: path.join(outDir, `settings-${who.canAdd ? 'office' : 'field'}.png`), fullPage: true });
-      await context.close();
-    }
+       Nothing about the job list's real behaviour went untested with it:
+       sections 1-3 above still cover what actually matters now, which is
+       that the picker never blocks a JSA, that a job number can always be
+       typed by hand, and that search finds a job by number or client. */
 
     await browser.close();
     const failed = results.filter(r => !r.pass).length;
