@@ -8,8 +8,9 @@ be quietly edited later.
 Built by Alfonso "Fonzo" Hernandez (safety) with Claude. If you have just
 inherited this, read **`HANDOVER.md`** first — what has to change hands, and
 what to do if you want to stop using it — then this page, then `CLAUDE.md`.
-If you want to keep *building* it, **`CONTINUING.md`** is the one you want:
-what was already decided, what the rules are, and where the tripwires sit.
+If you want to keep *building* it, **`CONTINUING.md`** is the one you want —
+and it assumes no coding knowledge at all, because the company runs Claude
+for this kind of work.
 
 ---
 
@@ -187,7 +188,7 @@ Commit messages are long on purpose and explain *why*, not what. `git log` is
 the real documentation. Beyond that:
 
 - `HANDOVER.md` — who owns what, and what to transfer
-- `CONTINUING.md` — how to keep building it, and the decisions written nowhere else
+- `CONTINUING.md` — how to keep building it without knowing how to code, plus the decisions written nowhere else
 - `CLAUDE.md` — how to work in this repo, and the hard-won gotchas
 - `reports/audits/` — outside review, database security audit, wording audit
 - `reports/plans/` — what was going to be built next

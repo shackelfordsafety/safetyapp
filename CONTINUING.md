@@ -1,280 +1,329 @@
 # Continuing this app
 
-`README.md` says what this is. `HANDOVER.md` says who owns the accounts.
-This page is for the person who wants to **keep building it**.
+**You do not need to know how to write code to use this page.**
 
-Written 2026-09-21, when Alfonso "Fonzo" Hernandez — the safety professional
-who designed and built it — left the company.
+If you have never opened a code file in your life, you are the person this
+was written for. Shackelford already uses Claude for project management
+work, and Claude can do the actual building here. Your job is to know what
+you have, what must never be broken, and what to ask for.
 
----
-
-## Read this first: it is finished, not abandoned
-
-Fonzo's own words on the day he handed it over: *"to me it's already 100%
-done, could have more modules but this already helps a ton."*
-
-That is the right way to read this codebase. It is not a half-built thing
-somebody walked away from. It is a working system that does a complete job:
-six safety documents, built in the field, printed or filed, with a crew
-sign-in flow that has taken **371 real signatures** on real job sites.
-
-So do not open it looking for a to-do list to finish. There isn't one. If
-you never touch it again, it keeps working.
-
-What follows is for the case where somebody wants **more** — another module,
-another document type. It tells you what was already decided, what the rules
-are, and where the tripwires sit.
+Written 2026-09-21, when Alfonso "Fonzo" Hernandez — the safety
+professional who designed and built this — left the company.
 
 ---
 
-## The one architectural rule
+## First, the important part
 
-**Half of this app must never require a login.**
+Fonzo's own words on his last day:
 
-Crews fill out paperwork in places with no cell signal. Creating, filling in
-and printing all six document types works entirely offline, in the browser,
-with no account. The office half — Records, the review chain, publishing a
-JSA to a board — needs a login and is loaded separately, so a
-superintendent's phone never downloads it.
+> *"To me it's already 100% done. Could have more modules, but this already
+> helps a ton."*
 
-Every other rule in this file is negotiable with the business. This one is
-not, and the split is load-bearing in the code: the office half is behind
-`lazy()` + `loadModule()` precisely so it stays out of the field bundle.
+**This app is finished. It is not a half-built thing somebody walked away
+from.** Six safety documents, filled out in the field, printed or filed
+away. 371 real signatures from real crews have already gone through it.
 
-If you merge those halves, the app stops working for the people it was built
-for, on the days it matters most.
+If nobody ever touches it again, **it keeps working.** Nothing expires,
+nothing needs maintenance, nobody has to babysit it.
 
----
-
-## Adding a seventh document type
-
-This is by far the most likely thing anybody wants to do, so here is the
-real recipe. It is better-paved than it looks — four of the six types
-already share the same scaffolding.
-
-**1. Three files in `src/documents/<yourType>/`.** Copy `separation/` as the
-model; it is the most recently built and the cleanest.
-
-| File | What it holds |
-| --- | --- |
-| `<type>Model.js` | `empty<Type>()`, `has<Type>MeaningfulContent()`, `is<Type>Ready()`, `migrate<Type>Shape()`, step progress + hints |
-| `<Type>Workflow.jsx` | The steps, built from `FormPrimitives.jsx` (fields, `StepNav`, `BuilderHeader`, `ReviewExportPanel`) |
-| `<type>PdfDraw.js` | Draws the PDF with `pdf-lib`. **Not** html2canvas — see the printing section below |
-
-**2. `src/documents/storage.js`** — add a `DOCUMENT_STORAGE_KEYS` entry. Use
-a fresh `.v1` suffix; the suffix is the only schema-versioning mechanism
-here and there is no migration runner.
-
-**3. `src/documents/registry.js`** — add the metadata entry. This drives
-Home, the Documents tab, Drafts and the mobile nav all at once. Keep it
-plain data; it is deliberately importable without pulling in React.
-
-**4. `src/main.jsx`** — the part that is still hand-written. You need: the
-model imports, a `lazy()` workflow import, an icon component, a
-`useDraftDocument({...})` call, a `usePdfExport({...})` call, a
-`makeDraftEntryPoints(...)` call, and a routing branch. Search for
-`separation` and you will find every one of them.
-
-**5. The database — this is the step people miss.** `can_file_doc_type()`
-enumerates the document types *by name*:
-
-```sql
-when kind = 'jsa' then true
-when kind in ('incident','medicalEvent','uncontrolledEvent') then my_role() in ('pm','hr')
-when kind in ('disciplinary','separation') then my_role() = 'hr'
-else false
-```
-
-A new type falls through to `else false`. **Everything will look right in
-the browser and filing will be silently refused by row-level security.** Add
-your type to that function in a migration, and decide deliberately which
-roles may file it.
-
-> A note on effort: the registry is the source of truth for *what documents
-> exist*, but routing is still per-type conditionals in `main.jsx`. That was
-> a conscious trade — making it fully registry-driven would have meant
-> touching the JSA's routing, and the JSA is the thing that must not break.
-> If you are adding several types, that refactor may finally be worth it.
-> Adding one, it is not.
+So do not read this page as a to-do list. Read it as: *if we ever want
+more, here is how.*
 
 ---
 
-## What was decided but never built
+## What you actually have
 
-These are **not** ideas — they are settled designs, argued through with
-Fonzo, that simply ran out of runway. They are recorded here because they
-otherwise exist nowhere in this repository.
+Think of it like a filing cabinet that a superintendent carries in his
+pocket.
+
+**Six forms** the app builds: the JSA (the daily job safety analysis),
+Incident Report, Uncontrolled Event, Medical Event, Disciplinary Notice,
+and Employee Separation.
+
+**Two halves**, and this is the one thing worth understanding about how it
+is put together:
+
+| | The field half | The office half |
+| --- | --- | --- |
+| **Who uses it** | Superintendents, foremen, crew | Safety, HR, owners, office |
+| **Needs a login?** | **No. Never.** | Yes |
+| **Needs cell signal?** | **No. Never.** | Yes |
+| **What it does** | Build, fill out and print any of the six forms | Records, approvals, publishing a JSA for the crew to sign |
+
+The field half works in a gravel pit with no bars on your phone. That is
+not a nice-to-have — it is the entire reason the app exists instead of a
+website somebody has to log into.
+
+**Where the paperwork lives:** finished documents go into a database
+(a service called Supabase — think of it as the locked filing cabinet in
+the office). Documents filed there **cannot be edited or deleted by
+anyone, at any permission level, ever.** That was deliberate, for legal
+reasons.
+
+---
+
+## How to actually get something done
+
+You will not edit anything yourself. You will ask Claude, and Claude will
+do it.
+
+### Setting Claude up on this, once
+
+1. Get the project folder onto a computer (see `HANDOVER.md` — it lives on
+   GitHub, and the company account already has access).
+2. Open Claude Code in that folder.
+3. That is it. **There is already a file called `CLAUDE.md` in there that
+   Claude reads automatically.** It explains the whole project, the house
+   rules, and every trap somebody has already fallen into. You do not have
+   to explain the project to Claude — it reads itself in.
+
+### The four things to say every time
+
+Whatever you are asking for, include these. They are the difference
+between a change that works and a change that quietly breaks something:
+
+1. **"Read CLAUDE.md and CONTINUING.md first."**
+2. **"Do not change anything about printing or the PDFs unless that is
+   specifically what I am asking for."**
+3. **"Run `npm run check` when you are done and tell me the result."**
+4. **"Show me screenshots of the actual app before and after."**
+
+That fourth one matters more than it sounds. This app's printed output has
+broken before in ways that looked perfectly fine on screen. **Never accept
+"it should work" — ask to see it.**
+
+### Prompts you can copy
+
+**To understand something before you change it:**
+
+> Read CLAUDE.md and CONTINUING.md. Then explain to me, in plain English
+> with no technical jargon, how [the thing] currently works and what would
+> have to change to [what you want]. Do not change anything yet — I want to
+> understand the tradeoffs first.
+
+**To make a small change (wording, a field, a label):**
+
+> Read CLAUDE.md and CONTINUING.md first. I want to [describe it in your
+> own words]. Make the smallest change that does this. Do not touch
+> printing or PDF code. When you're done, run `npm run check`, show me
+> before-and-after screenshots of the real app, and tell me anything you
+> were unsure about.
+
+**To add a whole new form — the big one:**
+
+> Read CLAUDE.md and CONTINUING.md first. I want to add a new document
+> type called [name]. Follow the same pattern as the Employee Separation
+> document, which is the newest and cleanest one.
+>
+> Important: `can_file_doc_type()` in the database lists document types by
+> name, and a new type falls through to `else false`. If you skip that, the
+> app will look correct in the browser and the database will silently
+> refuse to file anything. Add the new type in a migration and ask me which
+> roles should be allowed to file it.
+>
+> Before writing any code, show me a plan and what the form's fields will
+> be. Do not invent any safety wording — I will supply that.
+
+You do not need to understand that middle paragraph. Claude does. Paste it
+anyway — it is the single most expensive mistake available here, and it
+costs an afternoon to find.
+
+**When something looks wrong:**
+
+> Read CLAUDE.md first. [Describe what you're seeing.] Find out why before
+> changing anything, and show me what you found. If it's a printing or PDF
+> problem, generate a real PDF and look at the actual image inside it —
+> don't judge it from the preview on screen.
+
+---
+
+## Six rules you must never let anyone break
+
+Every one of these came from a real problem, a legal requirement, or a
+direct instruction from Fonzo. They are the ones most likely to get
+"tidied up" by somebody who does not know why they are there — including
+an AI that is trying to be helpful.
+
+**1. Never let anything invent safety wording.**
+The hazards, controls and task descriptions in this app end up on a signed
+legal document. Do not let Claude write them. Do not let anyone pad the
+lists with reasonable-sounding entries. When new wording is needed, it
+comes from actual regulations and a qualified safety person approves it
+line by line. *This is the most important rule on this page.*
+
+**2. What the employee wrote, the employer cannot change.**
+Fonzo's words: *"make sure everything the employee does can't be changed by
+the employer, for legal reasons."* An employee's statement, signature and
+date are locked the moment they are given. This applies to any new form
+anybody adds later, not just the ones that have it today.
+
+**3. Filed documents can never be edited or deleted.**
+Not by HR, not by an owner, not by anybody. The database itself refuses —
+it is not just a hidden button. That is on purpose. If someone asks for an
+"edit filed record" feature, that is a legal conversation, not a software
+request.
+
+**4. The crew sign-in never records names.**
+It is numbered only — person 1, person 2, person 43. It was built for a
+hundred men signing in a few seconds each. Every single design mockup ever
+made for this app got this wrong and showed a list of names to tap. If
+someone proposes that, they have not understood the workflow.
+
+**5. The field half never needs a login.**
+If a change would require a superintendent to sign in before filling out a
+form, the answer is no. Crews work where there is no signal.
+
+**6. Write about people neutrally.**
+No "he/him/his" in anything a person reads — use "they", or speak to the
+person directly. Fonzo's reason was simple professionalism: *"not
+everybody's he."*
+
+---
+
+## If you want more: what was already planned
+
+These are not loose ideas. They were thought through and decided, and then
+time ran out. They are written here because they existed nowhere else —
+they were going to be lost entirely.
 
 ### Equipment inspection checklists
 
-The intended next module, and the most fully specified.
+The intended next piece, and the most worked-out.
 
-- A **module of this app**, sharing one login system — not a separate app.
-- A **public, no-login form** reached by QR code, the way crew sign-in
-  works. An operator scans the sticker on the machine and fills it in with
-  no account.
-- That feeds a database only **management logins** can browse.
-- Deliberately the same shape as JSA crew sign-in: the thing in the field
-  is anonymous and frictionless; the thing in the office is the record.
+- It would be **part of this same app**, sharing one login — not a separate
+  program to buy and manage.
+- An operator **scans a QR sticker on the machine** and fills out the
+  checklist. **No login, no account, no app to install** — exactly like the
+  crew sign-in works today.
+- Those checklists land in the database, where **only management can browse
+  them**.
+- The shape is deliberate: effortless and anonymous out in the field, a
+  real permanent record in the office.
 
-### JSA QR sign-in, remaining decisions
+### The crew QR sign-in — decisions worth keeping
 
-Partly built. The decisions that were made and are worth honouring:
+Mostly built already. If anyone changes it, these were deliberate:
 
-- The QR points at the **superintendent's board**, not at one JSA. This is
-  what handles a five-JSA day and mid-day revisions — a sticker pointing at
-  a single document goes stale the moment the JSA is revised.
-- **One permanent QR per superintendent**, not per job. A sticker that never
-  changes is a sticker nobody has to reprint.
-- Multi-JSA days are disambiguated by **location**, chosen by the crew
-  member.
-- Foremen can freely switch which superintendent they are under.
-- **No roster.** The kiosk records numbered signatures with no names, on
-  purpose. Do not "fix" this by adding a name field — see below.
-- Publishing **locks** the JSA.
+- The QR code points at the **superintendent's board**, not at one specific
+  JSA. That is what handles a five-JSA day and a JSA that gets revised at
+  10am — a code pointing at one document goes stale the moment it changes.
+- **One permanent QR code per superintendent**, not one per job. A sticker
+  that never changes is a sticker nobody reprints.
+- If there are several JSAs going that day, the crew member picks by
+  **location**.
 
-### Template sharing
+### Sharing templates between people
 
-Decided, unbuilt, and smaller than it sounds because the plumbing exists.
+Decided, not built, and smaller than it sounds — the plumbing already
+exists.
 
-- A **company shelf**: safety or admin posts a template, everyone pulls
-  their own copy. **Not** person-to-person sharing.
-- Templates already sync per-account through the `user_sync` table, so this
-  is mostly a visibility and publishing question, not new infrastructure.
+- A **company shelf**: safety or the office posts a template, and everyone
+  pulls their own copy. Not people sending templates to each other.
 
-### Known-blocked
+### Two things that are blocked
 
-- **Email notifications of anything** — blocked on a company DNS record that
-  was never created. Nothing in the app sends email, at all.
-- **Syncing an in-progress draft between devices** — needs a real "there is
-  a newer version, which one do you want?" conversation designed first.
-  Silently picking one will lose somebody's morning.
+- **The app cannot send email.** Not a bug — it needs a company DNS record
+  that was never set up. Any feature involving notifications starts there.
+- **Starting a form on one device and finishing on another** needs somebody
+  to decide what happens when both have changes. Guessing wrong loses
+  somebody's morning of work.
 
 ---
 
-## Rules that are not style preferences
+## How to check nothing is broken
 
-Each of these came from a real incident, a legal requirement, or a direct
-instruction. They are the ones most likely to get "cleaned up" by somebody
-who does not know why they exist.
+The app can test itself. Ask Claude to run this, or type it yourself:
 
-**Never invent safety content.** Hazard, control and task wording ends up on
-a signed legal record. Do not auto-generate it, do not pad the built-in
-libraries with plausible-sounding entries, and do not let an AI assistant
-write it. When it needs extending: draft from named regulations, and have a
-qualified safety person approve it line by line.
-
-**The employee's own input is immutable.** Fonzo's words: *"make sure
-everything the employee does can't be changed by the employer, for legal
-reasons."* An employee's statement, signature and date are sealed once
-given — see `EmployeeOwned` in the codebase. This applies to every future
-document, not just the ones that have it today.
-
-**The archive is append-only, by design.** `documents` has **no UPDATE and
-no DELETE policy at all**. A filed record cannot be altered or removed from
-the app by anybody, at any permission level. That is a deliberate legal
-decision. Removing a record takes a migration and a good reason.
-
-**The crew sign-in kiosk captures no names.** It is numbered only, and built
-for ~100 people moving through in seconds. Every design mockup ever made for
-this app got it wrong and showed a named tap-to-sign list. Read
-`CrewSignInKiosk.jsx` before redesigning it.
-
-**Neutral wording everywhere.** No he/him/his in anything a person reads —
-use "they", or address the person directly. Fonzo's reason was
-professionalism: *"not everybody's he."*
-
-**Ask, don't lay out every option.** Where there is more than one way to do
-something, the interface asks once and shows only the chosen path — with a
-way back. The audience is superintendents and foremen who skew older and
-not especially tech-savvy. Prefer visible labels over icon-only controls,
-tooltips or hidden gestures.
-
----
-
-## Printing is the fragile part
-
-Treat any change to print CSS, pagination or PDF drawing as high-risk. The
-short version of a long, painful history:
-
-- **html2canvas does not always render what the live DOM says**, and the
-  difference is not always measurable from the DOM either. Vertical
-  centering that measures perfect in the browser can come out visibly
-  top-biased in the actual exported raster.
-- Therefore: **never certify a print change from the preview, a DOM
-  screenshot, or DOM-measured slack.** Generate a real PDF and extract the
-  embedded image — `tools/testing/output/extract-pdf-images.mjs` pulls the
-  exact bytes a human will see.
-- Some fixes in this codebase are **empirically calibrated constants**
-  (`translateY(-4px)`, `-5px`, `COMPACT_CELL_SHIFT_PX`) arrived at by trial
-  against real PDFs. They look arbitrary. They are not. Do not "clean them
-  up" without re-verifying against a real export.
-- The four Superintendent documents draw their PDFs with **pdf-lib**
-  (`pdfDraw.js`), not html2canvas. That is the newer, better path. The JSA
-  and Incident Report still use the older pipeline and have their own
-  calibration — do not copy fixes between them without redoing the numbers.
-- iPad and AirPrint must keep working. Desktop Chrome passing is not proof.
-
----
-
-## How to know you did not break it
-
-```bash
-npm run check      # 22 checks, named by what goes wrong rather than by filename
+```
+npm run check
 ```
 
-That is the only automated safety net in the repo — there is no lint, no
-type checker, no unit test framework. It was green on 2026-09-21. Keep it
-that way, and keep it **honest**: a check that cannot pass is worse than no
-check, because people learn to skim past red until they skim past a real
-failure.
+It runs **22 tests, each named after what would go wrong** rather than
+some technical label — things like *"the last thing you typed is not lost
+when you leave"* and *"the employer cannot change what the employee wrote
+or signed."* You can read the results without knowing any code.
 
-Four more checks need a real login and are run by hand; `npm run check`
-prints those commands when it finishes.
+**It was passing 22 out of 22 on 21 September 2026. If it ever says
+anything other than all clear, do not put that change live.**
 
-Two things worth internalising about this suite:
+Two things worth knowing about those tests:
 
-- `tools/testing/retired/` holds scripts whose screen no longer exists.
-  Nothing runs them. Its README explains when a script belongs there and,
-  more usefully, when it does **not** — a renamed button is a bug in the
-  script, not the end of it.
-- **A dead check does not always go red.** Some kept *passing* against
-  screens that were not on the page at all: `count() === 0` is perfectly
-  true when the thing being counted was deleted. Green is not proof.
-
-For anything touching a document's fields, layout or PDF output, generate
-real evidence rather than describing the change — the `verify-*.mjs` and
-`capture-*.mjs` scripts show the working pattern for each document type,
-including how to seed a draft through `localStorage` instead of typing
-through the UI.
+- **A test passing is not always proof.** Some old tests here kept
+  "passing" while checking a screen that had been deleted — they were
+  asking a question about something that was not there, and technically
+  getting the right answer. If a change feels risky, look at the real app,
+  not just the green checkmarks.
+- **A test that is always failing is worse than no test.** People start
+  ignoring the red, and then they ignore a real one. If a test breaks
+  because something was deliberately removed, it should be retired properly
+  — there is a folder for that, with instructions.
 
 ---
 
-## Security findings: all closed
+## When something goes wrong
 
-A full row-level-security audit was done 2026-09-11 and raised three issues.
-**All three were verified closed on 2026-09-21** — do not go chasing them:
+| What you see | What it probably is | What to do |
+| --- | --- | --- |
+| Somebody says a printed form looks wrong | This is the single most fragile part of the app | Get the actual PDF they printed. Do not trust the preview on screen — it has looked right while the print was wrong. |
+| The website won't load at all | The last change broke the build | Ask Claude: *"the site is down, find the last change that went live and tell me if it can be undone."* |
+| A person can't sign in | Account issue, not an app issue | See `HANDOVER.md` — passwords are reset from the Supabase dashboard |
+| Someone wants a filed record deleted | The app cannot do this, by design | This is a legal decision, not a software task. See rule 3. |
+| A change works on a computer but not an iPad | iPads genuinely behave differently here | Say so explicitly when asking for the fix. It has bitten this project repeatedly. |
 
-| Finding | Status |
+---
+
+## When to get an actual developer
+
+Claude can handle most of what this app will ever need. Bring in a real
+developer for:
+
+- **Anything touching the printed output or PDFs.** This has broken more
+  times than everything else combined, and the failures are subtle — it
+  looks perfect on screen and comes out wrong on paper.
+- **Anything about who is allowed to see what.** The permission rules are
+  enforced by the database, and getting them wrong could expose a
+  disciplinary notice to the wrong person.
+- **Deciding whether to keep this app at all.** If the company ever
+  considers replacing it, that is a business decision worth an expert
+  opinion — and `README.md` has an honest section about what is worth
+  keeping.
+
+---
+
+## Words you will run into
+
+| Word | What it actually means |
 | --- | --- |
-| Anonymous users could list every published JSA | Closed. `jsa_publications` SELECT now requires an authenticated, entitled user. |
-| Expired JSAs still accepted signatures | Closed. `publication_is_open()` checks `expires_at > now()`. |
-| The `safety` role could not file non-JSA documents | Resolved by the `is_admin` flag. Note this is a **role-design** question, not a bug — decide deliberately who should file what. |
-
-The publishable key in `src/archive/archiveClient.js` is meant to ship in
-browser code and grants nothing on its own. The service key is not in this
-repository and must never be.
+| **Repo / repository** | The project folder, with a complete history of every change ever made |
+| **GitHub** | The website where that folder lives, so it is not on one person's laptop |
+| **Commit** | One saved change, with a note explaining *why* it was made |
+| **Deploy / push live** | Making a change visible to real users on the real site |
+| **Supabase** | The company's database — the locked filing cabinet with all the records |
+| **Build** | Packaging the app so a browser can run it. "The build failed" means the site cannot update |
+| **Migration** | A change to the database's structure, written down so it can be repeated |
 
 ---
 
-## Where the reasoning actually lives
+## Where the real answers are
 
-**Commit messages are long on purpose and explain *why*, not what.** With no
-issue tracker and no design documents, `git log` is the real documentation
-of this project. When something looks strange, `git log -S'the odd thing'`
-will usually find the commit that explains it.
+**Every change ever made to this app has a written explanation attached to
+it.** Not a description of what changed — an explanation of *why*. There is
+no ticket system and no design documents, so that history is the actual
+record of this project.
 
-Beyond that: `README.md` for what it is, `HANDOVER.md` for the accounts,
-`CLAUDE.md` for working conventions and the full gotcha list,
-`reports/audits/` for outside review and the security audit, and
-`reports/plans/` for what was going to be built next.
+If something looks strange or wrong, it is worth asking Claude:
+
+> Look through the project history and find out why [the odd thing] is the
+> way it is. Explain what you find in plain English.
+
+A surprising amount of the odd-looking stuff is there because something
+went wrong once and this was the fix.
+
+**Four documents, four jobs:**
+
+- **`README.md`** — what this app is
+- **`HANDOVER.md`** — who owns the accounts, and what to do if you want to
+  stop using it
+- **`CONTINUING.md`** — this page
+- **`CLAUDE.md`** — the technical detail. You do not need to read it.
+  Claude does, automatically.
