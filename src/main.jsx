@@ -3495,9 +3495,13 @@ function HomeView({ customTemplates, setTab, docEntries, waitingCount = 0, waiti
                 <button type="button" className="signingRow" onClick={() => setTab('board')}>
                   <span className="signingDot" aria-hidden="true" />
                   <span className="signingLabel">{b.label}</span>
-                  <span className="signingCount">
-                    {b.expected ? `${b.signed} of ${b.expected} signed` : `${b.signed} signed`}
-                  </span>
+                  {/* Just the count. It used to read "40 of 60 signed",
+                      where the 60 was signatureLineCount -- blank ruled
+                      lines for a PRINTED sheet, not a headcount anybody
+                      expected. On a board posting that invented twenty men
+                      who were never coming, and made a complete sign-in
+                      look two-thirds finished. */}
+                  <span className="signingCount">{b.signed} signed</span>
                 </button>
               </li>
             ))}
@@ -4865,41 +4869,17 @@ function TemplatesView({ allTemplates, customTemplates, loadTemplate, deleteTemp
 /* Only mounted when there is a session, and lazy either way, so Settings
    stays a local-only screen for anyone who never signs in. */
 const ProfileCard = lazy(() => loadModule(() => import('./account/ProfileCard')));
-const JobsCard = lazy(() => loadModule(() => import('./jobs/JobsCard')));
 
+/* Settings used to also hold the company job list and a builder for custom
+   quick-add wording. Both are gone from this screen (2026-09).
+
+   Nothing was migrated and nothing was thrown away: job rows are untouched
+   and JobPicker still reads them on every document, and anybody who had
+   already saved custom quick adds still sees them in the JSA -- StepWork
+   reads settings.customQuick exactly as before. The only thing that went
+   away is the ability to add MORE from here. */
 function SettingsView({ settings, setSettings }) {
   const session = readStoredSession();
-  const [quickType, setQuickType] = useState('task');
-  const [quickLabel, setQuickLabel] = useState('');
-  const customQuick = settings.customQuick || { task: [], hazard: [], control: [] };
-
-  function addCustomQuick() {
-    const label = quickLabel.trim();
-    if (!label) return;
-    const existing = customQuick[quickType] || [];
-    if (existing.some(item => isNearDuplicate(item, label))) {
-      alert(`A similar ${quickType} already exists in your custom list.`);
-      return;
-    }
-    setSettings(prev => ({
-      ...prev,
-      customQuick: {
-        ...(prev.customQuick || { task: [], hazard: [], control: [] }),
-        [quickType]: [...existing, label],
-      },
-    }));
-    setQuickLabel('');
-  }
-
-  function removeCustomQuick(type, label) {
-    setSettings(prev => ({
-      ...prev,
-      customQuick: {
-        ...(prev.customQuick || { task: [], hazard: [], control: [] }),
-        [type]: (prev.customQuick?.[type] || []).filter(item => normalizeEntry(item) !== normalizeEntry(label)),
-      },
-    }));
-  }
 
   return (
     <div className="sectionStack">
@@ -4934,15 +4914,6 @@ function SettingsView({ settings, setSettings }) {
         </Suspense>
       )}
 
-      {/* The job list, and for the office the form that keeps it. Absent
-          rather than empty for anybody signed out -- it is a company list,
-          not a device one. */}
-      {session && (
-        <Suspense fallback={null}>
-          <JobsCard />
-        </Suspense>
-      )}
-
       <div className="card">
         <div className="cardHeader"><h3>Appearance</h3></div>
         <div className="cardBody">
@@ -4954,43 +4925,6 @@ function SettingsView({ settings, setSettings }) {
             <button className="btn ghost" onClick={() => setSettings(prev => ({ ...prev, theme: settings.theme === 'dark' ? 'light' : 'dark' }))}>
               Switch to {settings.theme === 'dark' ? 'Light' : 'Dark'} Mode
             </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="card">
-        <div className="cardHeader">
-          <h3>Custom Quick Adds</h3>
-          <p>Add company- or site-specific language. You must choose whether it is a task, hazard, or control so it stays in the correct lane.</p>
-        </div>
-        <div className="cardBody">
-          <div className="customQuickBuilder">
-            <label className="field">
-              <span>Type</span>
-              <select value={quickType} onChange={e => setQuickType(e.target.value)}>
-                <option value="task">Task — work being performed</option>
-                <option value="hazard">Hazard — exposure or harmful condition</option>
-                <option value="control">Control — preventive action or requirement</option>
-              </select>
-            </label>
-            <label className="field">
-              <span>Custom wording</span>
-              <input value={quickLabel} onChange={e => setQuickLabel(e.target.value)} placeholder={`Enter a custom ${quickType}`} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomQuick(); } }} />
-            </label>
-            <button className="btn primary" onClick={addCustomQuick}>Add custom item</button>
-          </div>
-          <div className="customQuickLists">
-            {['task','hazard','control'].map(type => (
-              <div className="customQuickList" key={type}>
-                <strong>{type === 'task' ? 'Tasks' : type === 'hazard' ? 'Hazards' : 'Controls'}</strong>
-                {(customQuick[type] || []).length ? (customQuick[type] || []).map(item => (
-                  <div className="customQuickItem" key={item}>
-                    <span>{item}</span>
-                    <button className="miniDanger" onClick={() => removeCustomQuick(type, item)}>Remove</button>
-                  </div>
-                )) : <p>No custom {type}s saved.</p>}
-              </div>
-            ))}
           </div>
         </div>
       </div>

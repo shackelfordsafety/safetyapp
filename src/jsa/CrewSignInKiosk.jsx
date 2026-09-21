@@ -58,12 +58,22 @@ import { useEffect, useRef, useState } from 'react';
 const SIG_BOX_RATIO = 363.7 / 39; // ~9.33 -- wide and short
 const MIN_PAD_HEIGHT = 130;
 const CONFIRM_PAUSE_MS = 1200;
-// Set (not added to whatever was there) once signing wraps up -- there's no
-// more manual "how many lines" picker upstream (StepSignatures), so this is
-// the one place that number ever gets decided (Fonzo, 2026-08-19: "after
-// you click done it should auto add 20 extra signatures in case visitors
-// come in later or late ppl").
-const EXTRA_BLANK_LINES_AFTER_SIGNING = 20;
+/* Exiting used to set signatureLineCount to 20, and the exit dialog told
+   people "20 blank lines will be added after them for anyone who signs in
+   ink later" (Fonzo, 2026-08-19). Both are gone, because neither could
+   happen any more:
+
+     - signInLineTotal() in main.jsx returns printedCrewSignatures().length
+       whenever anybody has signed, ignoring signatureLineCount entirely.
+       That was Fonzo's 2026-09-11 call -- "boxes should only populate how
+       many people signed the JSA and not generate an extra 40 boxes or
+       whatever" -- which quietly superseded the 08-19 behaviour.
+     - On a board posting `upd` is a no-op anyway (MyBoard passes () => {}),
+       and the PDF was published before anyone ever reached this screen.
+
+   So the write was dead on both routes and the sentence was a promise the
+   printed sheet could not keep. If extra ruled lines are ever wanted back,
+   that is a change in signInLineTotal, not here. */
 
 function padHeightFor(width) {
   return Math.max(MIN_PAD_HEIGHT, Math.round(width / SIG_BOX_RATIO));
@@ -75,7 +85,13 @@ function padHeightFor(width) {
    same place a phone signature does, which is the whole reason the two
    used to drift apart. Without it the component behaves exactly as
    before. */
-export default function CrewSignInKiosk({ jsa, upd, onExit, onSign, signedCount: signedCountProp }) {
+export default function CrewSignInKiosk({ jsa, upd, onExit, onSign, signedCount: signedCountProp, signedHereCount }) {
+  /* A board posting is the only caller that passes onSign, and it is the
+     one that must not read like the main way to sign. The QR on the
+     trailer door is that; this pad is the fallback for the man who has no
+     phone on him. Everything gated on this flag is wording, not
+     behaviour. */
+  const onBoard = !!onSign;
   const canvasRef = useRef(null);
   const wrapRef = useRef(null);
   const drawingRef = useRef(false);
@@ -277,7 +293,6 @@ export default function CrewSignInKiosk({ jsa, upd, onExit, onSign, signedCount:
   function requestExit() { setPhase('confirmingExit'); }
   function continueSigning() { setPhase('signing'); }
   function confirmDoneSigning() {
-    upd({ signatureLineCount: EXTRA_BLANK_LINES_AFTER_SIGNING });
     onExit();
   }
 
@@ -287,17 +302,25 @@ export default function CrewSignInKiosk({ jsa, upd, onExit, onSign, signedCount:
         type="button"
         className="crewKioskExitHold"
         onClick={requestExit}
-        aria-label="End sign-in"
-        title="End sign-in"
+        aria-label={onBoard ? 'Done signing on this device' : 'End sign-in'}
+        title={onBoard ? 'Done signing on this device' : 'End sign-in'}
       >
-        <span className="crewKioskExitHoldLabel">End Sign-In</span>
+        {/* "End Sign-In" read like it took the whole posting down. On a
+            board the QR stays up and the crew keeps signing on their own
+            phones after this pad closes, so it only ever ended signing
+            *here* (Fonzo, 2026-09). */}
+        <span className="crewKioskExitHoldLabel">{onBoard ? 'Done' : 'End Sign-In'}</span>
       </button>
 
       {phase === 'confirmingExit' && (
         <div className="crewKioskExitConfirmOverlay" role="alertdialog" aria-modal="true" aria-label="Done signing?">
           <div className="crewKioskExitConfirmPanel">
             <h2>Done signing?</h2>
-            <p>{signedCount} crew member{signedCount === 1 ? '' : 's'} signed. 20 blank lines will be added after them for anyone who signs in ink later.</p>
+            <p>
+              {onBoard
+                ? `${signedHereCount || 0} signed on this device. The code stays up and the crew can keep signing on their own phones.`
+                : `${signedCount} crew member${signedCount === 1 ? '' : 's'} signed.`}
+            </p>
             <div className="crewKioskExitConfirmActions">
               <button type="button" className="btn ghost lg" onClick={continueSigning}>Continue signing</button>
               <button type="button" className="btn primary lg" onClick={confirmDoneSigning}>Done signing</button>
@@ -308,9 +331,18 @@ export default function CrewSignInKiosk({ jsa, upd, onExit, onSign, signedCount:
 
       <div className="crewKioskBody">
         <div className="crewKioskHead">
-          <span className="crewKioskEyebrow">Crew Sign-In</span>
-          <h1 className="crewKioskNumber">Sign Here — #{headerNumber}</h1>
+          <span className="crewKioskEyebrow">{onBoard ? 'Sign on this device' : 'Crew Sign-In'}</span>
+          {/* No number on a board. signedCount there is everybody on the
+              posting, most of whom signed on their own phones, so "#43"
+              read like this pad was the main line -- and like the man
+              holding it was 43rd in a queue that does not exist. */}
+          <h1 className="crewKioskNumber">{onBoard ? 'Sign Here' : `Sign Here — #${headerNumber}`}</h1>
           <p className="crewKioskHint">Sign your name below, then tap Confirm &amp; Next.</p>
+          {onBoard && (
+            <p className="crewKioskHint">
+              {signedHereCount || 0} signed on this device · {signedCount} in all
+            </p>
+          )}
         </div>
         {/* The canvas stays mounted across both phases on purpose -- when it
             was conditionally rendered only during 'signing', switching to

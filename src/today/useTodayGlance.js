@@ -55,10 +55,6 @@ export default function useTodayGlance() {
         id: r.id,
         label: board ? board.boardLabel(r.data || r) : 'Job Safety Analysis',
         signed: r.signed || 0,
-        /* How many lines the sheet was built for. Shown only when the JSA
-           actually carries a number -- "14 signed" is honest, "14 of 0" is
-           not. */
-        expected: Number(r.data?.signatureLineCount) || 0,
       }));
 
       setState({ ready: true, signedIn: true, outForSigning: live, filedToday: filed.length });

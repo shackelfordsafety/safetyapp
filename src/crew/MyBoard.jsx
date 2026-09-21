@@ -301,7 +301,7 @@ export default function MyBoard() {
               <span className="brdCountLabel">signed</span>
             </button>
             <button type="button" className="btn secondary sm" onClick={() => { setKiosk(r); setKioskSigned(0); }}>
-              Sign on this iPad
+              Sign on this device
             </button>
             {/* Only while nobody has signed. Once a man has signed, this
                 is a record of who agreed to what and the button is gone --
@@ -362,6 +362,7 @@ export default function MyBoard() {
             upd={() => {}}
             onSign={signOnPad}
             signedCount={kiosk.signed + kioskSigned}
+            signedHereCount={kioskSigned}
             onExit={() => { setKiosk(null); load(); }}
           />
           {/* Above the kiosk, because the kiosk is full screen and this is
