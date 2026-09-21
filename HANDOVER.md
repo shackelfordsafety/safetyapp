@@ -1,126 +1,388 @@
 # Handover
 
-Alfonso "Fonzo" Hernandez built and ran this app while he was the safety person
-at Shackelford Construction and Hauling. He has left. This page is what has to
-change hands, written so that somebody who is not a programmer can still do the
-parts that matter.
+**You do not need to know how to write code to read this.**
 
-Last verified 2026-09-16.
+If you have never opened a code file in your life, you are exactly who this
+was written for. Shackelford already uses Claude for project management
+work, and Claude can do the actual building here. Your job is to know what
+you have, what must never be broken, and what to ask for.
 
----
+This is the only document you need. Everything is on this page.
 
-## The short version
-
-**Nothing breaks when Fonzo leaves.** The app is not running on his laptop and
-it is not tied to his personal accounts. It lives at
-
-> https://shackelfordsafety.github.io/safetyapp/
-
-and it will keep serving that page whether or not anybody touches it again.
-The records that have already been filed cannot be deleted from inside the
-app, by design, so they are not at risk either.
-
-There are four keys to hand over, and because they all sit on Fonzo's
-Shackelford email address, the company can take every one of them without his
-help. The section below says how, and names the single thing that is easier to
-sort out before he leaves than after.
+Last verified 21 September 2026.
 
 ---
 
-## If you are HR or management
+## First, the important part
 
-Four accounts exist outside the app itself. Think of them as the keys to the
-building, separate from the keys people use to get into their own office.
+**This app is finished.** It is not a half-built thing somebody walked away
+from. Six safety forms, filled out in the field, printed or filed away.
+371 real signatures from real crews have already gone through it.
 
-**The accounts are registered to Fonzo's Shackelford email address, not a
-personal one.** That is the important part: the company already controls that
-mailbox, so it can reset the password on any of these itself. Nothing here
-depends on Fonzo being reachable, or willing.
+If nobody ever touches it again, **it keeps working.** Nothing expires,
+nothing needs maintenance, nobody has to babysit it. The website will keep
+serving whether or not anyone opens this folder again.
 
-| What | Where it stands | What to do |
+So do not read this as a to-do list. Read it as: *if we ever want more,
+here is how.*
+
+---
+
+## What you actually have
+
+**Six forms:** the JSA (the daily job safety analysis), Incident Report,
+Uncontrolled Event, Medical Event, Disciplinary Notice, and Employee
+Separation.
+
+The live site is at:
+
+> **https://shackelfordsafety.github.io/safetyapp/**
+
+### What works without signal, and what does not
+
+This is the part worth getting straight, because it is easy to
+misdescribe.
+
+**Filling out paperwork works offline.** Building, filling in and printing
+any of the six forms needs no login, no account and no cell signal. That is
+the whole reason this exists instead of a website somebody has to log into
+— crews work in gravel pits with no bars.
+
+**Everything that leaves the device needs a login through Supabase.** That
+means: filing a finished document into Records, publishing a JSA for the
+crew to scan and sign, the approval chain, and seeing anything
+company-wide.
+
+So the field work is offline. The record-keeping is not. A superintendent
+can write and print a JSA on a dead phone in a pit; getting it into the
+company's permanent records requires being signed in.
+
+### Where the paperwork lives
+
+Finished documents go into a database called **Supabase** — think of it as
+the locked filing cabinet in the office.
+
+**Anything filed there cannot be edited or deleted by anyone, at any
+permission level, ever.** Not by HR, not by an owner. The database itself
+refuses; it is not just a hidden button. That was deliberate, for legal
+reasons.
+
+---
+
+## The accounts, and who holds them
+
+Three services sit behind this app. All of them are on company email and
+the company card — nothing is tied to a personal account in any way that
+matters.
+
+| What | Where it stands |
+| --- | --- |
+| **GitHub** — where the code lives and where the website publishes from | The company org `shackelfordsafety`. The company account `schsafety` is already a full owner. |
+| **Supabase** — the database with every filed record and signature | Org "Shackelford Safety", project "SCH Safety App". On the company card and a company email. |
+| **The seven logins inside the app** | All on `@shackelfordconst.com`. Managed from the Supabase dashboard. |
+
+There is also a **service key** in the Supabase dashboard — a master
+password for the database, deliberately stored in no file anywhere in the
+code. Treat it like a safe combination. Day-to-day use never needs it.
+
+### The seven app logins
+
+| Account | Role | Ever signed in |
 | --- | --- | --- |
-| **GitHub** — where the code lives and where the website is published from | The company org `shackelfordsafety`. Both `fonzohdz` and the company account `schsafety` are full owners. | ✅ **Nothing.** `schsafety` already owns everything. Remove `fonzohdz` from the org whenever you like. |
-| **Supabase** — the database holding the filed records and signatures | An org called "Shackelford Safety", project "SCH Safety App". | ✅ **Reset the password** from the work mailbox and sign in. While you are in there, confirm a company login is an *Owner* of the org, not just a member. |
-| **The seven logins inside the app** — two owners, safety, HR, a clerk, two foremen | Managed from inside the Supabase dashboard. | Change the password on any account belonging to somebody who has left. You do not need the old passwords to do this. |
-| **Cloudflare preview** (`safetyapp.fonzohdz.workers.dev`) | A personal account. | ❌ **Let it die.** It is only a scratch copy of the `testing` branch. The real site does not use it and does not care. |
+| `ahernandez@` | safety (full admin) | yes |
+| `hunter@` | owner | **never** |
+| `reeves@` | owner | **never** |
+| `pat@` | hr | yes |
+| `nic@` | clerk | yes |
+| `jake@` | foreman | yes |
+| `kris@` | foreman | yes |
 
-### The one thing a password reset does not fix
+Anyone who has left the company should have their password changed from the
+Supabase dashboard. You do not need their old password to do it.
 
-If any of these accounts has **two-factor authentication** — a code from an app
-or a text message — pointed at Fonzo's personal phone, resetting the password
-is not enough to get in. That is worth ten minutes of his time before his last
-day, and is the only part of this that gets harder after he is gone. Everything
-else on this page can be done at any point in the future.
+### Two things worth doing now
 
-There is also a **service key** in the Supabase dashboard — a master password
-for the database that is deliberately *not* stored anywhere in the code. Treat
-it like the safe combination. It is not needed for day-to-day use.
+Neither is a permissions problem — every account already has the rights it
+needs. These are two passwords **nobody has ever tested**:
 
-### What you are actually inheriting
-
-Real numbers as of 2026-09-16, read straight from the database:
-
-- **371 crew signatures** collected on real job sites
-- **8 documents** filed permanently in Records
-- **7 accounts**, of which only a few were ever used
-
-Filed records are append-only: there is no button anywhere in the app, for
-anybody at any permission level, that edits or deletes a filed document. That
-was a deliberate legal decision, not an oversight. Undoing it would take a
-developer writing a database migration on purpose.
-
-### If you decide to stop using it
-
-Do this before you walk away, or you lose the paperwork:
-
-1. Open Records, signed in as an owner, and export everything.
-2. Keep a copy of the Supabase project, or at minimum export the `documents`
-   table and the stored PDFs.
-3. Only then cancel anything.
-
-Do **not** just stop paying the bill and assume the files are somewhere else.
-They are not.
+1. **Get `hunter@` or `reeves@` to sign into the app once.** Both are
+   owners with full rights, and neither has ever logged in. If the password
+   works, the company's access is proven. If it does not, you find out
+   while it is still easy to fix.
+2. **Make sure somebody holds the `schsafety` GitHub password.** It is the
+   company's way into the code that does not run through a personal
+   account.
 
 ---
 
-## If you are the person maintaining it
+## How to actually get something done
 
-Read `README.md` first — it explains what the app is, how it is built, and
-what will bite you. Then `CLAUDE.md`, which is the accumulated hard-won
-detail, especially about printing.
+You will not edit anything yourself. You will ask Claude, and Claude will
+do it.
 
-Practical starting points:
+### Setting Claude up, once
 
-```bash
-npm install
-npm run dev      # http://localhost:5173 — works with no account and no network
-npm run check    # 22 checks, all passing as of 2026-09-16
-npm run build
+1. Get the project folder onto a computer. It lives on GitHub under the
+   `shackelfordsafety` account.
+2. Open Claude Code in that folder.
+3. That is it. **There is a file in there called `CLAUDE.md` that Claude
+   reads automatically** — the whole project, the house rules, and every
+   trap somebody has already fallen into. You never have to explain this
+   project to Claude, and you never have to read that file yourself.
+
+### The four things to say every time
+
+Whatever you are asking for, include these. They are the difference between
+a change that works and one that quietly breaks something.
+
+1. **"Read CLAUDE.md and HANDOVER.md first."**
+2. **"Do not change anything about printing or the PDFs unless that is
+   specifically what I am asking for."**
+3. **"Run `npm run check` when you are done and tell me the result."**
+4. **"Show me screenshots of the actual app before and after."**
+
+That fourth one matters more than it sounds. This app's printed output has
+broken before in ways that looked perfectly fine on screen. **Never accept
+"it should work" — ask to see it.**
+
+### Prompts you can copy
+
+**To understand something before you change it:**
+
+> Read CLAUDE.md and HANDOVER.md. Then explain to me, in plain English with
+> no technical jargon, how [the thing] currently works and what would have
+> to change to [what you want]. Do not change anything yet — I want to
+> understand the tradeoffs first.
+
+**To make a small change (wording, a field, a label):**
+
+> Read CLAUDE.md and HANDOVER.md first. I want to [describe it in your own
+> words]. Make the smallest change that does this. Do not touch printing or
+> PDF code. When you're done, run `npm run check`, show me before-and-after
+> screenshots of the real app, and tell me anything you were unsure about.
+
+**To add a whole new form — the big one:**
+
+> Read CLAUDE.md and HANDOVER.md first. I want to add a new document type
+> called [name]. Follow the same pattern as the Employee Separation
+> document, which is the newest and cleanest one.
+>
+> Important: `can_file_doc_type()` in the database lists document types by
+> name, and a new type falls through to `else false`. If you skip that, the
+> app will look correct in the browser and the database will silently
+> refuse to file anything. Add the new type in a migration and ask me which
+> roles should be allowed to file it.
+>
+> Before writing any code, show me a plan and what the form's fields will
+> be. Do not invent any safety wording — I will supply that.
+
+You do not need to understand that middle paragraph. Claude does. Paste it
+anyway — it is the single most expensive mistake available here, and it
+costs an afternoon to find.
+
+**When something looks wrong:**
+
+> Read CLAUDE.md first. [Describe what you're seeing.] Find out why before
+> changing anything, and show me what you found. If it's a printing or PDF
+> problem, generate a real PDF and look at the actual image inside it —
+> don't judge it from the preview on screen.
+
+---
+
+## Six rules you must never let anyone break
+
+Every one of these came from a real problem or a legal requirement. They
+are the ones most likely to get "tidied up" by somebody who does not know
+why they are there — including an AI that is trying to be helpful.
+
+**1. Never let anything invent safety wording.**
+The hazards, controls and task descriptions in this app end up on a signed
+legal document. Do not let Claude write them. Do not let anyone pad the
+lists with reasonable-sounding entries. When new wording is needed, it
+comes from actual regulations and a qualified safety person approves it
+line by line. *This is the most important rule on this page.*
+
+**2. What the employee wrote, the employer cannot change.**
+An employee's statement, signature and date are locked the moment they are
+given. This is a legal requirement, and it applies to any new form anybody
+adds later, not just the ones that have it today.
+
+**3. Filed documents can never be edited or deleted.**
+Not by HR, not by an owner, not by anybody. If someone asks for an "edit
+filed record" feature, that is a legal conversation, not a software
+request.
+
+**4. The crew sign-in never records names.**
+It is numbered only — person 1, person 2, person 43. It was built for a
+hundred men signing in a few seconds each. Every design mockup ever made
+for this app got this wrong and showed a list of names to tap. If someone
+proposes that, they have not understood the workflow.
+
+**5. Filling out and printing a form must never require a login.**
+Crews work where there is no signal. Filing and publishing need an account;
+doing the paperwork itself must not.
+
+**6. Write about people neutrally.**
+No "he/him/his" in anything a person reads — use "they", or speak to the
+person directly. This is simple professionalism: not everybody is a he.
+
+---
+
+## If you want more: what was already planned
+
+These are not loose ideas. They were thought through and decided, and then
+time ran out. They are written here because they existed nowhere else and
+were going to be lost entirely.
+
+### Equipment inspection checklists
+
+The intended next piece, and the most worked-out.
+
+- It would be **part of this same app**, sharing one login — not a separate
+  program to buy and manage.
+- An operator **scans a QR sticker on the machine** and fills out the
+  checklist. **No login, no account, nothing to install** — exactly like
+  the crew sign-in works today.
+- Those checklists land in the database, where **only management can browse
+  them**.
+- The shape is deliberate: effortless and anonymous out in the field, a
+  real permanent record in the office.
+
+### The crew QR sign-in — decisions worth keeping
+
+Mostly built already. If anyone changes it, these were deliberate:
+
+- The QR code points at the **superintendent's board**, not at one specific
+  JSA. That is what handles a five-JSA day and a JSA that gets revised at
+  10am — a code pointing at one document goes stale the moment it changes.
+- **One permanent QR code per superintendent**, not one per job. A sticker
+  that never changes is a sticker nobody reprints.
+- If several JSAs are running that day, the crew member picks by
+  **location**.
+
+### Sharing templates between people
+
+Decided, not built, and smaller than it sounds — the plumbing already
+exists.
+
+- A **company shelf**: safety or the office posts a template, and everyone
+  pulls their own copy. Not people sending templates to each other.
+
+### Two things that are blocked
+
+- **The app cannot send email.** Not a bug — it needs a company DNS record
+  that was never set up. Any feature involving notifications starts there.
+- **Starting a form on one device and finishing on another** needs somebody
+  to decide what happens when both have changes. Guessing wrong loses
+  somebody's morning of work.
+
+---
+
+## How to check nothing is broken
+
+The app can test itself. Ask Claude to run this, or type it yourself:
+
+```
+npm run check
 ```
 
-Shipping is: push to `main`. GitHub Actions builds and publishes to GitHub
-Pages. There is no review gate, so **run `npm run check` first** — it is the
-only safety net this repo has.
+It runs **22 tests, each named after what would go wrong** rather than some
+technical label — things like *"the last thing you typed is not lost when
+you leave"* and *"the employer cannot change what the employee wrote or
+signed."* You can read the results without knowing any code.
 
-Four more checks need a real login and are run by hand. `npm run check`
-prints the exact commands at the end.
+**It was passing 22 out of 22 on 21 September 2026. If it ever says
+anything other than all clear, do not put that change live.**
 
-**The two things most likely to surprise you:**
+Two things worth knowing about those tests:
 
-1. **Printing is the fragile part.** The PDF engine does not always draw what
-   the browser shows. Never approve a print change from a screenshot of the
-   preview — generate a real PDF and look at the actual image inside it.
-   `CLAUDE.md` has the full scar tissue on this.
-2. **Half the app must never need a login.** Crews fill out documents where
-   there is no cell signal. Creating, filling in and printing all six document
-   types works entirely offline in the browser. The login-only half (Records,
-   the review chain, publishing a JSA to a board) is loaded separately so a
-   superintendent's phone never downloads it. Do not merge those halves.
+- **A test passing is not always proof.** Some old tests here kept
+  "passing" while checking a screen that had been deleted — they were
+  asking a question about something that was not there, and technically
+  getting the right answer. If a change feels risky, look at the real app,
+  not just the green checkmarks.
+- **A test that is always failing is worse than no test.** People start
+  ignoring the red, and then they ignore a real one. If a test breaks
+  because something was deliberately removed, it should be retired properly
+  — there is a folder for that, with instructions.
 
-**Branches:** `main` is live. `testing` is scratch. The ~20 other remote
-branches are finished work from 2026 and can be deleted without thinking about
-it.
+### Putting a change live
 
-**Where the reasoning is:** commit messages are long on purpose and say *why*.
-`git log` is the real documentation. `reports/audits/` has outside review and a
-database security audit; `reports/plans/` has what was going to be built next.
+Changes go live by pushing to GitHub, which rebuilds and publishes the site
+automatically. There is no second approval step and no safety gate beyond
+the build succeeding — **so run `npm run check` first, every time.** It is
+the only safety net this project has.
+
+---
+
+## When something goes wrong
+
+| What you see | What it probably is | What to do |
+| --- | --- | --- |
+| Somebody says a printed form looks wrong | The single most fragile part of the app | Get the actual PDF they printed. Do not trust the preview on screen — it has looked right while the print was wrong. |
+| The website won't load at all | The last change broke the build | Ask Claude: *"the site is down, find the last change that went live and tell me if it can be undone."* |
+| A person can't sign in | An account issue, not an app issue | Reset their password from the Supabase dashboard. You do not need the old one. |
+| Someone wants a filed record deleted | The app cannot do this, by design | A legal decision, not a software task. See rule 3. |
+| A change works on a computer but not an iPad | iPads genuinely behave differently here | Say so explicitly when asking for the fix. It has bitten this project repeatedly. |
+
+---
+
+## When to get an actual developer
+
+Claude can handle most of what this app will ever need. Bring in a real
+developer for:
+
+- **Anything touching the printed output or PDFs.** This has broken more
+  times than everything else combined, and the failures are subtle — it
+  looks perfect on screen and comes out wrong on paper.
+- **Anything about who is allowed to see what.** The permission rules are
+  enforced by the database, and getting them wrong could expose a
+  disciplinary notice to the wrong person.
+- **Deciding whether to keep this app at all.** If the company ever
+  considers replacing it, that is a business decision worth an expert
+  opinion.
+
+---
+
+## If you decide to stop using it
+
+Do this **before** you cancel anything, or the paperwork goes with it:
+
+1. Sign in as an owner, open Records, and export everything.
+2. Keep a copy of the Supabase project — at minimum, export the documents
+   table and the stored PDFs.
+3. Only then cancel.
+
+Do not simply stop paying and assume the files are somewhere else. **They
+are not.** This is the company's only copy of that paperwork.
+
+---
+
+## Words you will run into
+
+| Word | What it actually means |
+| --- | --- |
+| **Repo / repository** | The project folder, with a complete history of every change ever made |
+| **GitHub** | The website where that folder lives, so it is not on one person's laptop |
+| **Commit** | One saved change, with a note explaining *why* it was made |
+| **Deploy / push live** | Making a change visible to real users on the real site |
+| **Supabase** | The company's database — the locked filing cabinet with all the records |
+| **Build** | Packaging the app so a browser can run it. "The build failed" means the site cannot update |
+| **Migration** | A change to the database's structure, written down so it can be repeated |
+
+---
+
+## Where the real answers are
+
+**Every change ever made to this app has a written explanation attached to
+it.** Not a description of what changed — an explanation of *why*. There is
+no ticket system and no design documents, so that history is the actual
+record of this project.
+
+If something looks strange or wrong, ask Claude:
+
+> Look through the project history and find out why [the odd thing] is the
+> way it is. Explain what you find in plain English.
+
+A surprising amount of the odd-looking stuff is there because something
+went wrong once and this was the fix.

@@ -6,11 +6,10 @@ iPad in a job trailer, printed or sent for review, and filed where they cannot
 be quietly edited later.
 
 Built by Alfonso "Fonzo" Hernandez (safety) with Claude. If you have just
-inherited this, read **`HANDOVER.md`** first — what has to change hands, and
-what to do if you want to stop using it — then this page, then `CLAUDE.md`.
-If you want to keep *building* it, **`CONTINUING.md`** is the one you want —
-and it assumes no coding knowledge at all, because the company runs Claude
-for this kind of work.
+inherited this, read **`HANDOVER.md`** first. It is the master handover
+document — what you have, who holds the accounts, what must never be broken,
+how to get changes made, and what was already planned. It assumes no coding
+knowledge at all, because the company runs Claude for this kind of work.
 
 ---
 
@@ -187,8 +186,7 @@ needs a real "there is a newer version, which do you want" conversation.
 Commit messages are long on purpose and explain *why*, not what. `git log` is
 the real documentation. Beyond that:
 
-- `HANDOVER.md` — who owns what, and what to transfer
-- `CONTINUING.md` — how to keep building it without knowing how to code, plus the decisions written nowhere else
+- `HANDOVER.md` — the master handover document, written for a non-developer
 - `CLAUDE.md` — how to work in this repo, and the hard-won gotchas
 - `reports/audits/` — outside review, database security audit, wording audit
 - `reports/plans/` — what was going to be built next
