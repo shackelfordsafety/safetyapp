@@ -5,6 +5,16 @@
 // takes typing, because that field binds straight to jsa.jobNumber and
 // never went through the job list at all.
 //
+// A warning for anybody using this as a before/after: the picker rendered
+// `null` whenever the job list was empty or nobody was signed in
+// (`if (!state.ready || state.jobs.length === 0) return null`). So a
+// signed-out run photographs an identical screen before and after the
+// removal, and "job picker present: false" is not on its own evidence that
+// anything was removed. Getting a real visual before/after would mean
+// stubbing auth and the jobs module the way the retired
+// verify-job-picker.mjs did. The assertion below that actually carries
+// weight is the one about typing.
+//
 // Usage (redirect on Windows, per CLAUDE.md):
 //   node tools/testing/capture-job-info-step.mjs before > out.log 2>&1
 
@@ -46,7 +56,7 @@ async function main() {
     await page.waitForSelector('text=Job Information', { timeout: 15000 });
     await page.waitForTimeout(500);
 
-    console.log(`  job picker present: ${(await page.locator('.jobPicker, .jobShortlist, .jobRow').count()) > 0}`);
+    console.log(`  job picker present: ${(await page.locator('.jobPick').count()) > 0}`);
 
     // The real point of this check: the field still takes typing.
     const jobField = page.locator('label').filter({ hasText: 'Job #' }).locator('input').first();
