@@ -103,17 +103,17 @@ This trips people up, so it is worth separating:
 | | What it opens | How you get in |
 | --- | --- | --- |
 | **The `schsafety` account** | The GitHub code *and* the Supabase dashboard | A GitHub password |
-| **The seven app logins** | The app itself, as a person with a role | Their own email and password, managed *inside* the Supabase dashboard |
+| **The eight app logins** | The app itself, as a person with a role | Their own email and password, managed *inside* the Supabase dashboard |
 
-The seven app logins are ordinary accounts that live in the database. They
+The eight app logins are ordinary accounts that live in the database. They
 have nothing to do with the GitHub password — you use `schsafety` to open
-the dashboard, and then you manage those seven from in there.
+the dashboard, and then you manage those eight from in there.
 
 There is also a **service key** in the Supabase dashboard — a master
 password for the database, deliberately stored in no file anywhere in the
 code. Treat it like a safe combination. Day-to-day use never needs it.
 
-### The seven app logins
+### The eight app logins
 
 | Account | Role | Ever signed in |
 | --- | --- | --- |
@@ -124,6 +124,27 @@ code. Treat it like a safe combination. Day-to-day use never needs it.
 | `nic@` | clerk | yes |
 | `jake@` | foreman | yes |
 | `kris@` | foreman | yes |
+| `houston@` | pm | **never** |
+
+**The role is what decides what somebody sees**, and it is set per account
+in the Supabase dashboard — not in the app. Worth knowing what they mean,
+because the difference is large:
+
+| Role | Sees | Files and approves |
+| --- | --- | --- |
+| `owner` | every filed document | everything |
+| `safety` | every filed document | JSAs (this account also carries the admin flag) |
+| `hr` | every filed document | disciplinary and separation |
+| `pm` | every filed document | incident, medical event, uncontrolled event |
+| `clerk` | every filed document | JSAs |
+| `superintendent` / `foreman` | own documents, plus every disciplinary | JSAs |
+| `field` | own documents only | JSAs |
+
+A new account defaults to `field`, the most restricted of these, so
+**check the role after adding somebody.** Houston was added as `field` on
+2026-09-22 and corrected to `pm` the same day; as `field` he could not
+have approved anything, and incident approvals would have had nowhere to
+go.
 
 Anyone who has left the company should have their password changed from the
 Supabase dashboard. You do not need their old password to do it.
