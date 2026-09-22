@@ -139,26 +139,94 @@ somebody goes around the app.
 
 What that screen deliberately cannot do is **add a person or reset a
 password** — both need the database's master key, which must never sit in
-a web page. Those two still happen in the Supabase dashboard.
+a web page. Those two happen in the Supabase dashboard, and the exact
+steps are below.
 
-Worth knowing what the roles mean, because the difference is large and the
-names do not give it away:
+---
 
-| Role | Sees | Files and approves |
+## Adding somebody to the app
+
+**Most people never need an account.** Filling in and printing any of the
+six forms needs no login at all, and a crew member signing a JSA just scans
+the QR code. An account is only for somebody who **publishes a JSA to the
+board, files into Records, or approves documents** — so superintendents,
+foremen, and the office.
+
+It is two jobs in two places. Both are quick.
+
+### Part 1 — make the login (Supabase dashboard)
+
+1. Go to **supabase.com** and choose **Sign in with GitHub**. Use the
+   `schsafety` account.
+2. Open the project called **SCH Safety App**.
+3. In the left sidebar choose **Authentication**, then **Users**.
+4. Click **Add user** → **Create new user**.
+5. Type their **work email** and a **password**. Write the password down —
+   you are going to read it to them, and nothing else keeps a copy.
+6. **Turn on "Auto Confirm User".** This one matters more than it looks.
+   Leave it off and Supabase tries to email them a confirmation link,
+   which will never arrive — this app has no email set up — and they will
+   not be able to sign in at all.
+7. Click **Create user**.
+8. Tell them their email and password, and ask them to change it in the
+   app under **Settings › Your Profile** once they are in.
+
+### Part 2 — say what they can see (in the app)
+
+A brand new account starts as **"Not assigned yet"**, which means they can
+only see documents they filed themselves. Until you do this step they
+cannot do much.
+
+1. Open the app and sign in as yourself.
+2. Go to **Settings › People**.
+3. Find them in the list. They will show as **"Name not set yet"** until
+   they fill their own name in.
+4. Choose what they can see from the **Can see** dropdown. The line
+   underneath tells you what each one means.
+5. Click **Save role**.
+
+That is it. The change is written to a history on the same screen that
+nobody can edit or delete.
+
+### If somebody is locked out
+
+Same dashboard, same place: **Authentication → Users**, find the person,
+and set a new password for them. Then tell them what it is. Nothing is
+emailed, so you have to pass it on yourself.
+
+### Which role to pick
+
+If you are not sure, **start smaller.** Giving somebody too little means
+they come back and ask; giving somebody too much means they can read every
+disciplinary notice and separation in the company.
+
+These are the words you will see in the dropdown, in the order they
+appear:
+
+| What the dropdown says | They can see | They can file and approve |
 | --- | --- | --- |
-| `owner` | every filed document | everything |
-| `safety` | every filed document | JSAs (this account also carries the admin flag) |
-| `hr` | every filed document | disciplinary and separation |
-| `pm` | every filed document | incident, medical event, uncontrolled event |
-| `clerk` | every filed document | JSAs |
-| `superintendent` / `foreman` | own documents, plus every disciplinary | JSAs |
-| `field` | own documents only | JSAs |
+| **Not assigned yet** | only documents they filed themselves | JSAs |
+| **Superintendent** | their own, plus every disciplinary notice | JSAs |
+| **Foreman** | their own, plus every disciplinary notice | JSAs |
+| **Clerk** | every filed document | JSAs |
+| **Project Manager** | every filed document | incidents, medical events, uncontrolled events |
+| **HR** | every filed document | disciplinary notices and separations |
+| **Safety** | every filed document | JSAs |
+| **Owner** | every filed document | everything |
 
-A new account defaults to `field`, the most restricted of these, so
-**check the role in Settings › People after adding somebody.** Houston was added as `field` on
-2026-09-22 and corrected to `pm` the same day; as `field` he could not
-have approved anything, and incident approvals would have had nowhere to
-go.
+Two that surprise people: **Clerk** and **Safety** can read every document
+in the company but approve nothing, and **Superintendent** and **Foreman**
+see almost nothing except every disciplinary notice.
+
+**Only an owner can make somebody an owner.** For anybody else that option
+is greyed out.
+
+**Check the role every time you add somebody.** A new account starts at
+"Not assigned yet", which is the most restricted setting there is, and
+nothing about the app will look broken if you forget — the person just
+quietly cannot do their job. Houston was added on 2026-09-22 and left at
+that setting by mistake; as a project manager he could not have approved a
+single incident, and those approvals would have had nowhere to go.
 
 ### When somebody leaves
 
