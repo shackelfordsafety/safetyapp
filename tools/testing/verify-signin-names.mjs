@@ -97,7 +97,15 @@ async function main() {
        The named sheet is the ARCHIVED copy of a JSA the crew signed
        digitally, so render the print DOM as it stands, through Chromium's
        own print engine and the same @media print rules. */
-    console.log('  Printing the sheet through the real print engine...');
+    /* Chrome's own print engine -- NOT the app's. The JSA exports through
+       an html2canvas screenshot pipeline (pdfExportCore.js), which is a
+       different renderer with a different baseline bug. This PDF is useful
+       for reading the text back, and it is NOT evidence about what the real
+       export looks like. Mislabelling it as "the real print engine" cost
+       real time on 2026-09-22, when this check was green while every name
+       on a genuine sheet was losing its descenders. For the real raster,
+       use tools/testing/capture-signin-name-raster.mjs. */
+    console.log("  Printing the sheet through Chrome's print engine (NOT the app's exporter)...");
     const pdfPath = path.join(outDir, 'signin-names.pdf');
     await page.pdf({ path: pdfPath, format: 'Letter', printBackground: true,
       margin: { top: 0, bottom: 0, left: 0, right: 0 } });
@@ -111,7 +119,7 @@ async function main() {
         const el = document.querySelector(sel);
         if (!el) return null;
         const c = getComputedStyle(el);
-        return [c.fontSize, c.lineHeight, c.paddingLeft, c.whiteSpace].join('|');
+        return [c.fontSize, c.lineHeight, c.paddingLeft, c.whiteSpace, c.overflow].join('|');
       };
       return {
         exportRoot: pick('.pdfExportRoot .attachedSigLineName'),
@@ -119,6 +127,14 @@ async function main() {
       };
     });
     check(Boolean(styles.exportRoot), 'the PDF copy of the name rule is live', styles.exportRoot || 'missing');
+    /* The specific regression this guards. html2canvas paints glyphs about
+       7px low, so 8px text in a 14px box hangs past the bottom edge; with
+       overflow:hidden the box then slices the descenders off in the export
+       while looking perfect on screen. Verified on a real raster. If this
+       ever reads 'hidden' again, names are being cut off on filed JSAs. */
+    check(!String(styles.exportRoot || '').endsWith('|hidden'),
+      'the exported name is not clipped by its own box',
+      styles.exportRoot || 'missing');
     if (styles.preview) {
       check(styles.preview === styles.exportRoot,
         'the preview and the PDF style the name identically',

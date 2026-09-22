@@ -3187,8 +3187,36 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   letter-spacing: 0.02em;
   color: #000;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* The 14px line-height above was not enough on its own, and the clip is
+     why. html2canvas paints every glyph roughly 7px below its true baseline
+     (its FontMetrics probe inherits body line-height: 1.5), so 8px text in
+     a 14px box lands with its descenders past the bottom edge -- and
+     `overflow: hidden`, inherited from the preview copy for the sake of an
+     ellipsis, sliced them off. Confirmed on a real raster 2026-09-22: every
+     name on the sheet lost its bottom, and "travis kennedy" lost the y.
+
+     A translateY correction, the trick .pdfSingleLineText uses above, does
+     NOT work here and it is worth saying why so nobody tries it again: a
+     transform moves the element together with its own overflow clip box, so
+     the text and the thing cutting it move as one and the cut is identical.
+     That works for .pdfSingleLineText only because the shifted inline-block
+     sits inside a DIFFERENT element that does the clipping.
+
+     So the clip goes instead. Nothing here needs it: the name is on its own
+     full-width line (flex: 0 0 100%), and the longest real name on file --
+     "Silfredo alejandro Rodriguez", 28 characters -- occupies about a third
+     of that width at 8px, so there is nothing to ellipsize. Overflow was
+     protection against a case that does not happen, and it cost every name
+     its descenders.
+
+     Scoped to .pdfExportRoot on purpose. The preview and @media print
+     copies render in Chrome, which has no baseline bug and clips nothing,
+     so they keep the ellipsis as a genuine long-name guard.
+
+     Re-check with tools/testing/capture-signin-name-raster.mjs if the font
+     size, the line-height, or body line-height ever change. */
+  overflow: visible;
+  text-overflow: clip;
 }
 .pdfExportRoot .attachedSigLineImg {
   flex: 0 0 auto;
