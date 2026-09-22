@@ -11,7 +11,6 @@ import { getContentRows, getContentColumns } from './jsa/jsaContent';
 import { handOffDraft, readLastFinished } from './shared/handOff';
 import useWaitingCount from './open/useWaitingCount';
 import useTodayGlance from './today/useTodayGlance';
-import JobPicker from './jobs/JobPicker';
 
 /* Shown while a screen that loads on demand is on its way. Says what is
    happening and shows the app is alive -- on bad site signal a bare line
@@ -4134,7 +4133,6 @@ function StepJob({ jsa, upd, prev, next }) {
           <div className="formSection">
             <span className="formSectionHeading">Site Details</span>
             <div className="formGrid">
-              <JobPicker jsa={jsa} upd={upd} />
               <div className="formPairRow">
                 <F label="Location / City" value={jsa.location} onChange={v => upd({ location: v })} />
                 <F label="Job Site" value={jsa.jobSite} onChange={v => upd({ jobSite: v })} />
@@ -4873,11 +4871,16 @@ const ProfileCard = lazy(() => loadModule(() => import('./account/ProfileCard'))
 /* Settings used to also hold the company job list and a builder for custom
    quick-add wording. Both are gone from this screen (2026-09).
 
-   Nothing was migrated and nothing was thrown away: job rows are untouched
-   and JobPicker still reads them on every document, and anybody who had
-   already saved custom quick adds still sees them in the JSA -- StepWork
-   reads settings.customQuick exactly as before. The only thing that went
-   away is the ability to add MORE from here. */
+   Custom quick adds were kept, only the builder went: anybody who had
+   already saved some still sees them in the JSA, because StepWork reads
+   settings.customQuick exactly as before.
+
+   The job list did not survive. Removing this card took away the only way
+   to add or remove a job, which left a picker that could never be filled
+   and, in practice, one row that was a typo of another. The whole feature
+   went with it -- see the commit that removed src/jobs/. Job numbers are
+   typed by hand on the Job Info step, which is how they always were; the
+   picker only ever filled that same field in. */
 function SettingsView({ settings, setSettings }) {
   const session = readStoredSession();
 
