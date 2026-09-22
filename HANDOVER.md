@@ -117,7 +117,7 @@ code. Treat it like a safe combination. Day-to-day use never needs it.
 
 | Account | Role | Ever signed in |
 | --- | --- | --- |
-| `ahernandez@` | safety (full admin) | yes |
+| `ahernandez@` | safety | yes |
 | `hunter@` | owner | **never** |
 | `reeves@` | owner | **never** |
 | `pat@` | hr | yes |
@@ -160,8 +160,27 @@ A new account defaults to `field`, the most restricted of these, so
 have approved anything, and incident approvals would have had nowhere to
 go.
 
-Anyone who has left the company should have their password changed from the
-Supabase dashboard. You do not need their old password to do it.
+### When somebody leaves
+
+**Do not try to delete their account. The database will refuse, on
+purpose.**
+
+Every filed document records the person who submitted and filed it, and
+publications record whose board they went on. Those references are set so
+that a person cannot be removed while any record still names them — a
+signed JSA can never end up with no author. That is the same promise as
+"a filed record cannot be edited", enforced the same way.
+
+So when somebody leaves, do this instead:
+
+1. **Change their password** from the Supabase dashboard. They are out
+   immediately, and you do not need the old password.
+2. **Set their role to "Not assigned yet"** in Settings › People. That
+   drops them to seeing only their own documents.
+
+Their account stays, because their name has to. The one thing that would
+actually be lost by a deletion is their saved templates and settings, and
+that is personal convenience data, not records.
 
 ### The one thing worth doing now
 
