@@ -9,7 +9,7 @@ you have, what must never be broken, and what to ask for.
 
 This is the only document you need. Everything is on this page.
 
-Last verified 21 September 2026.
+Last verified 22 September 2026.
 
 ---
 
@@ -71,15 +71,43 @@ reasons.
 
 ## The accounts, and who holds them
 
-Three services sit behind this app. All of them are on company email and
-the company card — nothing is tied to a personal account in any way that
-matters.
+### One account opens everything
 
-| What | Where it stands |
-| --- | --- |
-| **GitHub** — where the code lives and where the website publishes from | The company org `shackelfordsafety`. The company account `schsafety` is already a full owner. |
-| **Supabase** — the database with every filed record and signature | Org "Shackelford Safety", project "SCH Safety App". On the company card and a company email. |
-| **The seven logins inside the app** | All on `@shackelfordconst.com`. Managed from the Supabase dashboard. |
+This is the single most important thing on this page.
+
+There is **one GitHub account, `schsafety`**, registered to a
+`@shackelfordconst.com` address, and it is reached with an ordinary
+password. No two-factor, no code sent to anybody's phone.
+
+That one account gets you both of the things this app runs on:
+
+1. **GitHub** — the code, and the site that publishes from it. `schsafety`
+   is already a full owner of the company org `shackelfordsafety`.
+2. **Supabase** — the database holding every filed record and signature.
+   **Supabase has no password of its own.** You open it by clicking *"Sign
+   in with GitHub."* So GitHub access *is* database access.
+
+Because the account is on a company mailbox, the company can recover it
+without anybody's help: reset the email password, then reset the GitHub
+password from that mailbox, and both GitHub and the database come with it.
+
+**Whoever holds the `schsafety` login holds this entire app.** Treat it
+accordingly.
+
+The Supabase subscription is on the company card.
+
+### Two different things are both called a "login"
+
+This trips people up, so it is worth separating:
+
+| | What it opens | How you get in |
+| --- | --- | --- |
+| **The `schsafety` account** | The GitHub code *and* the Supabase dashboard | A GitHub password |
+| **The seven app logins** | The app itself, as a person with a role | Their own email and password, managed *inside* the Supabase dashboard |
+
+The seven app logins are ordinary accounts that live in the database. They
+have nothing to do with the GitHub password — you use `schsafety` to open
+the dashboard, and then you manage those seven from in there.
 
 There is also a **service key** in the Supabase dashboard — a master
 password for the database, deliberately stored in no file anywhere in the
@@ -100,18 +128,21 @@ code. Treat it like a safe combination. Day-to-day use never needs it.
 Anyone who has left the company should have their password changed from the
 Supabase dashboard. You do not need their old password to do it.
 
-### Two things worth doing now
+### The one thing worth doing now
 
-Neither is a permissions problem — every account already has the rights it
-needs. These are two passwords **nobody has ever tested**:
+**Make sure somebody at the company actually holds the `schsafety`
+password**, and has signed in with it at least once.
 
-1. **Get `hunter@` or `reeves@` to sign into the app once.** Both are
-   owners with full rights, and neither has ever logged in. If the password
-   works, the company's access is proven. If it does not, you find out
-   while it is still easy to fix.
-2. **Make sure somebody holds the `schsafety` GitHub password.** It is the
-   company's way into the code that does not run through a personal
-   account.
+That is the whole list. It is not a permissions problem — every account
+already has the rights it needs — it is that this one password opens the
+code, the website and the database, and it should not sit with only one
+person.
+
+Optionally: `hunter@` and `reeves@` are owner accounts inside the app that
+have never once been signed into. Their rights are correct; nobody has
+just proved the passwords work. Worth five minutes if anybody cares to,
+and not a problem if they never do — `schsafety` reaches the dashboard
+either way and can reset them.
 
 ---
 
@@ -286,12 +317,12 @@ The app can test itself. Ask Claude to run this, or type it yourself:
 npm run check
 ```
 
-It runs **22 tests, each named after what would go wrong** rather than some
+It runs **21 tests, each named after what would go wrong** rather than some
 technical label — things like *"the last thing you typed is not lost when
 you leave"* and *"the employer cannot change what the employee wrote or
 signed."* You can read the results without knowing any code.
 
-**It was passing 22 out of 22 on 21 September 2026. If it ever says
+**It was passing 21 out of 21 on 22 September 2026. If it ever says
 anything other than all clear, do not put that change live.**
 
 Two things worth knowing about those tests:
@@ -321,7 +352,7 @@ the only safety net this project has.
 | --- | --- | --- |
 | Somebody says a printed form looks wrong | The single most fragile part of the app | Get the actual PDF they printed. Do not trust the preview on screen — it has looked right while the print was wrong. |
 | The website won't load at all | The last change broke the build | Ask Claude: *"the site is down, find the last change that went live and tell me if it can be undone."* |
-| A person can't sign in | An account issue, not an app issue | Reset their password from the Supabase dashboard. You do not need the old one. |
+| A person can't sign in | An account issue, not an app issue | Open the Supabase dashboard (sign in with the `schsafety` GitHub account) and reset their password there. You do not need the old one. |
 | Someone wants a filed record deleted | The app cannot do this, by design | A legal decision, not a software task. See rule 3. |
 | A change works on a computer but not an iPad | iPads genuinely behave differently here | Say so explicitly when asking for the fix. It has bitten this project repeatedly. |
 
