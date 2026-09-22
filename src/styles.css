@@ -1949,6 +1949,33 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 .settingsRow:last-child { border-bottom: none; }
 .settingsRow .rowInfo strong { font-weight: 700; font-size: 14.5px; }
 .settingsRow .rowInfo p { color: var(--muted); font-size: 13.5px; margin-top: 2px; }
+
+/* ── People (Settings > People, PeopleCard.jsx) ──
+   One row per person: who they are on top, and the role picker under it.
+   Stacked rather than side by side on purpose -- the picker carries a line
+   of explanation under it ("Every filed document. Approves nothing.") and
+   that sentence is the part that stops somebody guessing wrong, so it gets
+   full width instead of being squeezed into a column on a phone. */
+.peopleList { display: grid; gap: 2px; }
+.peopleRow { padding: 14px 0; border-bottom: 1px solid var(--line); }
+.peopleRow:last-child { border-bottom: none; }
+.peopleWho strong { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14.5px; }
+.peopleNow { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+.peopleTag {
+  font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--good); border: 1px solid var(--good); border-radius: 2px; padding: 1px 5px;
+}
+.peopleLocked { margin-top: 6px; }
+.peopleEdit { display: grid; gap: 6px; margin-top: 10px; max-width: 420px; }
+.peopleEdit .btn { justify-self: start; }
+.peopleSaved { color: var(--good); font-size: 13px; font-weight: 600; }
+.peopleHistoryTitle {
+  margin-top: 18px; font-size: 11.5px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--text-3, var(--muted));
+}
+.peopleHistory { list-style: none; margin: 8px 0 10px; padding: 0; display: grid; gap: 6px; }
+.peopleHistory li { font-size: 13px; color: var(--text-2, var(--muted)); line-height: 1.4; }
+.peopleHistory strong { color: var(--text); font-weight: 600; }
 .workflowNotes { display: grid; gap: 8px; }
 .workflowNotes p { font-size: 14px; color: var(--muted); line-height: 1.6; }
 .workflowNotes strong { color: var(--text); }

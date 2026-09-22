@@ -4867,6 +4867,9 @@ function TemplatesView({ allTemplates, customTemplates, loadTemplate, deleteTemp
 /* Only mounted when there is a session, and lazy either way, so Settings
    stays a local-only screen for anyone who never signs in. */
 const ProfileCard = lazy(() => loadModule(() => import('./account/ProfileCard')));
+/* Renders nothing unless the person signed in may manage people, so it is
+   safe to mount for everybody with a session. */
+const PeopleCard = lazy(() => loadModule(() => import('./account/PeopleCard')));
 
 /* Settings used to also hold the company job list and a builder for custom
    quick-add wording. Both are gone from this screen (2026-09).
@@ -4914,6 +4917,12 @@ function SettingsView({ settings, setSettings }) {
       {session && (
         <Suspense fallback={null}>
           <ProfileCard session={session} />
+        </Suspense>
+      )}
+
+      {session && (
+        <Suspense fallback={null}>
+          <PeopleCard />
         </Suspense>
       )}
 

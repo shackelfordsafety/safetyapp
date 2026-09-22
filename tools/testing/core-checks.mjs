@@ -57,6 +57,7 @@ const CORE = [
   ['verify-simulator.mjs', 'the simulator fills documents and stays hidden otherwise'],
   ['verify-conditional-fields.mjs', 'fields appear and hide when they should'],
   ['verify-employee-parts-are-his.mjs', "the employer cannot change what the employee wrote or signed"],
+  ['verify-people-roles.mjs', 'only the right people can change what someone else may see'],
 ];
 
 /* Need a real account. Run by hand before anything that touches the

@@ -19,7 +19,9 @@ import ChangePassword from './ChangePassword';
    Lazily loaded from Settings, so a signed-out superintendent still gets
    Settings with no cloud code in it. */
 
-const ROLE_WORDS = {
+/* Exported so PeopleCard names roles exactly the same way. One map, so
+   the picker over there and the label here can never drift apart. */
+export const ROLE_WORDS = {
   owner: 'Owner',
   safety: 'Safety',
   hr: 'HR',
@@ -38,7 +40,7 @@ const ROLE_MEANS = {
   clerk: 'You can see every document in Records.',
   superintendent: 'You can see your own documents, plus every disciplinary form.',
   foreman: 'You can see your own documents, plus every disciplinary form.',
-  field: 'You can see the documents you filed yourself. Ask Fonzo to set your role.',
+  field: 'You can see the documents you filed yourself. Ask an owner or HR to set your role.',
 };
 
 export default function ProfileCard({ session }) {

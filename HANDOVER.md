@@ -126,9 +126,23 @@ code. Treat it like a safe combination. Day-to-day use never needs it.
 | `kris@` | foreman | yes |
 | `houston@` | pm | **never** |
 
-**The role is what decides what somebody sees**, and it is set per account
-in the Supabase dashboard — not in the app. Worth knowing what they mean,
-because the difference is large:
+**The role is what decides what somebody sees.** Change it in the app:
+**Settings › People**, which appears for owners and HR. Pick the person,
+pick what they can see, Save. Every change is written to a history that
+cannot be edited or deleted by anybody, so there is always a record of who
+changed what.
+
+Two rules are built in and cannot be clicked past: **nobody can change
+their own role**, and **only an owner can make or unmake an owner**. Those
+are enforced by the database, not by the screen, so they hold even if
+somebody goes around the app.
+
+What that screen deliberately cannot do is **add a person or reset a
+password** — both need the database's master key, which must never sit in
+a web page. Those two still happen in the Supabase dashboard.
+
+Worth knowing what the roles mean, because the difference is large and the
+names do not give it away:
 
 | Role | Sees | Files and approves |
 | --- | --- | --- |
@@ -141,7 +155,7 @@ because the difference is large:
 | `field` | own documents only | JSAs |
 
 A new account defaults to `field`, the most restricted of these, so
-**check the role after adding somebody.** Houston was added as `field` on
+**check the role in Settings › People after adding somebody.** Houston was added as `field` on
 2026-09-22 and corrected to `pm` the same day; as `field` he could not
 have approved anything, and incident approvals would have had nowhere to
 go.
