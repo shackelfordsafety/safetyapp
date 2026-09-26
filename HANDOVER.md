@@ -87,7 +87,7 @@ Eight accounts today. Everyone has a role. These are the app's own words.
 | Foreman | their own, plus every disciplinary notice | JSAs |
 | Clerk | every filed document | JSAs |
 | Project Manager | every filed document | incidents, medical events, uncontrolled events |
-| HR | every filed document | disciplinary notices and separations |
+| HR | every filed document | everything |
 | Safety | every filed document | JSAs |
 | Owner | every filed document | everything |
 
