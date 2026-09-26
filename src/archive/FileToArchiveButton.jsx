@@ -98,9 +98,26 @@ export default function FileToArchiveButton({ docType, model, pdfBlob, disabled 
         {phase === 'working' ? 'Filing…' : 'File to Records'}
       </button>
       {phase === 'error' && <p className="archiveError">{message}</p>}
+      {/* Filing is one tap and it cannot be undone -- Records has no delete,
+          by design. Until 2026-09-25 the only place that said so was the
+          confirmation AFTER it had already happened, and nothing stopped an
+          unfinished document going in: the panel around this button appears
+          as soon as a PDF exists, which does not mean the document is
+          finished. So say it beforehand, and say it louder when the document
+          has not been marked complete. Deliberately a warning and not a
+          block -- a supervisor filing a part-done report on purpose is a
+          real thing, and taking that away would be worse than saying it
+          plainly. */}
+      {model?.status === 'draft' && (
+        <p className="archiveNotFinal">
+          This one is not marked complete yet. It will be filed exactly as it
+          is now, and filing cannot be undone.
+        </p>
+      )}
       <p className="helperText">
         Sends a copy to the company archive so Safety and HR can find it later.
-        Your copy on this device stays exactly as it is.
+        Once it is filed it cannot be edited or deleted by anybody. Your copy
+        on this device stays exactly as it is.
       </p>
     </div>
   );

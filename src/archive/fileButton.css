@@ -16,6 +16,26 @@
   font-size: 15px;
 }
 
+/* Shown above "File to Records" when the document has not been marked
+   complete. Amber, not red -- filing a part-done report on purpose is a
+   real thing somebody may mean to do, so this is a "know what you are
+   doing", not an error. Styled off the same tokens as .archiveError so the
+   two read as one family at a glance. */
+.archiveNotFinal {
+  margin: 0;
+  /* --warn, not a literal: it is defined for both themes (#5E4510 on the
+     light tint, #D8A94E on the dark one). A hardcoded brown here looked
+     right in the light theme and all but vanished on the dark tint, which
+     is the whole failure mode this app gets audited for. */
+  background: var(--warn-tint);
+  border: 1px solid var(--warn-border);
+  color: var(--warn);
+  border-radius: 7px;
+  padding: 9px 12px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
 .archiveFiled {
   display: grid; gap: 4px;
   background: var(--good-tint); border: 2px solid var(--good-border);
