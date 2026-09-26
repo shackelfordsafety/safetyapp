@@ -2,7 +2,8 @@
 
 The app: **shackelfordsafety.github.io/safetyapp/**
 
-It is a website. Nothing to install, nothing to update, nothing expires.
+It is a website. Nothing to install and nothing to update. It costs $25 a
+month to run — section 15.
 
 Last checked: 26 September 2026.
 
@@ -310,7 +311,28 @@ signed in with it at least once.**
 
 ---
 
-## 15. Planned, never built
+## 15. What it costs
+
+| What | Cost | Paid by |
+| --- | --- | --- |
+| Supabase (Pro plan) | $25 a month, plus usage above the included limits | Company card |
+| GitHub | nothing | — |
+| The website itself | nothing | — |
+
+The $25 is the filing cabinet — every filed document, every signature, every
+account. Pro also keeps daily backups and stops the project being paused for
+sitting idle, which the free plan does after about a week of no use.
+
+**If that card ever fails, the records go offline.** Filling in and printing
+keep working, because they need nothing. Filing, Records and crew sign-in stop
+until billing is sorted out. Nothing is deleted.
+
+Keep a current company card on the account, and make sure the receipts go
+somewhere other than one person's inbox.
+
+---
+
+## 16. Planned, never built
 
 - **Equipment inspection checklists.** Part of this same app. Operator
   scans a QR sticker on the machine, fills in the checklist, no login.
@@ -327,7 +349,7 @@ signed in with it at least once.**
 
 ---
 
-## 16. Glossary
+## 17. Glossary
 
 | Word | Meaning |
 | --- | --- |
@@ -342,7 +364,7 @@ signed in with it at least once.**
 
 ---
 
-## 17. Finding out why something is the way it is
+## 18. Finding out why something is the way it is
 
 Every change ever made has a written explanation attached. There is no
 ticket system and no design documents — that history is the record.
