@@ -261,11 +261,16 @@ export function hasMeaningfulSeparationContent(model) {
     || Boolean(model.employeeSignatureData) || Boolean(model.supervisorSignatureData) || Boolean(model.hrSignatureData);
 }
 
-// Content -> Review -> Signatures -> Export, no exceptions (Fonzo, standing
-// rule, 2026-08-20) -- signatures always come last so everyone reviews the
-// record before signing it. Also the fix for the missing lock: Separation
-// used to have no lockedIds/guardedJump at all, so a direct StepNav jump
-// could land straight on a blank Signatures step (see SeparationWorkflow.jsx).
+// The step order here is NOT "Review then Signatures". This comment used to
+// say it was -- "no exceptions (Fonzo, standing rule, 2026-08-20)" -- and
+// that rule was replaced on 2026-09-14 for documents signed in a room with
+// the employee. The array below has the reason. Corrected 2026-09-25, after
+// the two comments had spent eleven days contradicting each other.
+//
+// Still true and unrelated to the order: this is also where the missing lock
+// was fixed. Separation used to have no lockedIds/guardedJump at all, so a
+// direct StepNav jump could land straight on a blank Signatures step (see
+// SeparationWorkflow.jsx).
 export const SEPARATION_STEPS = [
   { id: 'details', label: 'Separation Details', helper: 'Employee info, separation type, reason, and explanation' },
   { id: 'closeout', label: 'Closeout', helper: 'Rehire status and company closeout' },

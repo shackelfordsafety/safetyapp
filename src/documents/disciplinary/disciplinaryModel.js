@@ -147,9 +147,12 @@ export function hasMeaningfulDisciplinaryContent(model) {
     || Boolean(model.managerSignatureData);
 }
 
-// Content -> Review -> Signatures -> Export, no exceptions (Fonzo, standing
-// rule, 2026-08-20) -- signatures always come last so the crew/employee
-// reviews what they're signing before they sign it.
+// SUPERSEDED, left here only to say so: this used to read "Content ->
+// Review -> Signatures -> Export, no exceptions (Fonzo, standing rule,
+// 2026-08-20)". That rule was replaced on 2026-09-14 and the array below
+// has not matched it since -- see the comment inside it for the reason.
+// The two sat three lines apart contradicting each other until 2026-09-25,
+// which is exactly how somebody later "fixes" the order and breaks it.
 export const DISCIPLINARY_STEPS = [
   { id: 'notice', label: 'Notice Details', helper: 'Employee info, warning level, and what occurred' },
   { id: 'response', label: 'Corrective Action', helper: 'Required correction and consequence' },

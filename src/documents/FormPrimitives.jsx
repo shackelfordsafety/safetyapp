@@ -244,9 +244,29 @@ function IconLockDot(props) {
   );
 }
 
+/* Is this step actually finished, ignoring whether you happen to be standing
+   on it? stepRowState answers a different question -- what the ROW should
+   say -- and "You are here" rightly beats "Done" there. But the counter was
+   built on the same answer, so the step under your feet was never counted
+   and the rail read "3 of 4 done" on every step of a document where all four
+   were complete. It could not reach "4 of 4" from anywhere, so a finished
+   document never once read as finished (found 2026-09-25). Shared by all six
+   document types through StepNav, so it said it six times over. */
+function stepIsComplete(step, checks, isTerminal) {
+  const stepChecks = checks.filter(c => c.step === step.id);
+  if (!stepChecks.length) return isTerminal ? checks.every(c => c.ok) : true;
+  return stepChecks.every(c => c.ok);
+}
+
 export function StepNav({ steps, activeStepId, checks, onJump, lockedIds, ariaLabel = 'Document steps' }) {
   const rows = steps.map((s, i) => ({ step: s, ...stepRowState(s, activeStepId, checks, lockedIds, i === steps.length - 1) }));
-  const doneCount = rows.filter(r => r.kind === 'done').length;
+  /* A locked step is deliberately NOT counted even if its checks pass -- that
+     is the whole reason locking exists (a default value can satisfy a step
+     you cannot actually reach yet). Only 'current' is rehabilitated here. */
+  const doneCount = rows.filter((r, i) =>
+    r.kind === 'done'
+    || (r.kind === 'current' && stepIsComplete(r.step, checks, i === steps.length - 1))
+  ).length;
   return (
     <nav className="stepNav" aria-label={ariaLabel}>
       <span className="stepNavHead">Steps &mdash; {doneCount} of {steps.length} done</span>

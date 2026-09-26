@@ -118,7 +118,12 @@ export default function ProfileCard({ session }) {
               <input
                 value={name}
                 onChange={e => { setName(e.target.value); setSaved(false); }}
-                placeholder="Alfonso Hernandez Jr."
+                // A real person's name sat here as the example until
+                // 2026-09-25, so everybody who opened this screen was shown
+                // somebody else's name in their own name field. Describe the
+                // format instead of naming anybody -- no name stays correct
+                // once people come and go.
+                placeholder="First and last name"
                 autoComplete="name"
                 maxLength={80}
               />

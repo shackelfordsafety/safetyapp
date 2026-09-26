@@ -138,7 +138,25 @@ Twenty-two checks, named by what goes wrong rather than by filename:
 
 The other scripts in `tools/testing/` are evidence, not a suite — each was
 written to prove one change when it was made. Several exercise screens that no
-longer exist. `npm run check:all` runs everything if you want it; expect noise.
+longer exist.
+
+**`npm run check:all` produces failures that are not real, so do not act
+on its list.** Its last recorded run called `verify-conditional-fields`
+CRASHED after one second. That script passes every assertion standalone
+with exit 0, including when started through the runner's own spawn call —
+checked 2026-09-25. At least some of what that list calls broken is the
+harness having trouble running 67 browser-driving scripts back to back,
+not the scripts and not the app.
+
+That matters because the obvious reaction to a long list of CRASHED is to
+start "fixing" or retiring working checks. If a script looks broken,
+**run it on its own first** — that is the only result worth acting on.
+`npm run check` runs its 22 one at a time and is trustworthy.
+
+Also worth knowing: the log at `tools/testing/output/everything-run.log`
+is gitignored and is whatever the last run on that machine left behind. It
+carries no date in the file. Check its modified time before believing it —
+it is easy to read a weeks-old run as today's.
 
 Four more need a real login and are run by hand — publishing, the
 "same info as last time?" sync, the whole review chain with two accounts, and
