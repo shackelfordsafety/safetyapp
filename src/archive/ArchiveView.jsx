@@ -456,6 +456,15 @@ export default function ArchiveView() {
     });
   }, [rows, q, type, range]);
 
+  /* Opening Records shows the newest few, not every document ever filed.
+     Fonzo, 2026-09-26: "it shouldn't just be endless scrolling of what's
+     filed, the most recent 5 should be here and if you have to search for
+     it then u use the top section." Search, a shelf or a filter still
+     return every match. Rows arrive newest-filed first. */
+  const RECENT_COUNT = 5;
+  const browsing = !type && !q.trim() && !period;
+  const shown = browsing ? visible.slice(0, RECENT_COUNT) : visible;
+
   if (status === 'checking' || status === 'loading') {
     return <div className="page"><p className="helperText">Loading records…</p></div>;
   }
@@ -553,7 +562,7 @@ export default function ArchiveView() {
       {/* The shelves. Shown until something narrows the view, so opening
          the archive is "which kind of document?" rather than a wall of
          every document ever filed. */}
-      {!type && !q.trim() && !period ? (
+      {browsing ? (
         <>
           <div className="arcShelves">
             {Object.entries(DOC_LABELS).map(([k, label]) => (
@@ -616,7 +625,7 @@ export default function ArchiveView() {
                   pop up the PDF too, this simple read stuff is good but not
                   for everything." The field list is still reachable, it is
                   just no longer what a tap gets you. */}
-              {visible.map(r => (
+              {shown.map(r => (
                 <tr key={r.id} onClick={() => openPdf(r)} style={{ cursor: r.pdf_path ? 'pointer' : 'default' }}>
                   <td>
                     <span className="arcType">{DOC_LABELS[r.doc_type] || r.doc_type}</span>
@@ -649,6 +658,12 @@ export default function ArchiveView() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {browsing && visible.length > RECENT_COUNT && (
+        <p className="arcFine">
+          Showing the {RECENT_COUNT} most recent. Search, or tap a type above, to find older ones.
+        </p>
       )}
 
       {showFilters && (
