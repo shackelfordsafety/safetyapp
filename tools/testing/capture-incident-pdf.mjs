@@ -40,7 +40,7 @@ const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--stric
 try {
   await waitForServer(BASE_URL, 25000);
   const browser = await chromium.launch();
-  const fixture = readFileSync(path.join(__dirname, 'fixtures', 'incident-full-fixture.json'), 'utf8');
+  const fixture = readFileSync(path.join(__dirname, 'fixtures', process.env.INCIDENT_FIXTURE || 'incident-full-fixture.json'), 'utf8');
 
   const ctx = await browser.newContext({ viewport: { width: 1180, height: 900 }, acceptDownloads: true });
   await ctx.addInitScript(j => window.localStorage.setItem('sdc.incident.draft.v1', j), fixture);

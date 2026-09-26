@@ -564,12 +564,22 @@ html[data-theme='dark'] .incidentReadinessItem.ok .checkIcon { color: #8bd48f; }
 }
 .incPhotoCaptionText { flex: 1 1 auto; line-height: 1.35; word-break: break-word; white-space: pre-wrap; }
 
-/* Smaller and lower-opacity than the original 72pt/0.16 alpha (which
-   visually dominated the page and sat on top of content -- see the v0.1.1
-   polish pass): still unmistakably a DRAFT stamp, but sized/positioned so
-   it doesn't compete with checkboxes, signatures, or body-diagram marks.
-   z-index: 0 (paired with .incidentHeader/.incidentPageBody's z-index: 1
-   above) keeps it behind all real content regardless of DOM order. */
+/* ── NOTHING RENDERS THESE ANY MORE (2026-09-22) ──
+   The DRAFT stamp was removed from the Incident Report to match the other
+   five documents. See the comment on IncidentPageShell in IncidentPdf.jsx
+   for why: a filed record that says DRAFT across it is worse than no stamp
+   at all, and Records cannot be edited, so it says it forever.
+
+   These rules are kept rather than deleted because the per-page positions
+   below took several rounds to tune against real pages, and if the stamp
+   is ever wanted back that work should not have to be redone. Nothing
+   outputs the markup, so they cost only the bytes.
+
+   Original note, still true of the rules themselves: smaller and
+   lower-opacity than the first 72pt/0.16 alpha version, which dominated the
+   page and sat on top of content. z-index: 0, paired with
+   .incidentHeader/.incidentPageBody's z-index: 1 above, kept it behind all
+   real content regardless of DOM order. */
 .incidentWatermark {
   position: absolute;
   top: 45%;

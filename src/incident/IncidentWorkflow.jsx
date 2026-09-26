@@ -1,7 +1,7 @@
 import { useId, useRef, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import {
   INCIDENT_STEPS, INJURY_NATURE_OPTIONS, CAUSE_CATEGORIES, causeKey,
-  emptyWitness, emptyTeamMember, getIncidentReadinessChecks, isIncidentReady, isIncidentPrintFinal, printedIncidentFingerprint,
+  emptyWitness, emptyTeamMember, getIncidentReadinessChecks, isIncidentReady, printedIncidentFingerprint,
 } from './incidentModel';
 import { incidentCopy as t } from './incidentCopy';
 import SignaturePad from './SignaturePad';
@@ -59,7 +59,6 @@ function IncidentPreview({ incident }) {
   const { pages } = useMemo(() => buildIncidentPagePlan(incident), [incident]);
   const totalPages = pages.length;
   const page1 = pages[0];
-  const draft = !isIncidentPrintFinal(incident);
   const viewportRef = useRef(null);
   const [scale, setScale] = useState(0.55);
 
@@ -87,7 +86,7 @@ function IncidentPreview({ incident }) {
       </div>
       <div className="previewSheetViewport" ref={viewportRef} style={{ height: `${1056 * scale + 28}px` }}>
         <div className="previewSheetCanvas" style={{ transform: `scale(${scale})` }}>
-          <IncidentPageShell pageNumber={1} totalPages={totalPages} draft={draft} watermarkVariant="page1">
+          <IncidentPageShell pageNumber={1} totalPages={totalPages}>
             <Page1Content incident={incident} {...page1.props} />
           </IncidentPageShell>
         </div>

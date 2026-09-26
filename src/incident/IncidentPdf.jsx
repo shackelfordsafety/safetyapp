@@ -43,19 +43,29 @@ export function fmtTime(v) {
   return `${h12}:${m[2]} ${ampm}`;
 }
 
-/* watermarkVariant (the page's own type -- 'page1'..'page6') selects a
-   per-page-type vertical position via incidentWatermark--pageN in
-   incident.css, so the stamp lands on each page's largest calm region
-   instead of one universal position that happens to cross witness/
-   investigation-team signature rows on some pages -- see the v0.1.4 polish
-   pass. Deterministic (keyed off page type, not content), simple, and the
-   default (no variant) still renders identically to before. */
-export function IncidentPageShell({ pageRef, pageNumber, totalPages, draft, children, className = '', watermarkVariant, headerLabel }) {
+/* No DRAFT watermark, matching the other five documents (Fonzo, 2026-09-09:
+   "remove the draft stamp completely"). That pass only reached
+   src/documents/, because the Incident Report draws its pages from this
+   file instead, so the stamp survived here alone for two more weeks and
+   turned up on a filed report.
+
+   The reasoning is the same one written into pdfDraw.js at the time: the
+   stamp marked a document that had not been marked complete, and that
+   state stopped meaning anything once finishing a document files it. A
+   filed record that says DRAFT across it is worse than no stamp at all --
+   and Records cannot be edited, so it says that forever.
+
+   The `draft` and `watermarkVariant` props are gone from here and from
+   every caller, rather than kept and ignored -- a prop that is threaded
+   through three files and does nothing is how somebody later concludes
+   the stamp is still working. The CSS that positioned it per page type is
+   left in incident.css with a note, because it took several rounds to
+   tune and reviving the stamp should not mean re-deriving it. */
+export function IncidentPageShell({ pageRef, pageNumber, totalPages, children, className = '', headerLabel }) {
   return (
     <div ref={pageRef} className={`incidentPage ${className}`}>
       <IncidentHeader pageNumber={pageNumber} totalPages={totalPages} headerLabel={headerLabel} />
       <div className="incidentPageBody">{children}</div>
-      {draft && <div className={`incidentWatermark${watermarkVariant ? ` incidentWatermark--${watermarkVariant}` : ''}`}>DRAFT</div>}
     </div>
   );
 }
@@ -452,7 +462,7 @@ export function PhotoAppendixContent({ photos, photoUrls }) {
 }
 
 /* ── Generic continuation page for overflowing long-text fields ── */
-export function ContinuationPage({ sectionLabel, text, pageNumber, totalPages, draft, incident, pageRef }) {
+export function ContinuationPage({ sectionLabel, text, pageNumber, totalPages, incident, pageRef }) {
   return (
     <div ref={pageRef} className="incidentPage incidentContinuationPage">
       <header className="incidentHeader">
@@ -474,7 +484,6 @@ export function ContinuationPage({ sectionLabel, text, pageNumber, totalPages, d
         </div>
         <div className="incTextBlock incTextBlockContinuation">{text}</div>
       </div>
-      {draft && <div className="incidentWatermark">DRAFT</div>}
     </div>
   );
 }

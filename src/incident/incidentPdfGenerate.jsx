@@ -350,7 +350,6 @@ function centerCompactCellContent(renderedPages) {
 
 export function IncidentPdfExportRoot({ incident, pageRefsRef }) {
   const elRefs = useRef({});
-  const draft = !isIncidentPrintFinal(incident);
   const photoUrls = useIncidentPhotoUrls(incident.photos);
 
   const { pages } = useMemo(() => buildIncidentPagePlan(incident), [
@@ -415,7 +414,6 @@ export function IncidentPdfExportRoot({ incident, pageRefsRef }) {
               incident={incident}
               pageNumber={pageNumber}
               totalPages={totalPages}
-              draft={draft}
               pageRef={setRef}
               {...p.props}
             />
@@ -423,7 +421,7 @@ export function IncidentPdfExportRoot({ incident, pageRefsRef }) {
         }
         const Content = PAGE_COMPONENTS[p.type];
         return (
-          <IncidentPageShell key={p.key} pageRef={setRef} pageNumber={pageNumber} totalPages={totalPages} draft={draft} watermarkVariant={p.type} headerLabel={p.headerLabel}>
+          <IncidentPageShell key={p.key} pageRef={setRef} pageNumber={pageNumber} totalPages={totalPages} headerLabel={p.headerLabel}>
             <Content incident={incident} photoUrls={photoUrls} {...p.props} />
           </IncidentPageShell>
         );
