@@ -4105,3 +4105,8 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 }
 /* The draft title truncates; the mark must not be what gets truncated. */
 .startDocTileOpen strong { white-space: normal; overflow: visible; text-overflow: clip; }
+
+/* First sign-in name setup (account/NameSetup.jsx). */
+.nameSetup { max-width: 460px; gap: 14px; }
+.nameSetup h3 { font-size: 21px; }
+.nameSetup .btn.lg { width: 100%; }

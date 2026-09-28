@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { fetchMyBoard, fetchSigners, signOnKiosk, takeDownPublication, describeWindow, NotSignedInError } from './board';
+import { fetchMyBoard, fetchSigners, signOnKiosk, takeDownPublication, describeWindow, NotSignedInError, isSignable, fmtOpens } from './board';
 import CrewSignInKiosk from '../jsa/CrewSignInKiosk';
 import BoardQr from './BoardQr';
 import { signedUrlFor } from '../archive/fileToArchive';
@@ -297,9 +297,17 @@ export default function MyBoard() {
               view the crew reads. Checking "did I put the right one up?"
               without walking outside to scan your own QR. */}
           <button type="button" className="brdCardMain" onClick={() => openDoc(r)}>
-            <strong>{r.area_label}</strong>
+            <strong>
+              {r.area_label}
+              {/* Scheduled / Starts soon / Live -- same states the crew sees. */}
+              <span className={`brdState brdState--${r.status}`}>
+                {r.status === 'scheduled' ? 'Scheduled' : r.status === 'upcoming' ? 'Starts soon' : 'Live'}
+              </span>
+            </strong>
             <span className="brdMeta">
-              Published {fmtTime(r.published_at)} · good until {describeWindow(r.expires_at)}
+              {r.status === 'scheduled'
+                ? `Signing opens ${fmtOpens(r.opensAt)} · ends ${fmtOpens(new Date(r.expires_at))}`
+                : `Published ${fmtTime(r.published_at)} · good until ${describeWindow(r.expires_at)}`}
               {r.version > 1 ? ` · version ${r.version}` : ''}
             </span>
             <span className="brdSeeDoc">{opening === r.id ? 'Opening…' : 'See the JSA'}</span>
@@ -309,9 +317,11 @@ export default function MyBoard() {
               <span className="brdCountNum">{r.signed}</span>
               <span className="brdCountLabel">signed</span>
             </button>
-            <button type="button" className="btn secondary sm" onClick={() => { setKiosk(r); setKioskSigned(0); }}>
-              Sign on this device
-            </button>
+            {isSignable(r.status) && (
+              <button type="button" className="btn secondary sm" onClick={() => { setKiosk(r); setKioskSigned(0); }}>
+                Sign on this device
+              </button>
+            )}
             {/* Only while nobody has signed. Once a man has signed, this
                 is a record of who agreed to what and the button is gone --
                 the fix from there is a corrected version, not an eraser. */}

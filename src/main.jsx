@@ -3112,26 +3112,20 @@ function App() {
             leave room for it -- otherwise a document's last field sits
             underneath it. */}
         <main className="page pageWithBottomNav">
-          {/* Hidden during a document flow -- a man mid-JSA at 6:15 does
-              not need a housekeeping notice on the screen. */}
+          {/* First sign-in with no name on the account: set it now, right here.
+              Was a dismissable banner that sent you to Settings (Fonzo,
+              2026-09-28: people kept asking why it said they had no name).
+              Still never shown mid-document -- a man mid-JSA at 6:15 does not
+              need it -- and skippable only when saving fails for lack of
+              signal. See NameSetup. */}
           {needsName && !nameNudgeHidden && !isDocFlow && (
-            <div className="nameNudge">
-              <div>
-                <strong>Add your name</strong>
-                <p>
-                  Your account doesn&apos;t have a name on it yet. It goes on company records,
-                  so put the name the company has you under.
-                </p>
-              </div>
-              <div className="nameNudgeActions">
-                <button type="button" className="btn primary sm" onClick={() => { setTab('settings'); setNameNudgeHidden(true); }}>
-                  Add it
-                </button>
-                <button type="button" className="btn ghost sm" onClick={() => setNameNudgeHidden(true)}>
-                  Later
-                </button>
-              </div>
-            </div>
+            <Suspense fallback={null}>
+              <NameSetup
+                email={readStoredSession()?.email || ''}
+                onDone={() => { setNeedsName(false); showToast('Thanks — your name is set.'); }}
+                onSkip={() => setNameNudgeHidden(true)}
+              />
+            </Suspense>
           )}
           {tab === 'home' && (
             <HomeView customTemplates={customTemplates} setTab={setTab} docEntries={homeDocEntries} waitingCount={waitingCount} waitingItems={waitingItems} />
@@ -4893,6 +4887,7 @@ const ProfileCard = lazy(() => loadModule(() => import('./account/ProfileCard'))
 /* Renders nothing unless the person signed in may manage people, so it is
    safe to mount for everybody with a session. */
 const PeopleCard = lazy(() => loadModule(() => import('./account/PeopleCard')));
+const NameSetup = lazy(() => loadModule(() => import('./account/NameSetup')));
 
 /* Settings used to also hold the company job list and a builder for custom
    quick-add wording. Both are gone from this screen (2026-09).

@@ -153,3 +153,13 @@ button.brdCardMain:hover .brdSeeDoc { text-decoration: underline; }
 .sigPendingBar strong { font-size: 15px; color: var(--danger, #C1121F); flex: 1 1 100%; }
 .sigPendingBar span { font-size: 13.5px; line-height: 1.35; flex: 1 1 14rem; color: var(--text); }
 .sigPendingBar .btn { flex: 0 0 auto; }
+
+/* Scheduled / Starts soon / Live, next to each JSA on the board (2026-09-28). */
+.brdState {
+  display: inline-block; margin-left: 8px; vertical-align: middle;
+  font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 999px; border: 1px solid currentColor;
+}
+.brdState--open { color: var(--good, #17603F); }
+.brdState--upcoming { color: #B7791F; }
+.brdState--scheduled { color: #4A78B0; }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import SignaturePad from '../incident/SignaturePad';
-import { fetchBoard, signPublication } from './board';
+import { fetchBoard, signPublication, isSignable, fmtOpens } from './board';
 import JsaContents from './JsaContents';
 import './crew.css';
 
@@ -151,11 +151,18 @@ export default function CrewSignIn({ boardOwnerId }) {
             <img src={LOGO} alt="Shackelford Construction and Hauling" />
           </div>
           <div className="crewConfirm">
-            <span className="crewEyebrow">{picked.live ? 'Job Safety Analysis' : 'Closed'}</span>
+            <span className="crewEyebrow">{picked.status === 'closed' ? 'Closed' : picked.status === 'scheduled' ? 'Scheduled' : 'Job Safety Analysis'}</span>
             <h1>{picked.area_label}</h1>
             <p>{fmtDate(picked.doc_date)}{picked.job_site ? ` · ${picked.job_site}` : ''}</p>
             {picked.version > 1 && (
               <p className="crewRevised">Revised — version {picked.version}</p>
+            )}
+            {/* Put up early: readable now, signable 30 minutes before the start
+                (Fonzo, 2026-09-28). The database refuses it before then too. */}
+            {picked.status === 'scheduled' && (
+              <p className="crewLate">
+                Not open yet. You can read it now. Signing opens at <strong>{fmtOpens(picked.opensAt)}</strong>, 30 minutes before the shift starts.
+              </p>
             )}
             {!picked.live && (
               <p className="crewLate">
@@ -166,7 +173,7 @@ export default function CrewSignIn({ boardOwnerId }) {
 
           <JsaContents jsa={picked.data} />
 
-          {picked.live && signing && (
+          {isSignable(picked.status) && signing && (
             <form className="crewSignForm" ref={signFormRef} onSubmit={submit}>
               <label className="crewField">
                 <span>Your name</span>
@@ -216,7 +223,7 @@ export default function CrewSignIn({ boardOwnerId }) {
 
             It disappears once he is signing, because from there the form
             and its own Finish button are what he needs. */}
-        {picked.live && !signing && (
+        {isSignable(picked.status) && !signing && (
           <div className="crewStickyBar">
             <button type="button" className="crewBtn primary" onClick={() => setSigning(true)}>
               Sign the JSA
@@ -276,7 +283,7 @@ export default function CrewSignIn({ boardOwnerId }) {
             <span className="crewPickTop">
               <strong>{r.area_label}</strong>
               <span className={`crewTag crewTag--${r.status}`}>
-                {r.status === 'open' ? 'Open' : r.status === 'upcoming' ? 'Starts soon' : 'Closed'}
+                {r.status === 'open' ? 'Live' : r.status === 'upcoming' ? 'Starts soon' : r.status === 'scheduled' ? 'Scheduled' : 'Closed'}
               </span>
             </span>
             <span>
@@ -284,6 +291,7 @@ export default function CrewSignIn({ boardOwnerId }) {
               {r.status === 'upcoming' && r.startsAt
                 ? ` · starts ${r.startsAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
                 : ''}
+              {r.status === 'scheduled' && r.opensAt ? ` · signing opens ${fmtOpens(r.opensAt)}` : ''}
             </span>
             {r.status === 'closed' && (
               <span className="crewPickClosed">

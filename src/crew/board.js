@@ -45,6 +45,25 @@ export function computeExpiry(jsa, now = new Date()) {
   return expires;
 }
 
+/* Signing opens this long before Time Issued. Fonzo, 2026-09-28: a JSA put
+   up the night before should not be signable the night before -- "someone
+   can't check the board the night before and sign early". */
+export const SIGNING_OPENS_MINUTES = 30;
+
+/* When crew signing opens, from the JSA's own date and Time Issued. Null
+   when there is no usable start time -- then it is open from publish, as
+   it always was. The same sum runs on the crew's phone and the super's
+   board (opensAtOf below), so what they read matches what the database
+   enforces. */
+export function computeOpens(jsa) {
+  const day = jsa?.date;
+  const start = /^\d{2}:\d{2}$/.test(jsa?.timeIssued || '') ? jsa.timeIssued : null;
+  if (!day || !start) return null;
+  const at = new Date(`${day}T${start}:00`);
+  if (Number.isNaN(at.getTime())) return null;
+  return new Date(at.getTime() - SIGNING_OPENS_MINUTES * 60000);
+}
+
 /* How long a posting will stay open from this moment, in hours. */
 export function windowHours(jsa, now = new Date()) {
   const ms = computeExpiry(jsa, now).getTime() - now.getTime();
@@ -184,6 +203,9 @@ export async function publishToBoard({ jsa, boardOwner, pdfBlob }) {
     job_number: jsa?.jobNumber || null,
     doc_date: jsa?.date || null,
     expires_at: computeExpiry(jsa).toISOString(),
+    /* When crew signing opens. The database refuses signatures before it
+       (20260928120000_signing_opens_before_start.sql); null = open now. */
+    opens_at: computeOpens(jsa)?.toISOString() || null,
     pdf_path: pdfPath,
   });
   if (error) throw new Error(`Could not publish it: ${error.message}`);
@@ -230,16 +252,38 @@ export async function fetchBoard(boardOwnerId) {
     .filter(r => new Date(r.expires_at) > since)
     .map((r) => {
       const live = new Date(r.expires_at) > now;
-      return { ...r, live, status: boardStatus(r, live, now), startsAt: startTimeOf(r) };
+      return { ...r, live, status: boardStatus(r, live, now), startsAt: startTimeOf(r), opensAt: opensAtOf(r) };
     })
-    /* Open first, then the ones about to start, then the closed ones last.
-       A man at 6:30 should find his line at the top of the list, not below
-       yesterday's night shift. */
+    /* Open first, then the ones about to start, then tomorrow's, then the
+       closed ones last. A man at 6:30 should find his line at the top of
+       the list, not below yesterday's night shift. */
     .sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]
       || new Date(a.published_at) - new Date(b.published_at));
 }
 
-const STATUS_ORDER = { open: 0, upcoming: 1, closed: 2 };
+const STATUS_ORDER = { open: 0, upcoming: 1, scheduled: 2, closed: 3 };
+
+/* When signing opens for a posting: SIGNING_OPENS_MINUTES before its start.
+   Same sum as computeOpens at publish time, from the same two fields. */
+export function opensAtOf(row) {
+  const start = startTimeOf(row);
+  return start ? new Date(start.getTime() - SIGNING_OPENS_MINUTES * 60000) : null;
+}
+
+/* Can a signature go on this posting right now? What every sign button
+   asks. The database asks the same question and has the final word. */
+export function isSignable(status) {
+  return status === 'open' || status === 'upcoming';
+}
+
+/* "5:30 AM Tue" -- the day only when it is not today. */
+export function fmtOpens(at, now = new Date()) {
+  if (!at) return '';
+  const time = at.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  return at.toDateString() === now.toDateString()
+    ? time
+    : `${time} ${at.toLocaleDateString([], { weekday: 'short' })}`;
+}
 
 /* When this JSA's shift starts, from the day and Time Issued on the
    document itself. Null when there is no usable time, in which case it is
@@ -252,22 +296,26 @@ function startTimeOf(row) {
   return Number.isNaN(at.getTime()) ? null : at;
 }
 
-/* Three states, and only three, because a crew member should be able to
-   tell at a glance which line is his:
+/* Four states, so a crew member can tell at a glance which line is his and
+   whether he can sign it:
 
-     open     - signable now
-     upcoming - published, but the shift hasn't started yet
-     closed   - past Time Expired; still readable, can't be signed
+     scheduled - published early (e.g. the night before); readable, NOT
+                 signable until SIGNING_OPENS_MINUTES before the start
+     upcoming  - inside that window; signable, shift not started yet
+     open      - shift running; signable
+     closed    - past Time Expired; still readable, can't be signed
 
-   "upcoming" is a LABEL, not a lock. Fonzo publishes before the tailgate
-   meeting on purpose and is happy for men to read and sign early -- they
-   see the whole document and acknowledge it either way, which is the point
-   of the thing. So this tells a man the shift hasn't started; it never
-   stops him signing. */
+   "upcoming" used to be the only pre-start state and was a label, not a
+   lock -- Fonzo was happy for men to sign early (2026-09-09). He reversed
+   that 2026-09-28 after a JSA for the next morning sat signable all night:
+   signing now opens 30 minutes before the start, and the database enforces
+   it (20260928120000_signing_opens_before_start.sql). */
 export function boardStatus(row, live, now = new Date()) {
   if (!live) return 'closed';
   const start = startTimeOf(row);
-  return start && start > now ? 'upcoming' : 'open';
+  if (!start || start <= now) return 'open';
+  const opens = opensAtOf(row);
+  return opens && opens > now ? 'scheduled' : 'upcoming';
 }
 
 /* One crew member signing.
@@ -403,11 +451,17 @@ export async function fetchMyBoard() {
   const now = new Date();
   return {
     boardUrl: boardUrlFor(user.id),
-    rows: rows.map(r => ({
-      ...r,
-      signed: counts[r.id] || 0,
-      live: new Date(r.expires_at) > now,
-    })),
+    rows: rows.map((r) => {
+      const live = new Date(r.expires_at) > now;
+      return {
+        ...r,
+        signed: counts[r.id] || 0,
+        live,
+        status: boardStatus(r, live, now),
+        startsAt: startTimeOf(r),
+        opensAt: opensAtOf(r),
+      };
+    }),
   };
 }
 

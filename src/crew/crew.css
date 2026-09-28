@@ -94,6 +94,7 @@
 }
 .crewTag--open { color: #17603F; background: #E3F0E8; border-color: #7FB39A; }
 .crewTag--upcoming { color: #5E4510; background: #FBEFDC; border-color: #D9BE86; }
+.crewTag--scheduled { color: #1F3F66; background: #E4ECF6; border-color: #9BB3D1; }
 .crewTag--closed { color: #5A5A60; background: #EDEDEF; border-color: #C4C4C9; }
 
 /* Open is the one a man is looking for, so it is the one that stands out.
@@ -102,6 +103,7 @@
    is the reason it is still on the list at all. */
 .crewPick--open { border-color: #17603F; background: #FFFFFF; }
 .crewPick--upcoming { border-color: #D9BE86; }
+.crewPick--scheduled { border-color: #9BB3D1; }
 .crewPick--closed { opacity: .72; }
 .crewPick--closed strong { color: #46464C; }
 
