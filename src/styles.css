@@ -1402,6 +1402,19 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 }
 .numberedSectionHelp { margin-top: -6px; }
 
+/* SignerCard (FormPrimitives) -- one box per person on a Signatures step. */
+.signerCard {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.signerCard + .signerCard { margin-top: 14px; }
+.signerCardHeader { display: grid; gap: 2px; }
+.signerCardHeader strong { font-size: 17px; }
+.signerCardHeader span { font-size: 13.5px; color: var(--muted); line-height: 1.4; }
+
 /* SegmentedToggle with 3+ options (e.g. warning level) — wraps to a 2-up
    grid instead of squeezing every option into one row, additive to the
    existing .yesNoToggle rules above (Incident's own 2-option yes/no

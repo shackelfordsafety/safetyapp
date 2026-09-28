@@ -208,12 +208,12 @@ export default class ErrorBoundary extends Component {
 
           {rescueFailed && (
             <p style={S.fine}>
-              That didn’t work on this device. Close the tab, open the app again, and tell Fonzo.
+              That didn’t work on this device. Close the tab, open the app again, and tell your safety department.
             </p>
           )}
 
           <details style={S.details}>
-            <summary>Details (for Fonzo)</summary>
+            <summary>Details (for whoever fixes the app)</summary>
             <pre style={S.pre}>{String(error?.stack || error?.message || error)}</pre>
           </details>
         </div>

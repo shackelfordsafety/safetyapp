@@ -62,12 +62,12 @@ try {
       await page.locator('.stepNav button', { hasText: /SIGNATURE/i }).first().click();
       await page.waitForTimeout(900);
 
-      const askShown = await page.getByText('How is the employee signing?').count() > 0;
+      const askShown = await page.getByText('How are they doing it?').count() > 0;
       let offerShown = false;
       if (askShown) {
         await page.getByRole('button', { name: 'On their own phone', exact: true }).click();
         await page.waitForTimeout(900);
-        offerShown = await page.getByRole('button', { name: /Show the code/i }).count() > 0;
+        offerShown = await page.getByRole('button', { name: /Show the (QR )?code/i }).count() > 0;
       }
       await page.screenshot({ path: path.join(outDir, `${level}-${vpName}.png`), fullPage: true });
       results.push({ level, vpName, askShown, offerShown, errors: errors.length });

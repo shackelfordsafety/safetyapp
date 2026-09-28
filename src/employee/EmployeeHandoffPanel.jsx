@@ -26,21 +26,21 @@ import './employee.css';
    original; the rest say what the other person is actually being asked. */
 const PANEL_COPY = {
   notice: {
-    intro: 'They scan one code and get the whole notice to read, a box for their statement, and somewhere to sign. Nothing leaves your hands.',
+    intro: 'They scan it, read the notice, write their statement, and sign on their phone.',
     doneWithStatement: 'Their statement and signature are on the notice now.',
     doneSignatureOnly: 'Their signature is on the notice now. They chose not to give a statement.',
     already: 'What they wrote and signed is on the notice below and cannot be changed here.',
     redo: 'Only if it genuinely has to be redone. A new code replaces what they sent the first time on this notice.',
   },
   medicalEvent: {
-    intro: 'They scan one code, read the form, and sign it on their phone. Nothing leaves your hands.',
+    intro: 'They scan it, read the form, and sign on their phone.',
     doneWithStatement: 'Their signature is on the form now.',
     doneSignatureOnly: 'Their signature is on the form now.',
     already: 'Their signature is on the form below and cannot be changed here.',
     redo: 'Only if it genuinely has to be redone. A new code replaces the signature they sent the first time.',
   },
   incidentWitness: {
-    intro: 'They scan one code and get a box to write what they saw and somewhere to sign. They see the incident date and location only — not the rest of the report.',
+    intro: 'They scan it, write what they saw, and sign. They only see the incident date and place.',
     doneWithStatement: 'Their statement and signature are in this witness slot now.',
     doneSignatureOnly: 'Their signature is in this witness slot now.',
     already: 'What they wrote and signed is below and cannot be changed here.',
@@ -174,26 +174,16 @@ export default function EmployeeHandoffPanel({ docType, model, employeeName, nee
     return (
       <div className="card empPanel">
         <div className="cardHeader">
-          <strong>
-            {docType === 'incidentWitness'
-              ? 'Let the witness do this on their own phone'
-              : 'Let the employee do their part on their own phone'}
-          </strong>
           <p>{copy.intro}</p>
         </div>
         <div className="cardBody">
           {error && <p className="empError">{error}</p>}
           <button type="button" className="btn primary" onClick={start} disabled={busy}>
-            {busy ? 'Making the code…' : 'Show the code'}
+            {busy ? 'Making the code…' : 'Show the QR code'}
           </button>
-          {/* Points back at the fork above rather than "the pad below" --
-              there is no longer a pad below, because choosing this path is
-              what put this panel here. Saying otherwise sent people looking
-              for a control that is not on screen. */}
-          <p className="empMuted">
-            If their phone is dead or there is no signal, switch to
-            <strong> On this device</strong> above and nothing is lost.
-          </p>
+          {/* Points back at the fork above -- choosing this path is what put
+              this panel here. */}
+          <p className="helperText">Dead phone or no signal? Pick <strong>On this device</strong> instead.</p>
         </div>
       </div>
     );
@@ -202,8 +192,8 @@ export default function EmployeeHandoffPanel({ docType, model, employeeName, nee
   return (
     <div className="card empPanel">
       <div className="cardHeader">
-        <strong>Hand over the screen &mdash; or read out the link</strong>
-        <p>Waiting for them to send it back. Leave this open.</p>
+        <strong>Have them scan this</strong>
+        <p>Leave this open. It fills in by itself when they send it back.</p>
       </div>
       <div className="cardBody empQrBody">
         <QrImage url={handoff.url} />
@@ -211,7 +201,7 @@ export default function EmployeeHandoffPanel({ docType, model, employeeName, nee
             focus on a QR code in the sun is not a rare event on a job site.
             Selectable so it can be texted to them. */}
         <p className="empLink">{handoff.url}</p>
-        <p className="empMuted">The code stops working in two hours, or the moment they send it.</p>
+        <p className="empMuted">Works for 2 hours, one time only.</p>
         <button type="button" className="btn ghost sm" onClick={cancel}>Cancel this code</button>
       </div>
     </div>

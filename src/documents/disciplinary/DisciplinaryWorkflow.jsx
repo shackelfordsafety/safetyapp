@@ -8,7 +8,7 @@ import { disciplinaryFacsimileBlocks } from './disciplinaryPdfDraw';
 import {
   Field, TextAreaField, SegmentedToggle, StepPanel, NumberedSection, StepFooter,
   BuilderHeader, StepNav, ReviewExportPanel, ReadinessChecklist, SignaturePad, DocFacsimile,
-  useIsTouchPrimary, useElementWidth, EmployeeOwned,
+  useIsTouchPrimary, useElementWidth, EmployeeOwned, SignerCard,
 } from '../FormPrimitives';
 import { LockedContext } from '../lockedContext';
 import { downloadDraftFile, buildDraftFilename } from '../../shared/draftTransfer';
@@ -17,14 +17,10 @@ import { downloadDraftFile, buildDraftFilename } from '../../shared/draftTransfe
    with no signal never downloads the handoff machinery. */
 const EmployeeHandoffPanel = lazy(() => import('../../employee/EmployeeHandoffPanel'));
 
-/* ── Step: Notice Details — employee info, warning level, sections 1-4 ──
-   Section 4 (Employee Statement) is here again as of 2026-09-15. It was
-   removed on 2026-08-29 so the employee would write it by hand on the
-   printed copy; every other half of that rule has since been reversed and
-   there is no printed copy in the flow any more.
-
-   Left blank it still prints as a ruled box, so writing it by hand is
-   never taken away -- it just stops being the only option. */
+/* ── Step: Notice Details — employee info, warning level, sections 1-3 ──
+   Section 4 (Employee Statement) is taken on the Signatures step, as part
+   of the employee's own part. Left blank it still prints as a ruled box,
+   so writing it by hand is never taken away. */
 function StepNotice({ model, upd, next }) {
   return (
     <StepPanel title="Notice Details" intro="Basic facts about the employee and what occurred. Enter only what happened — do not decide the outcome here.">
@@ -56,33 +52,10 @@ function StepNotice({ model, upd, next }) {
         <TextAreaField label="What company rule or policy applies?" rows={3} value={model.companyPolicyStates} onChange={v => upd({ companyPolicyStates: v })} voice />
       </NumberedSection>
 
-      {/* Section 4. Typable again as of 2026-09-15 -- see the comment on
-          employeeStatement in disciplinaryModel.js for why it stopped
-          being, and why that reason no longer holds.
-
-          Used to be skipped for a verbal warning. Fonzo, 2026-09-28: verbal
-          warnings get the employee's side too, same as every other level. */}
-      <NumberedSection number={4} title="Employee Statement" help="The employee's own words. Type what they say, or leave it blank and the notice prints a ruled box for them to write in by hand.">
-          {/* If he wrote it himself on his own phone, it stops being
-              something anybody here can retype. See EmployeeOwned. */}
-          <EmployeeOwned when={model.employeeResponseAt}>
-            <TextAreaField
-              label="Does the employee want to say anything about this?"
-              rows={4}
-              value={model.employeeStatement}
-              onChange={v => upd({ employeeStatement: v })}
-              voice
-            />
-          </EmployeeOwned>
-          {model.employeeResponseAt && (
-            <p className="helperText">
-              {model.employeeName || 'The employee'} wrote this on their own phone
-              on {fmtWhen(model.employeeResponseAt)}. Those are their own words, so they
-              cannot be edited here &mdash; and a copy of exactly what was typed is
-              kept separately. If it has to be redone, send a new code.
-            </p>
-          )}
-        </NumberedSection>
+      {/* Section 4 (Employee Statement) is the employee's, so it lives with
+          the rest of their part on the Signatures step -- typed there, or
+          written on their own phone. Fonzo, 2026-09-28: "this box should
+          show up where the employee scans the qr code." */}
 
       <StepFooter hasNext onNext={next} />
     </StepPanel>
@@ -170,150 +143,117 @@ function witnessStatementFor(model) {
 
 function StepSignatures({ model, upd, prev, next }) {
   const method = employeeSignMethod(model);
+  const who = model.employeeName || 'The employee';
+  const statementField = (
+    <TextAreaField
+      label="Their statement (optional)"
+      rows={3}
+      value={model.employeeStatement}
+      onChange={v => upd({ employeeStatement: v })}
+      voice
+    />
+  );
+  /* Three people, three boxes, in the order they sign. Fonzo, 2026-09-28:
+     the old version was "a bunch of word slop on a page". Every line of
+     explanation that used to sit between the pads is either one short
+     line inside its box or gone. */
   return (
-    <StepPanel title="Signatures" intro="Everyone signs here — management, the employee, and a witness who was in the room. Nothing has to be printed to be signed.">
-      <div className="formPairRow">
-        <SignaturePad label="Management Signature" value={model.managerSignatureData} onChange={data => upd({ managerSignatureData: data, managerSignatureDate: data ? today() : model.managerSignatureDate })} />
-        <Field label="Management Signature Date" type="date" value={model.managerSignatureDate} onChange={v => upd({ managerSignatureDate: v })} />
-      </div>
+    <StepPanel title="Signatures" intro="Three people sign: you, the employee, and a witness.">
       {/* Deliberately NOT the Supervisor field from Notice Details. That one
-          says who the employee works for; this says who is giving the notice
-          and signing above. They are often different people, and on the
-          separation form printing the first over the second put the wrong
-          man's name on a real record. */}
-      <Field
-        label="Management Name and Title"
-        value={model.managerName}
-        onChange={v => upd({ managerName: v })}
-        placeholder="Whoever is signing above"
-      />
-      <p className="helperText">
-        Whoever is giving this notice &mdash; not the employee&rsquo;s supervisor, unless they
-        happen to be the same person. This is the name that prints under the signature.
-      </p>
+          says who the employee works for; this says who is giving the notice.
+          They are often different people. */}
+      <SignerCard title="1. You" sub="Whoever is giving this notice. Your name prints under your signature.">
+        <Field label="Your Name and Title" value={model.managerName} onChange={v => upd({ managerName: v })} placeholder="Name - Title" />
+        <div className="formPairRow">
+          <SignaturePad label="Your Signature" value={model.managerSignatureData} onChange={data => upd({ managerSignatureData: data, managerSignatureDate: data ? today() : model.managerSignatureDate })} />
+          <Field label="Date" type="date" value={model.managerSignatureDate} onChange={v => upd({ managerSignatureDate: v })} />
+        </div>
+      </SignerCard>
 
-      {/* Every level, verbal included (Fonzo, 2026-09-28). This used to be
-          hidden for a verbal warning, which is how the QR code went missing
-          on one. */}
-      <>
-          {/* ONE QUESTION, THEN ONE ROAD. The QR panel and the signature
-              pads used to sit on screen together, so it read as though the
-              employee was going to scan a code AND sign the iPad. Fonzo:
-              "give people forks in the road to where they can make a
-              decision and stick with it. But they can also go back if
-              needed." The question stays put and stays changeable; only the
-              chosen path appears under it. */}
-          <EmployeeOwned when={model.employeeResponseAt}>
-            <SegmentedToggle
-              label="How is the employee signing?"
-              value={method}
-              onChange={v => upd({ employeeSignMethod: v, employeeRefusedToSign: v === 'none' })}
-              options={EMPLOYEE_SIGN_METHODS}
-            />
-          </EmployeeOwned>
+      <SignerCard title={`2. ${model.employeeName || 'Employee'}`} sub="Their statement and signature. Signing means they got this notice, not that they agree.">
+        {/* ONE QUESTION, THEN ONE ROAD: only the chosen path shows. Sealed
+            once they have answered on their own phone. */}
+        <EmployeeOwned when={model.employeeResponseAt}>
+          <SegmentedToggle
+            label="How are they doing it?"
+            value={method}
+            onChange={v => upd({ employeeSignMethod: v, employeeRefusedToSign: v === 'none' })}
+            options={EMPLOYEE_SIGN_METHODS}
+          />
+        </EmployeeOwned>
 
-          {!method && (
-            <p className="helperText">
-              Pick one and the rest of this step follows it. You can change it
-              afterwards.
-            </p>
-          )}
-
-          {method === 'phone' && (
-            <Suspense fallback={null}>
-              <EmployeeHandoffPanel
-                docType="disciplinary"
-                model={model}
-                employeeName={model.employeeName}
-                needs={['statement', 'signature']}
-                respondedAt={model.employeeResponseAt}
-                onReceived={answer => upd({
-                  /* Their words go in section 4 only if they gave any -- an
-                     empty statement must not wipe one typed for them
-                     earlier. */
-                  ...(answer.statement ? { employeeStatement: answer.statement } : {}),
-                  ...(answer.signatureData
-                    ? {
-                      employeeSignatureData: answer.signatureData,
-                      employeeSignatureDate: today(),
-                      employeeRefusedToSign: false,
-                    }
-                    : {}),
-                  /* The stamp that makes all of the above theirs, and
-                     read-only from here on. Set even if nothing came back
-                     but a signature -- they still did their part on their
-                     own device. */
-                  employeeResponseAt: answer.respondedAt || new Date().toISOString(),
-                })}
-              />
-            </Suspense>
-          )}
-
-          {/* What came back off the phone, shown but sealed. */}
-          {method === 'phone' && model.employeeResponseAt && (
-            <>
-              <EmployeeOwned when>
-                <div className="formPairRow">
-                  <SignaturePad
-                    label={model.employeeName ? `${model.employeeName} — Employee Signature` : 'Employee Signature'}
-                    value={model.employeeSignatureData}
-                    onChange={() => {}}
-                  />
-                  <Field label="Employee Signature Date" type="date" value={model.employeeSignatureDate} onChange={() => {}} />
-                </div>
-              </EmployeeOwned>
-              <p className="helperText">
-                Signed by {model.employeeName || 'the employee'} on their own phone on{' '}
-                {fmtWhen(model.employeeResponseAt)}. That signature is theirs &mdash; nobody
-                here can replace or remove it. Send a new code if it has to be done
-                again.
-              </p>
-            </>
-          )}
-
-          {method === 'device' && (
-            <>
-              <div className="formPairRow">
-                <SignaturePad
-                  label={model.employeeName ? `${model.employeeName} — Employee Signature` : 'Employee Signature'}
-                  value={model.employeeSignatureData}
-                  onChange={data => upd({ employeeSignatureData: data, employeeSignatureDate: data ? today() : model.employeeSignatureDate })}
-                />
-                <Field label="Employee Signature Date" type="date" value={model.employeeSignatureDate} onChange={v => upd({ employeeSignatureDate: v })} />
-              </div>
-              <p className="helperText">
-                Signing acknowledges <strong>receipt</strong> of this notice. It does not mean the
-                employee agrees with it, and the printed notice says so.
-              </p>
-            </>
-          )}
-
-          {method === 'none' && (
-            <p className="helperText">
-              The notice will print <strong>Refused / Unavailable to Sign</strong> on the
-              employee&rsquo;s line, so the record says why it is empty. The witness below
-              is what stands in its place.
-              {model.employeeSignatureData ? ' There is a signature saved on this notice from earlier — it will not print while this is selected.' : ''}
-            </p>
-          )}
-
-          {/* The witness. An employee refusing to sign a write-up is the
-              normal case, and a blank line proves nothing about whether he
-              was ever told. */}
-          <div className="formPairRow">
-            <SignaturePad
-              label="Witness Signature"
-              value={model.witnessSignatureData}
-              onChange={data => upd({
-                witnessSignatureData: data,
-                witnessSignatureDate: data ? today() : model.witnessSignatureDate,
-                witnessStatement: data ? witnessStatementFor(model) : '',
+        {method === 'phone' && (
+          <Suspense fallback={null}>
+            <EmployeeHandoffPanel
+              docType="disciplinary"
+              model={model}
+              employeeName={model.employeeName}
+              needs={['statement', 'signature']}
+              respondedAt={model.employeeResponseAt}
+              onReceived={answer => upd({
+                /* An empty statement must not wipe one typed earlier. */
+                ...(answer.statement ? { employeeStatement: answer.statement } : {}),
+                ...(answer.signatureData
+                  ? { employeeSignatureData: answer.signatureData, employeeSignatureDate: today(), employeeRefusedToSign: false }
+                  : {}),
+                /* The stamp that makes all of the above theirs, and read-only
+                   from here on. */
+                employeeResponseAt: answer.respondedAt || new Date().toISOString(),
               })}
             />
-            <Field label="Witness Name and Title" value={model.witnessName} onChange={v => upd({ witnessName: v })} />
-          </div>
-          <p className="helperText">{witnessStatementFor(model)}</p>
-      </>
+          </Suspense>
+        )}
+
+        {/* What came back off the phone, shown but sealed. */}
+        {method === 'phone' && model.employeeResponseAt && (
+          <EmployeeOwned when>
+            {model.employeeStatement && statementField}
+            <div className="formPairRow">
+              <SignaturePad label="Their Signature" value={model.employeeSignatureData} onChange={() => {}} />
+              <Field label="Date" type="date" value={model.employeeSignatureDate} onChange={() => {}} />
+            </div>
+            <p className="helperText">Done on their phone {fmtWhen(model.employeeResponseAt)}. Locked — nobody here can change it.</p>
+          </EmployeeOwned>
+        )}
+
+        {method === 'device' && (
+          <>
+            {statementField}
+            <div className="formPairRow">
+              <SignaturePad label="Their Signature" value={model.employeeSignatureData} onChange={data => upd({ employeeSignatureData: data, employeeSignatureDate: data ? today() : model.employeeSignatureDate })} />
+              <Field label="Date" type="date" value={model.employeeSignatureDate} onChange={v => upd({ employeeSignatureDate: v })} />
+            </div>
+          </>
+        )}
+
+        {method === 'none' && (
+          <>
+            {/* A statement typed before they refused still prints, so it
+                stays on screen rather than printing unseen. */}
+            {model.employeeStatement && statementField}
+            <p className="helperText">
+              Prints &ldquo;Refused / Unavailable to Sign.&rdquo; The witness below covers it.
+              {model.employeeSignatureData ? ' A signature saved earlier will not print.' : ''}
+            </p>
+          </>
+        )}
+      </SignerCard>
+
+      {/* What the witness attests to (witnessStatementFor) is stamped onto
+          the record when they sign and prints above their signature. */}
+      <SignerCard title="3. Witness" sub="Someone else who was in the room.">
+
+        <Field label="Witness Name and Title" value={model.witnessName} onChange={v => upd({ witnessName: v })} placeholder="Name - Title" />
+        <SignaturePad
+          label="Witness Signature"
+          value={model.witnessSignatureData}
+          onChange={data => upd({
+            witnessSignatureData: data,
+            witnessSignatureDate: data ? today() : model.witnessSignatureDate,
+            witnessStatement: data ? witnessStatementFor(model) : '',
+          })}
+        />
+      </SignerCard>
 
       <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Review" />
     </StepPanel>

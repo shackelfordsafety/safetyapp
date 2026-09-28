@@ -10,7 +10,7 @@ import { medicalEventFacsimileBlocks } from './medicalEventPdfDraw';
 import {
   Field, TextAreaField, SegmentedToggle, ChipGroup, StepPanel, StepFooter,
   BuilderHeader, StepNav, ReviewExportPanel, ReadinessChecklist, SignaturePad, DocFacsimile,
-  useIsTouchPrimary, useElementWidth, EmployeeOwned,
+  useIsTouchPrimary, useElementWidth, EmployeeOwned, SignerCard,
 } from '../FormPrimitives';
 import { LockedContext } from '../lockedContext';
 import { downloadDraftFile, buildDraftFilename } from '../../shared/draftTransfer';
@@ -156,79 +156,73 @@ function fmtWhen(iso) {
    only "if able" -- on 2026-08-29 Fonzo only wanted the supervisor side
    digital, which left the employee line printing blank every time. On
    2026-09-28 he asked for anything an employee fills in to be doable from
-   their own phone, so the employee line gets the same fork Separation
-   uses: their phone, this device, or not signing. Still never required. ── */
+   their own phone, so the employee gets the same fork Separation uses:
+   their phone, this device, or not signing. Still never required.
+   One box per person (SignerCard). ── */
 function StepSignatures({ model, upd, prev, next }) {
   const method = employeeSignMethod(model);
-  const empLabel = model.employeeName ? `${model.employeeName} — Employee Signature` : 'Employee Signature';
   return (
-    <StepPanel title="Signatures" intro="Safety/Supervisor signs here. The employee can sign too, if able. Leave a name blank to print the employee/supervisor named on Event & Response.">
-      <Field label="Employee Name (printed)" value={model.employeeSignatureName} placeholder={model.employeeName} onChange={v => upd({ employeeSignatureName: v })} />
+    <StepPanel title="Signatures" intro="You sign. The employee signs too, if they're able.">
+      <SignerCard title="1. You" sub="Safety or supervisor. Leave the name blank to use the supervisor from step 1.">
+        <Field label="Your Name (printed)" value={model.supervisorSignatureName} placeholder={model.supervisor || 'Name'} onChange={v => upd({ supervisorSignatureName: v })} />
+        <div className="formPairRow">
+          <SignaturePad label="Your Signature" value={model.supervisorSignatureData} onChange={data => upd({ supervisorSignatureData: data, supervisorSignatureDate: data ? today() : model.supervisorSignatureDate })} />
+          <Field label="Date" type="date" value={model.supervisorSignatureDate} onChange={v => upd({ supervisorSignatureDate: v })} />
+        </div>
+      </SignerCard>
 
-      <EmployeeOwned when={model.employeeResponseAt}>
-        <SegmentedToggle
-          label="How is the employee signing?"
-          value={method}
-          onChange={v => upd({ employeeSignMethod: v })}
-          options={EMPLOYEE_SIGN_METHODS}
-        />
-      </EmployeeOwned>
-
-      {method === 'phone' && (
-        <Suspense fallback={null}>
-          <EmployeeHandoffPanel
-            docType="medicalEvent"
-            model={model}
-            employeeName={model.employeeName}
-            needs={['signature']}
-            respondedAt={model.employeeResponseAt}
-            onReceived={answer => (answer.signatureData ? upd({
-              employeeSignatureData: answer.signatureData,
-              employeeSignatureDate: today(),
-              employeeResponseAt: answer.respondedAt || new Date().toISOString(),
-            }) : null)}
+      <SignerCard title={`2. ${model.employeeName || 'Employee'} (optional)`} sub="Only if they're able to sign.">
+        <Field label="Employee Name (printed)" value={model.employeeSignatureName} placeholder={model.employeeName || 'Name'} onChange={v => upd({ employeeSignatureName: v })} />
+        <EmployeeOwned when={model.employeeResponseAt}>
+          <SegmentedToggle
+            label="How are they signing?"
+            value={method}
+            onChange={v => upd({ employeeSignMethod: v })}
+            options={EMPLOYEE_SIGN_METHODS}
           />
-        </Suspense>
-      )}
+        </EmployeeOwned>
 
-      {method === 'phone' && model.employeeResponseAt && (
-        <>
+        {method === 'phone' && (
+          <Suspense fallback={null}>
+            <EmployeeHandoffPanel
+              docType="medicalEvent"
+              model={model}
+              employeeName={model.employeeName}
+              needs={['signature']}
+              respondedAt={model.employeeResponseAt}
+              onReceived={answer => (answer.signatureData ? upd({
+                employeeSignatureData: answer.signatureData,
+                employeeSignatureDate: today(),
+                employeeResponseAt: answer.respondedAt || new Date().toISOString(),
+              }) : null)}
+            />
+          </Suspense>
+        )}
+
+        {method === 'phone' && model.employeeResponseAt && (
           <EmployeeOwned when>
             <div className="formPairRow">
-              <SignaturePad label={empLabel} value={model.employeeSignatureData} onChange={() => {}} />
-              <Field label="Employee Signature Date" type="date" value={model.employeeSignatureDate} onChange={() => {}} />
+              <SignaturePad label="Their Signature" value={model.employeeSignatureData} onChange={() => {}} />
+              <Field label="Date" type="date" value={model.employeeSignatureDate} onChange={() => {}} />
             </div>
+            <p className="helperText">Signed on their phone {fmtWhen(model.employeeResponseAt)}. Locked — nobody here can change it.</p>
           </EmployeeOwned>
+        )}
+
+        {method === 'device' && (
+          <div className="formPairRow">
+            <SignaturePad label="Their Signature" value={model.employeeSignatureData} onChange={data => upd({ employeeSignatureData: data, employeeSignatureDate: data ? today() : model.employeeSignatureDate })} />
+            <Field label="Date" type="date" value={model.employeeSignatureDate} onChange={v => upd({ employeeSignatureDate: v })} />
+          </div>
+        )}
+
+        {method === 'none' && (
           <p className="helperText">
-            Signed by {model.employeeName || 'the employee'} on their own phone on{' '}
-            {fmtWhen(model.employeeResponseAt)}. Nobody here can replace or remove it.
+            Their line prints blank.
+            {model.employeeSignatureData ? ' A signature saved earlier will not print.' : ''}
           </p>
-        </>
-      )}
-
-      {method === 'device' && (
-        <div className="formPairRow">
-          <SignaturePad
-            label={empLabel}
-            value={model.employeeSignatureData}
-            onChange={data => upd({ employeeSignatureData: data, employeeSignatureDate: data ? today() : model.employeeSignatureDate })}
-          />
-          <Field label="Employee Signature Date" type="date" value={model.employeeSignatureDate} onChange={v => upd({ employeeSignatureDate: v })} />
-        </div>
-      )}
-
-      {method === 'none' && (
-        <p className="helperText">
-          The employee line prints blank. That&rsquo;s fine &mdash; it&rsquo;s marked &ldquo;if able&rdquo; on the form.
-          {model.employeeSignatureData ? ' There is a signature saved from earlier — it will not print while this is selected.' : ''}
-        </p>
-      )}
-
-      <div className="formPairRow">
-        <SignaturePad label="Safety / Supervisor Signature" value={model.supervisorSignatureData} onChange={data => upd({ supervisorSignatureData: data, supervisorSignatureDate: data ? new Date().toISOString().slice(0, 10) : model.supervisorSignatureDate })} />
-        <Field label="Supervisor Signature Date" type="date" value={model.supervisorSignatureDate} onChange={v => upd({ supervisorSignatureDate: v })} />
-      </div>
-      <Field label="Safety / Supervisor Name (printed)" value={model.supervisorSignatureName} placeholder={model.supervisor} onChange={v => upd({ supervisorSignatureName: v })} />
+        )}
+      </SignerCard>
 
       <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Submit" />
     </StepPanel>

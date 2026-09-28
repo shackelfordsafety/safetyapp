@@ -136,7 +136,7 @@ async function main() {
     await shot(mgr, '2-mgmt-offer', 'the signatures step: the offer sits above the pads');
     await shot(panel, '2b-mgmt-offer-close', 'the offer on its own');
 
-    await mgr.getByRole('button', { name: /Show the code/i }).first().click();
+    await mgr.getByRole('button', { name: /Show the (QR )?code/i }).first().click();
     await mgr.waitForSelector('.empQr', { timeout: 20000 }).catch(() => {});
     await mgr.waitForTimeout(800);
     await shot(panel, '3-mgmt-code', 'the code he holds up (this one points nowhere)');

@@ -23,7 +23,7 @@ const wait = (u, ms) => { const e = Date.now() + ms; return new Promise((r, j) =
 const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { cwd: repoRoot, shell: true, stdio: ['ignore', 'pipe', 'pipe'] });
 try {
   await wait(BASE, 25000);
-  const b = await chromium.launch();
+  const b = await chromium.launch().catch(() => chromium.launch({ channel: "chrome" }));
   const c = await b.newContext({ viewport: { width: 1180, height: 1000 } });
   const p = await c.newPage();
   await p.goto(`${BASE}?sim=1`, { waitUntil: 'domcontentloaded' });

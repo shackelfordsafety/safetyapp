@@ -9,7 +9,7 @@ import { separationFacsimileBlocks } from './separationPdfDraw';
 import {
   Field, TextAreaField, SegmentedToggle, ChipGroup, StepPanel, StepFooter,
   BuilderHeader, StepNav, ReviewExportPanel, ReadinessChecklist, SignaturePad, DocFacsimile,
-  useIsTouchPrimary, useElementWidth, EmployeeOwned,
+  useIsTouchPrimary, useElementWidth, EmployeeOwned, SignerCard,
 } from '../FormPrimitives';
 import { LockedContext } from '../lockedContext';
 import { downloadDraftFile, buildDraftFilename } from '../../shared/draftTransfer';
@@ -194,158 +194,88 @@ function witnessStatementFor(model) {
   return `I was present when this separation was discussed. ${outcome}`;
 }
 
-/* ── Step: Signatures — the three people who are in the room ──────────────
-   Fonzo, 2026-09-14, looking at a real separation he had just run:
-   "There should be three things on there. The manager that's talking to
-   the employee, the employee, and the witness."
+/* ── Step: Signatures — the three people in the room, in the order they
+   sign: management, employee, witness (Fonzo, 2026-09-14). HR approves
+   afterwards and signs nothing (Fonzo, 2026-09-15); the HR fields stay on
+   the model only so old drafts load.
 
-   It had four, in the wrong order, with HR in the middle of them. HR is
-   not in that room -- the notice reaches HR afterwards, and Pat signs it
-   on her own screen when she files it. Putting her pad here meant the one
-   person running the meeting had to scroll past a slot nobody present
-   could use, twice, while a man waited to sign.
-
-   So: management, employee, witness, in the order they actually sign.
-
-   And that is the entire list. Fonzo, 2026-09-15, having asked her: "I
-   talked to Miss Pat, the HR manager, she said she doesn't need to sign on
-   anything, signing people are only in the field, she's just the approver."
-   The HR fields are still on the model so an old draft loads, but nothing
-   captures them and nothing prints them any more. */
+   One box per person (SignerCard). Fonzo, 2026-09-28: the old page was
+   "a bunch of word slop". ── */
 function StepSignatures({ model, upd, prev, next }) {
   const method = employeeSignMethod(model);
   return (
-    <StepPanel
-      title="Signatures"
-      intro="The three people in the room sign here — you, the employee, and a witness. Nobody else signs a separation."
-    >
-      <div className="formPairRow">
-        <SignaturePad label="Management Signature" value={model.supervisorSignatureData} onChange={data => upd({ supervisorSignatureData: data, supervisorSignatureDate: data ? new Date().toISOString().slice(0, 10) : model.supervisorSignatureDate })} />
-        <Field label="Management Signature Date" type="date" value={model.supervisorSignatureDate} onChange={v => upd({ supervisorSignatureDate: v })} />
-      </div>
-      {/* Deliberately NOT the Supervisor field from step one. That one says
-          who the employee worked for; this says who ran the meeting and is
-          signing above. They are usually different people, and printing the
-          first over the second put the wrong man's name on a real record. */}
-      <Field
-        label="Management Name and Title"
-        value={model.managerName}
-        onChange={v => upd({ managerName: v })}
-        placeholder="e.g. Alfonso Hernandez - Safety Manager"
-      />
-      <p className="helperText">
-        The manager holding this meeting &mdash; not the employee&rsquo;s supervisor, unless
-        they happen to be the same person. This is the name that prints under the
-        signature.
-      </p>
+    <StepPanel title="Signatures" intro="Three people sign: you, the employee, and a witness.">
+      {/* Deliberately NOT the Supervisor field from step one: this is who ran
+          the meeting, which is often somebody else. */}
+      <SignerCard title="1. You" sub="Whoever is holding this meeting. Your name prints under your signature.">
+        <Field label="Your Name and Title" value={model.managerName} onChange={v => upd({ managerName: v })} placeholder="Name - Title" />
+        <div className="formPairRow">
+          <SignaturePad label="Your Signature" value={model.supervisorSignatureData} onChange={data => upd({ supervisorSignatureData: data, supervisorSignatureDate: data ? today() : model.supervisorSignatureDate })} />
+          <Field label="Date" type="date" value={model.supervisorSignatureDate} onChange={v => upd({ supervisorSignatureDate: v })} />
+        </div>
+      </SignerCard>
 
-      {/* ONE QUESTION, THEN ONE ROAD. The QR panel and the signature pad
-          used to sit on screen together, which read as though the employee
-          was going to scan a code AND sign the iPad. Fonzo, 2026-09-15:
-          "give people forks in the road to where they can make a decision
-          and stick with it. But they can also go back if needed."
-
-          The question stays put and stays changeable; only the chosen path
-          appears under it. It also replaces the old "is the employee
-          available to sign?" toggle -- that was the same decision asked
-          half-way, in a place where "no" and "on their phone" could somehow
-          both be true at once.
-
-          Sealed once they have signed on their phone: switching this
-          afterwards would print "Refused / Unavailable to Sign" over
-          somebody who demonstrably did sign. */}
-      <EmployeeOwned when={model.employeeResponseAt}>
-        <SegmentedToggle
-          label="How is the employee signing?"
-          value={method}
-          onChange={v => upd({ employeeSignMethod: v, employeeRefusedToSign: v === 'none' })}
-          options={EMPLOYEE_SIGN_METHODS}
-        />
-      </EmployeeOwned>
-
-      {!method && (
-        <p className="helperText">
-          Pick one and the rest of this step follows it. You can change it afterwards.
-        </p>
-      )}
-
-      {/* A separation asks the employee for a signature only. There is no
-          employee statement on this form the way there is on a disciplinary,
-          and inventing a box for one would take words down that the printed
-          form has nowhere to put. */}
-      {method === 'phone' && (
-        <Suspense fallback={null}>
-          <EmployeeHandoffPanel
-            docType="separation"
-            model={model}
-            employeeName={model.employeeName}
-            needs={['signature']}
-            respondedAt={model.employeeResponseAt}
-            onReceived={answer => (answer.signatureData ? upd({
-              employeeSignatureData: answer.signatureData,
-              employeeSignatureDate: today(),
-              employeeRefusedToSign: false,
-              /* The stamp that seals it. See EmployeeOwned. */
-              employeeResponseAt: answer.respondedAt || new Date().toISOString(),
-            }) : null)}
+      {/* Signature only: the separation form has no employee statement. */}
+      <SignerCard title={`2. ${model.employeeName || 'Employee'}`} sub="Signing means they got this, not that they agree.">
+        {/* Sealed once they have signed on their phone: switching this would
+            print "Refused" over somebody who did sign. */}
+        <EmployeeOwned when={model.employeeResponseAt}>
+          <SegmentedToggle
+            label="How are they signing?"
+            value={method}
+            onChange={v => upd({ employeeSignMethod: v, employeeRefusedToSign: v === 'none' })}
+            options={EMPLOYEE_SIGN_METHODS}
           />
-        </Suspense>
-      )}
+        </EmployeeOwned>
 
-      {method === 'phone' && model.employeeResponseAt && (
-        <>
+        {method === 'phone' && (
+          <Suspense fallback={null}>
+            <EmployeeHandoffPanel
+              docType="separation"
+              model={model}
+              employeeName={model.employeeName}
+              needs={['signature']}
+              respondedAt={model.employeeResponseAt}
+              onReceived={answer => (answer.signatureData ? upd({
+                employeeSignatureData: answer.signatureData,
+                employeeSignatureDate: today(),
+                employeeRefusedToSign: false,
+                employeeResponseAt: answer.respondedAt || new Date().toISOString(),
+              }) : null)}
+            />
+          </Suspense>
+        )}
+
+        {method === 'phone' && model.employeeResponseAt && (
           <EmployeeOwned when>
             <div className="formPairRow">
-              <SignaturePad
-                label={model.employeeName ? `${model.employeeName} — Employee Signature` : 'Employee Signature'}
-                value={model.employeeSignatureData}
-                onChange={() => {}}
-              />
-              <Field label="Employee Signature Date" type="date" value={model.employeeSignatureDate} onChange={() => {}} />
+              <SignaturePad label="Their Signature" value={model.employeeSignatureData} onChange={() => {}} />
+              <Field label="Date" type="date" value={model.employeeSignatureDate} onChange={() => {}} />
             </div>
+            <p className="helperText">Signed on their phone {fmtWhen(model.employeeResponseAt)}. Locked — nobody here can change it.</p>
           </EmployeeOwned>
-          <p className="helperText">
-            Signed by {model.employeeName || 'the employee'} on their own phone on{' '}
-            {fmtWhen(model.employeeResponseAt)}. That signature is theirs &mdash; nobody here
-            can replace or remove it. Send a new code if it has to be done again.
-          </p>
-        </>
-      )}
+        )}
 
-      {method === 'device' && (
-        <>
+        {method === 'device' && (
           <div className="formPairRow">
-            <SignaturePad
-              label={model.employeeName ? `${model.employeeName} — Employee Signature` : 'Employee Signature'}
-              value={model.employeeSignatureData}
-              onChange={data => upd({ employeeSignatureData: data, employeeSignatureDate: data ? today() : model.employeeSignatureDate })}
-            />
-            <Field label="Employee Signature Date" type="date" value={model.employeeSignatureDate} onChange={v => upd({ employeeSignatureDate: v })} />
+            <SignaturePad label="Their Signature" value={model.employeeSignatureData} onChange={data => upd({ employeeSignatureData: data, employeeSignatureDate: data ? today() : model.employeeSignatureDate })} />
+            <Field label="Date" type="date" value={model.employeeSignatureDate} onChange={v => upd({ employeeSignatureDate: v })} />
           </div>
+        )}
+
+        {method === 'none' && (
           <p className="helperText">
-            Signing acknowledges <strong>receipt</strong> of this notice. It does not mean the
-            employee agrees with it, and the printed form says so.
+            Prints &ldquo;Refused / Unavailable to Sign.&rdquo; The witness below covers it.
+            {model.employeeSignatureData ? ' A signature saved earlier will not print.' : ''}
           </p>
-        </>
-      )}
+        )}
+      </SignerCard>
 
-      {method === 'none' && (
-        <p className="helperText">
-          The form will print <strong>Refused / Unavailable to Sign</strong> on the
-          employee&rsquo;s line instead of leaving it blank, so the record says why it is
-          empty &mdash; and the witness below is what stands in its place.
-          {model.employeeSignatureData ? ' There is a signature saved on this form from earlier — it will not print while this is selected.' : ''}
-        </p>
-      )}
-
-      {/* The witness. Fonzo, 2026-09-11: "if the employee doesn't sign, the
-          witness was there." Another Shackelford person who was in the
-          room -- a clerk, a second supervisor -- not a third party.
-
-          The statement is written down at the moment it is signed, not
-          worked out at print time, because what somebody attested to must
-          not change later when a toggle above gets edited. */}
-      <div className="formPairRow">
+      {/* Fonzo, 2026-09-11: "if the employee doesn't sign, the witness was
+          there." What they attest to (witnessStatementFor) is stamped at the
+          moment they sign, so a later edit cannot change it. */}
+      <SignerCard title="3. Witness" sub="Someone else who was in the room.">
+        <Field label="Witness Name and Title" value={model.witnessName} onChange={v => upd({ witnessName: v })} placeholder="Name - Title" />
         <SignaturePad
           label="Witness Signature"
           value={model.witnessSignatureData}
@@ -355,17 +285,7 @@ function StepSignatures({ model, upd, prev, next }) {
             witnessStatement: data ? witnessStatementFor(model) : '',
           })}
         />
-        <Field label="Witness Name and Title" value={model.witnessName} onChange={v => upd({ witnessName: v })} />
-      </div>
-      <p className="helperText">
-        {witnessStatementFor(model)}
-      </p>
-
-      {/* HR's own signature and name used to sit here, under the witness,
-          on the screen of the man running the meeting. They are not gone --
-          they print, and they are filled in by whoever files this at the
-          office. They just do not belong in front of three people standing
-          in a trailer. */}
+      </SignerCard>
 
       <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Review" />
     </StepPanel>

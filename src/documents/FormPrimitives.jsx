@@ -172,6 +172,23 @@ export function NumberedSection({ number, title, help, children }) {
   );
 }
 
+/* One person's part of a Signatures step, in its own box: who they are in
+   a few words, then only the controls they need. Fonzo, 2026-09-28, on the
+   old Signatures pages: "looks like a bunch of word slop on a page" -- every
+   signer's pads and paragraphs ran together down one column, and nobody new
+   could tell where one person's part ended. Keep `sub` to one short line. */
+export function SignerCard({ title, sub, children }) {
+  return (
+    <section className="signerCard">
+      <header className="signerCardHeader">
+        <strong>{title}</strong>
+        {sub && <span>{sub}</span>}
+      </header>
+      {children}
+    </section>
+  );
+}
+
 export function StepFooter({ onBack, onNext, hasBack, hasNext, nextLabel, backLabel }) {
   return (
     <div className="stepFooter">

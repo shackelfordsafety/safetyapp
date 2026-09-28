@@ -135,7 +135,7 @@ async function main() {
       await page.getByRole('button', { name: 'On their own phone', exact: true }).click();
       await page.waitForTimeout(800);
       await shot(page, 'med-4-phone-offer', '"On their own phone": the offer', { fullPage: true });
-      await page.getByRole('button', { name: /Show the code/i }).click();
+      await page.getByRole('button', { name: /Show the (QR )?code/i }).click();
       await page.waitForSelector('.empQr', { timeout: 20000 });
       await shot(page.locator('.empPanel').first(), 'med-5-phone-code', 'the code to scan (points nowhere)');
 
@@ -178,7 +178,7 @@ async function main() {
       await card1.getByRole('button', { name: 'On their own phone', exact: true }).click();
       await page.waitForTimeout(800);
       await shot(card1, 'inc-2-witness-offer', 'Witness 1 → "On their own phone"');
-      await card1.getByRole('button', { name: /Show the code/i }).click();
+      await card1.getByRole('button', { name: /Show the (QR )?code/i }).click();
       await page.waitForSelector('.empQr', { timeout: 20000 });
       await shot(card1, 'inc-3-witness-code', 'the code for this one witness');
 
