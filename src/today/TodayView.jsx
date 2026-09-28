@@ -175,7 +175,9 @@ export default function TodayView({ entries = [], goDocs, onPickedUp }) {
                       {e.savedDraft.status === 'completed' ? 'Completed' : e.savedDraft.status === 'ready' ? 'Ready' : 'Draft'}
                     </span>
                   </div>
-                  <p>{e.metaLine}</p>
+                  {/* What KIND of document, so "Marcus Doyle" alone does not
+                      leave a new person guessing disciplinary or medical. */}
+                  <p><strong className="itemDocType">{DOC_LABELS[e.id] || e.id}</strong> · {e.metaLine}</p>
                 </div>
                 <div className="itemActions">
                   <button className="btn secondary sm" onClick={e.onOpen}>Open</button>

@@ -63,6 +63,7 @@ export default function PeopleCard() {
   const [busyId, setBusyId] = useState('');
   const [error, setError] = useState('');
   const [savedId, setSavedId] = useState('');
+  const [search, setSearch] = useState('');
 
   const load = useCallback(async () => {
     setState('loading');
@@ -128,14 +129,21 @@ export default function PeopleCard() {
   const iAmOwner = me?.role === 'owner';
   const nameOf = id => people.find(p => p.id === id)?.full_name || 'Someone';
 
+  /* Fonzo, 2026-09-28, on Pat's screen: "the people screen is HUUUUUGE".
+     Every person used to get a label, a dropdown, a paragraph and a Save
+     button stacked down the page. Now: one line each, a search box, Save
+     only on a row that was actually changed, and the role meanings said
+     once in a list you can open rather than under every name. */
+  const q = search.trim().toLowerCase();
+  const shown = q
+    ? people.filter(p => (p.full_name || '').toLowerCase().includes(q) || (ROLE_WORDS[p.role] || p.role || '').toLowerCase().includes(q))
+    : people;
+
   return (
     <div className="card">
       <div className="cardHeader">
         <h3>People</h3>
-        <p>
-          What each person can see in Records. Adding somebody new, or resetting a
-          password, is still done from the database dashboard.
-        </p>
+        <p>Change what each person can see. New people and password resets are done in the database dashboard.</p>
       </div>
       <div className="cardBody">
         {state === 'loading' && <p className="helperText">Loading…</p>}
@@ -150,8 +158,27 @@ export default function PeopleCard() {
           <>
             {error && <p className="archiveError">{error}</p>}
 
+            <div className="peopleTools">
+              <input
+                type="search"
+                className="peopleSearch"
+                placeholder={`Search ${people.length} people by name or role`}
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+              <details className="peopleLegend">
+                <summary>What each role can see</summary>
+                <dl>
+                  {ROLE_ORDER.map(r => (
+                    <div key={r}><dt>{ROLE_WORDS[r] || r}</dt><dd>{ROLE_MEANS[r]}</dd></div>
+                  ))}
+                </dl>
+              </details>
+            </div>
+
             <div className="peopleList">
-              {people.map(p => {
+              {shown.length === 0 && <p className="helperText">Nobody matches &ldquo;{search}&rdquo;.</p>}
+              {shown.map(p => {
                 const isMe = p.id === me.id;
                 /* Only an owner can make or unmake an owner -- the database
                    refuses otherwise, so the screen says so up front instead
@@ -162,48 +189,46 @@ export default function PeopleCard() {
                 const dirty = chosen !== p.role;
 
                 return (
-                  <div className="peopleRow" key={p.id}>
+                  <div className={`peopleRow${dirty ? ' dirty' : ''}`} key={p.id}>
                     <div className="peopleWho">
                       <strong>
                         {p.full_name || 'Name not set yet'}
+                        {isMe && <span className="peopleTag">you</span>}
                         {p.is_admin && <span className="peopleTag">full access</span>}
                       </strong>
-                      <span className="peopleNow">
-                        {isMe ? 'You — ' : ''}{ROLE_WORDS[p.role] || p.role}
-                      </span>
+                      {locked && (
+                        <span className="peopleNow">
+                          {ROLE_WORDS[p.role] || p.role} · {isMe ? 'you can’t change your own' : 'only an owner can change this'}
+                        </span>
+                      )}
                     </div>
 
-                    {locked ? (
-                      <p className="helperText peopleLocked">
-                        {isMe
-                          ? 'You cannot change your own role. Ask an owner.'
-                          : 'Only an owner can change an owner.'}
-                      </p>
-                    ) : (
-                      <div className="peopleEdit">
-                        <label className="field">
-                          <span>Can see</span>
-                          <select
-                            value={chosen}
-                            onChange={e => setDraft(d => ({ ...d, [p.id]: e.target.value }))}
-                          >
-                            {ROLE_ORDER.map(r => (
-                              <option key={r} value={r} disabled={r === 'owner' && !iAmOwner}>
-                                {ROLE_WORDS[r] || r}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <p className="helperText">{ROLE_MEANS[chosen]}</p>
-                        <button
-                          type="button"
-                          className="btn primary sm"
-                          disabled={!dirty || busyId === p.id}
-                          onClick={() => saveRole(p)}
-                        >
-                          {busyId === p.id ? 'Saving…' : 'Save role'}
-                        </button>
-                        {savedId === p.id && <span className="peopleSaved">Saved</span>}
+                    {!locked && (
+                      <select
+                        className="peopleSelect"
+                        aria-label={`Role for ${p.full_name || 'this person'}`}
+                        value={chosen}
+                        onChange={e => setDraft(d => ({ ...d, [p.id]: e.target.value }))}
+                      >
+                        {ROLE_ORDER.map(r => (
+                          <option key={r} value={r} disabled={r === 'owner' && !iAmOwner}>
+                            {ROLE_WORDS[r] || r}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+
+                    {savedId === p.id && <span className="peopleSaved">Saved ✓</span>}
+
+                    {dirty && (
+                      <div className="peopleConfirm">
+                        <span>{ROLE_MEANS[chosen]}</span>
+                        <div className="peopleConfirmBtns">
+                          <button type="button" className="btn ghost sm" onClick={() => setDraft(d => ({ ...d, [p.id]: p.role }))}>Cancel</button>
+                          <button type="button" className="btn primary sm" disabled={busyId === p.id} onClick={() => saveRole(p)}>
+                            {busyId === p.id ? 'Saving…' : 'Save'}
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -212,8 +237,8 @@ export default function PeopleCard() {
             </div>
 
             {history.length > 0 && (
-              <>
-                <div className="peopleHistoryTitle">Recent changes</div>
+              <details className="peopleLegend">
+                <summary>Recent role changes</summary>
                 <ul className="peopleHistory">
                   {history.map(h => (
                     <li key={h.id}>
@@ -228,7 +253,7 @@ export default function PeopleCard() {
                 <p className="helperText">
                   This history cannot be edited or removed, by anyone.
                 </p>
-              </>
+              </details>
             )}
           </>
         )}

@@ -147,12 +147,12 @@ export default function SendForReviewButton({ docType, model, pdfBlob, ensurePdf
   return (
     <div className="archiveFileRow">
       <label className="field">
-        <span>Anything they should know? (optional)</span>
+        <span>Note for the reviewer (optional)</span>
         <input
           type="text"
           value={note}
           onChange={e => setNote(e.target.value)}
-          placeholder="Still waiting on the witness statement"
+          placeholder="e.g. witness statement coming tomorrow"
           maxLength={200}
         />
       </label>
@@ -166,8 +166,7 @@ export default function SendForReviewButton({ docType, model, pdfBlob, ensurePdf
       </button>
       {phase === 'error' && <p className="archiveError">{message}</p>}
       <p className="helperText">
-        Goes to {goesTo} to look over and file. It leaves this device when you
-        send it &mdash; you can see where it got to under My Work.
+        Goes to {goesTo} to approve and file. After that you can find it under My Work.
       </p>
     </div>
   );

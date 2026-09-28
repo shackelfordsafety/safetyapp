@@ -595,6 +595,7 @@ html[data-theme='dark'] .btn.secondary { background: var(--surface-3); color: va
    inputs never blend into their parent card the way they would if they
    just reused --surface in both themes. */
 input[type=text], input[type=date], input[type=time], input[type=number],
+input[type=tel], input[type=email], input[type=datetime-local], input[type=search], input[type=password], input:not([type]),
 select, textarea {
   width: 100%;
   min-width: 0;
@@ -611,6 +612,7 @@ select, textarea {
   min-height: 44px;
 }
 input[type=text]:hover, input[type=date]:hover, input[type=time]:hover, input[type=number]:hover,
+input[type=tel]:hover, input[type=email]:hover, input[type=datetime-local]:hover, input[type=search]:hover, input[type=password]:hover, input:not([type]):hover,
 select:hover, textarea:hover { border-color: var(--line-strong); }
 textarea { resize: vertical; line-height: 1.5; min-height: 100px; }
 /* Content-aware height (see TA in main.jsx): starts small, grows with
@@ -1402,6 +1404,26 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 }
 .numberedSectionHelp { margin-top: -6px; }
 
+/* The Submit step's two cards (ReviewExportPanel) had their contents flush
+   against the card edge -- only the header was padded. */
+.reviewPanelCard { padding: 16px 20px 18px; display: grid; gap: 10px; }
+.reviewPanelCard > .cardHeader { padding: 0; }
+
+/* Submit's checklist, folded to one line once everything is done. */
+.readinessCollapsed > summary {
+  cursor: pointer; list-style: none; font-weight: 700; color: var(--good);
+  display: flex; justify-content: space-between; align-items: center; padding: 6px 0;
+}
+.readinessCollapsed > summary::-webkit-details-marker { display: none; }
+.readinessCollapsed > summary span { font-weight: 600; font-size: 13.5px; color: var(--text-2, var(--muted)); text-decoration: underline; }
+
+/* Said when a locked step is tapped (StepNav). */
+.stepNavLockedNote {
+  margin: 10px 0 0; padding: 10px 12px; border-radius: 10px;
+  background: var(--warn-tint); border: 1px solid var(--warn-border);
+  color: var(--text); font-size: 14.5px; line-height: 1.4;
+}
+
 /* SignerCard (FormPrimitives) -- one box per person on a Signatures step. */
 .signerCard {
   display: grid;
@@ -1969,8 +1991,30 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
    of explanation under it ("Every filed document. Approves nothing.") and
    that sentence is the part that stops somebody guessing wrong, so it gets
    full width instead of being squeezed into a column on a phone. */
-.peopleList { display: grid; gap: 2px; }
-.peopleRow { padding: 14px 0; border-bottom: 1px solid var(--line); }
+.peopleList { display: grid; gap: 0; }
+/* One line per person (2026-09-28, "the people screen is HUUUUUGE"): name
+   left, role picker right; the confirm row only on a changed one. */
+.peopleRow {
+  padding: 6px 0; border-bottom: 1px solid var(--line);
+  display: grid; grid-template-columns: 1fr minmax(150px, 220px); align-items: center; gap: 6px 12px;
+}
+.peopleRow.dirty { background: var(--warn-tint); margin: 0 -10px; padding: 10px; border-radius: 8px; }
+.peopleSelect { width: 100%; min-height: 40px; }
+.peopleConfirm { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; font-size: 13.5px; color: var(--text-2, var(--muted)); }
+.peopleConfirmBtns { display: flex; gap: 8px; }
+.peopleTools { display: grid; gap: 10px; margin-bottom: 8px; }
+.peopleSearch { width: 100%; min-height: 42px; }
+.peopleLegend { margin-top: 4px; }
+.peopleLegend > summary { cursor: pointer; font-weight: 600; font-size: 14px; color: var(--text-2, var(--muted)); padding: 6px 0; }
+.peopleLegend dl { margin: 6px 0 4px; display: grid; gap: 6px; }
+.peopleLegend dl div { display: grid; grid-template-columns: 130px 1fr; gap: 10px; font-size: 13.5px; }
+.peopleLegend dt { font-weight: 700; }
+.peopleLegend dd { margin: 0; color: var(--text-2, var(--muted)); }
+@media (max-width: 520px) {
+  .peopleRow { grid-template-columns: 1fr minmax(128px, 48%); }
+  .peopleSelect { font-size: 15px; padding-left: 8px; padding-right: 4px; }
+  .peopleLegend dl div { grid-template-columns: 1fr; gap: 0; }
+}
 .peopleRow:last-child { border-bottom: none; }
 .peopleWho strong { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14.5px; }
 .peopleNow { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }

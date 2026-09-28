@@ -63,7 +63,7 @@ async function generateOne(browser, { id, key, fixture, label, touch }) {
 
   // Generic step navigation: walk forward until Create Document is reachable.
   for (let step = 0; step < 12; step += 1) {
-    const create = page.getByRole('button', { name: /Create Document|Update the printout|Want a paper copy first/ });
+    const create = page.getByRole('button', { name: /Create Document|Update the printout|Print a copy|Want a paper copy first/ });
     if (await create.count() > 0 && await create.first().isVisible().catch(() => false)) {
       await create.first().click();
       break;

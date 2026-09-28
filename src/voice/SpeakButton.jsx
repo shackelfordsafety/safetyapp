@@ -90,10 +90,12 @@ export default function SpeakButton({ value, onChange, disabled = false, mode = 
         {isListening && !error && <span className="voiceStatus" role="status" aria-live="polite">Listening… tap Stop when finished.</span>}
         {error && <span className="voiceStatus voiceError" role="status" aria-live="polite">{error.message}</span>}
       </span>
-      {!isListening && !error && (
+      {/* "Speak clearly for the best results." used to sit under every mic
+          button, up to 7 times a page (tidiness audit, 2026-09-28). Only
+          the list tip is worth a line. */}
+      {!isListening && !error && mode === 'list' && (
         <span className="voiceGuidanceHint">
-          Speak clearly for the best results.
-          {mode === 'list' && ' Say each item as its own sentence, or say "next item."'}
+          Say each item as its own sentence, or say &ldquo;next item.&rdquo;
         </span>
       )}
     </span>

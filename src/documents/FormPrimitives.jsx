@@ -235,12 +235,15 @@ export function StepFooter({ onBack, onNext, hasBack, hasNext, nextLabel, backLa
        grayed out, i see it green w a check"). Still loses to "You are
        here" so a step doesn't lock itself out from under the user who's
        currently standing on it. */
-function stepRowState(step, activeStepId, checks, lockedIds, isTerminal) {
+function stepRowState(step, activeStepId, checks, lockedIds, isTerminal, earlierOk = true) {
   if (step.id === activeStepId) return { kind: 'current', text: 'You are here' };
   if (lockedIds && lockedIds.includes(step.id)) return { kind: 'locked', text: 'Locked' };
   const stepChecks = checks.filter(c => c.step === step.id);
   if (!stepChecks.length) {
-    if (!isTerminal) return { kind: 'done', text: 'Done' };
+    /* A step with nothing of its own to fill in (Review) is only done once
+       everything before it is -- it used to show a green check on a
+       completely blank form (tidiness audit, 2026-09-28). */
+    if (!isTerminal) return earlierOk ? { kind: 'done', text: 'Done' } : { kind: 'pending', text: 'Not started' };
     return checks.every(c => c.ok) ? { kind: 'done', text: 'Done' } : { kind: 'pending', text: 'Not started' };
   }
   const okCount = stepChecks.filter(c => c.ok).length;
@@ -269,21 +272,47 @@ function IconLockDot(props) {
    were complete. It could not reach "4 of 4" from anywhere, so a finished
    document never once read as finished (found 2026-09-25). Shared by all six
    document types through StepNav, so it said it six times over. */
-function stepIsComplete(step, checks, isTerminal) {
+function stepIsComplete(step, checks, isTerminal, earlierOk = true) {
   const stepChecks = checks.filter(c => c.step === step.id);
-  if (!stepChecks.length) return isTerminal ? checks.every(c => c.ok) : true;
+  if (!stepChecks.length) return isTerminal ? checks.every(c => c.ok) : earlierOk;
   return stepChecks.every(c => c.ok);
 }
 
 export function StepNav({ steps, activeStepId, checks, onJump, lockedIds, ariaLabel = 'Document steps' }) {
-  const rows = steps.map((s, i) => ({ step: s, ...stepRowState(s, activeStepId, checks, lockedIds, i === steps.length - 1) }));
+  const earlierOkAt = i => { const ids = steps.slice(0, i).map(x => x.id); return checks.filter(c => ids.includes(c.step)).every(c => c.ok); };
+  const rows = steps.map((s, i) => ({ step: s, ...stepRowState(s, activeStepId, checks, lockedIds, i === steps.length - 1, earlierOkAt(i)) }));
   /* A locked step is deliberately NOT counted even if its checks pass -- that
      is the whole reason locking exists (a default value can satisfy a step
      you cannot actually reach yet). Only 'current' is rehabilitated here. */
   const doneCount = rows.filter((r, i) =>
     r.kind === 'done'
-    || (r.kind === 'current' && stepIsComplete(r.step, checks, i === steps.length - 1))
+    || (r.kind === 'current' && stepIsComplete(r.step, checks, i === steps.length - 1, earlierOkAt(i)))
   ).length;
+
+  /* Tapping a locked step used to silently throw you onto a different step
+     with no word about why (tidiness audit, 2026-09-28). The workflow still
+     decides where to send you; this just says what is in the way. */
+  const [lockedNote, setLockedNote] = useState('');
+  useEffect(() => {
+    if (!lockedNote) return undefined;
+    const t = setTimeout(() => setLockedNote(''), 9000);
+    return () => clearTimeout(t);
+  }, [lockedNote]);
+  function jump(r) {
+    if (r.kind === 'locked') {
+      const missing = (checks || [])
+        .filter(c => !c.ok && c.step && !(lockedIds || []).includes(c.step) && c.step !== 'review')
+        .map(c => c.label);
+      const list = missing.slice(0, 4).join(', ') + (missing.length > 4 ? `, and ${missing.length - 4} more` : '');
+      setLockedNote(missing.length
+        ? `${r.step.label} opens once the earlier steps are done. Still needed: ${list}.`
+        : `${r.step.label} opens once the earlier steps are done.`);
+    } else {
+      setLockedNote('');
+    }
+    onJump(r.step.id);
+  }
+
   return (
     <nav className="stepNav" aria-label={ariaLabel}>
       <span className="stepNavHead">Steps &mdash; {doneCount} of {steps.length} done</span>
@@ -297,7 +326,7 @@ export function StepNav({ steps, activeStepId, checks, onJump, lockedIds, ariaLa
             aria-current={r.kind === 'current' ? 'step' : undefined}
             aria-label={`${r.step.label}: ${r.text}`}
             className={`stepNavRow ${r.kind}`}
-            onClick={() => onJump(r.step.id)}
+            onClick={() => jump(r)}
           >
             <span className="stepNavDot" aria-hidden="true">{r.kind === 'locked' ? <IconLockDot /> : r.kind === 'done' ? '✓' : r.kind === 'attention' ? '!' : i + 1}</span>
             <span className="stepNavText">
@@ -307,6 +336,7 @@ export function StepNav({ steps, activeStepId, checks, onJump, lockedIds, ariaLa
           </button>
         ))}
       </div>
+      {lockedNote && <p className="stepNavLockedNote" role="status">{lockedNote}</p>}
     </nav>
   );
 }
@@ -396,11 +426,11 @@ export function ReviewExportPanel({
   const remainingCount = checks.filter(c => !c.ok).length;
   return (
     <StepPanel title={title}>
-      <div className="card">
+      <div className="card reviewPanelCard">
         <div className="cardHeader">
           <strong>Readiness</strong>
         </div>
-        {status === 'draft' && (
+        {status === 'draft' && !checklistComplete && (
           <p className="helperText">
             {checklistComplete
               ? markReadyHintText
@@ -410,7 +440,17 @@ export function ReviewExportPanel({
               : `${remainingCount} ${remainingCount === 1 ? 'item' : 'items'} still needed — tap one to go straight to it.`}
           </p>
         )}
-        <ReadinessChecklist checks={checks} onJump={status === 'draft' ? onJumpCheck : undefined} />
+        {/* Everything done: one line, not a screen of green checks before
+            the button (tidiness audit, 2026-09-28). The list is still one
+            tap away. Anything missing shows the full list as before. */}
+        {checklistComplete && status === 'draft' ? (
+          <details className="readinessCollapsed">
+            <summary>✓ Everything&apos;s filled in <span>Show checklist</span></summary>
+            <ReadinessChecklist checks={checks} onJump={onJumpCheck} />
+          </details>
+        ) : (
+          <ReadinessChecklist checks={checks} onJump={status === 'draft' ? onJumpCheck : undefined} />
+        )}
         {status !== 'draft' && (
           <p className="helperText">Marked complete. Editing is locked while it's marked this way — creating or updating the PDF does not change this.</p>
         )}
@@ -429,7 +469,7 @@ export function ReviewExportPanel({
         )}
       </div>
 
-      <div className="card">
+      <div className="card reviewPanelCard">
         {/* ONE primary action: Submit. It was three taps, then two, because
             Submit went in UNDER a big primary "Create Document" that still
             read as the main thing to do -- Fonzo: "why does it still say
@@ -462,7 +502,7 @@ export function ReviewExportPanel({
               disabled={isGenerating}
               aria-busy={isGenerating}
             >
-              {isGenerating ? generatingLabel : (archiveFiling ? 'Want a paper copy first?' : generateLabel)}
+              {isGenerating ? generatingLabel : (archiveFiling ? 'Print a copy' : generateLabel)}
             </button>
           </div>
         )}
@@ -470,7 +510,7 @@ export function ReviewExportPanel({
         {onExportDraft && (
           <div className="reviewSecondaryActions">
             <button type="button" className="btn ghost sm" onClick={onExportDraft}>Send draft to someone else</button>
-            <span className="reviewAutosaveNote">Saves a file to text, email, or AirDrop — they pick up right where you left off, no need to finish the checklist first.</span>
+            <span className="reviewAutosaveNote">Saves a file you can text or AirDrop so someone else can finish it.</span>
           </div>
         )}
 

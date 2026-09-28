@@ -542,7 +542,8 @@ function StepReview({ incident, prev, pdfExportState, isPdfStale, onGeneratePdf,
       <div className="card">
         <div className="cardHeader">
           <strong>{c.readinessTitle}</strong>
-          <p>{headline}</p>
+          {/* "Still in progress" right above "everything is filled in" argued with itself (tidiness audit, 2026-09-28). */}
+          {!(status === 'draft' && checklistComplete) && <p>{headline}</p>}
         </div>
         {status === 'draft' && (
           <p className="helperText">
@@ -551,6 +552,7 @@ function StepReview({ incident, prev, pdfExportState, isPdfStale, onGeneratePdf,
               : `${checks.filter(k => !k.ok).length} ${checks.filter(k => !k.ok).length === 1 ? 'item' : 'items'} still needed — tap one to go straight to it.`}
           </p>
         )}
+        {status === 'draft' && checklistComplete ? null : (
         <div className="incidentReadinessList">
           {checks.map(chk => (
             <button
@@ -565,6 +567,7 @@ function StepReview({ incident, prev, pdfExportState, isPdfStale, onGeneratePdf,
             </button>
           ))}
         </div>
+        )}
         {/* "Mark Complete" is gone, 2026-09-11. It let the man writing the
             report decide it was finished, which took the DRAFT watermark
             off a document nobody had approved. Fonzo: "i don't want any
@@ -608,7 +611,7 @@ function StepReview({ incident, prev, pdfExportState, isPdfStale, onGeneratePdf,
         <div className="reviewPaperRow">
           {!isReady && (
             <button type="button" className="btn secondary" onClick={onGeneratePdf} disabled={isGenerating} aria-busy={isGenerating}>
-              {isGenerating ? c.generating : 'Want a paper copy first?'}
+              {isGenerating ? c.generating : 'Print a copy'}
             </button>
           )}
 

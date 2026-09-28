@@ -81,6 +81,9 @@ try {
         await page.waitForTimeout(500);
         await snap('2-device');
       }
+      await page.locator('.stepNav button', { hasText: /SUBMIT/i }).first().click();
+      await page.waitForTimeout(900);
+      await snap('5-submit');
       if (errors.length) console.log('  PAGE ERRORS:', errors.join(' | '));
       await ctx.close();
     }

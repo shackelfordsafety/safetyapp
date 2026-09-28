@@ -147,7 +147,7 @@ export const incidentCopy = {
        watermark was dropped on 2026-09-09. Nothing referenced them any
        more, so they sat here waiting to be wired back into a screen and
        tell somebody something untrue. */
-    markReadyHint: 'Everything required is filled in. Send it for review below.',
+    markReadyHint: '✓ Everything is filled in. Ready to send.',
     readyHeadline: 'This report is locked. Unlock it below to keep editing.',
     completedHeadline: 'This report is locked. Unlock it below to keep editing.',
     draftHeadline: 'This report is still in progress.',

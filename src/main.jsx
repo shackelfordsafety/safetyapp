@@ -4955,7 +4955,7 @@ function SettingsView({ settings, setSettings }) {
           <div className="settingsRow">
             <div className="rowInfo">
               <strong>Theme</strong>
-              <p>Light mode uses a navy-and-off-white workspace and is the primary experience. Dark mode uses layered navy surfaces with the same red accent.</p>
+              <p>Dark mode is easier on the eyes early in the morning.</p>
             </div>
             <button className="btn ghost" onClick={() => setSettings(prev => ({ ...prev, theme: settings.theme === 'dark' ? 'light' : 'dark' }))}>
               Switch to {settings.theme === 'dark' ? 'Light' : 'Dark'} Mode
@@ -4965,12 +4965,12 @@ function SettingsView({ settings, setSettings }) {
       </div>
 
       <div className="card">
-        <div className="cardHeader"><h3>Storage Workflow</h3></div>
+        <div className="cardHeader"><h3>Where your work is kept</h3></div>
         <div className="cardBody">
           <div className="workflowNotes">
-            <p><strong>Inside the app:</strong> Editable drafts, reusable templates, favorites, recent quick adds, custom quick adds, and settings. One active JSA draft is supported in this pilot build.</p>
-            <p><strong>Outside the app:</strong> Final PDFs should be saved to your device, OneDrive, iCloud, or a project folder after export.</p>
-            <p><strong>Important:</strong> All data is stored locally in your browser. Clearing browser data will remove saved drafts, templates, and custom items.</p>
+            {/* Rewritten 2026-09-28: the old card said "pilot build", told people to save PDFs to OneDrive, and said everything lived only in the browser -- all stale since sending for review and Records. */}
+            <p><strong>Anything you haven&apos;t sent yet</strong> (drafts in progress) lives only on this device. Don&apos;t clear Safari&apos;s website data or you&apos;ll lose it.</p>
+            <p><strong>Once it&apos;s sent for review or published,</strong> it&apos;s saved online. After it&apos;s approved it shows up in Records.</p>
           </div>
         </div>
       </div>
