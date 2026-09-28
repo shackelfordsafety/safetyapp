@@ -6,14 +6,13 @@
    See pdfDraw.js for why this exists and what it makes impossible. */
 
 import { createFormPdf, loadLogoPngBytes, fmtDate } from '../pdfDraw';
-import { WARNING_LEVELS, warningLevelLabel,  isVerbalWarning } from './disciplinaryModel';
+import { WARNING_LEVELS, warningLevelLabel } from './disciplinaryModel';
 
-// Verbal warnings are a coaching conversation, not a signed notice -- the
-// employee never signs (see DisciplinaryWorkflow.jsx's StepResponse). Shared
-// by the real PDF draw and the review-screen facsimile so the two note texts
-// can't drift apart.
+// Shared by the real PDF draw and the review-screen facsimile so the two
+// note texts can't drift apart. Verbal warnings used to print "No Employee
+// Signature Required" here; since 2026-09-28 (Fonzo) the employee signs
+// every level, verbal included.
 function employeeSigNote(model) {
-  if (isVerbalWarning(model)) return 'Verbal Warning — No Employee Signature Required';
   if (model.employeeRefusedToSign) return 'Refused / Unavailable to Sign';
   return null;
 }
@@ -81,17 +80,6 @@ async function withEmbeddedSignatures(doc, items) {
     : it)));
 }
 
-/* A verbal warning is the one exception to the three boxes. Nobody signs it
-   but the manager -- there is no employee signature and no witness, and
-   printing two boxes that say so would be louder than the notice. */
-function verbalOnlyRow(model) {
-  return {
-    label: signatureLine('Management', model.managerName),
-    dataUrl: model.managerSignatureData,
-    dateValue: fmtDate(model.managerSignatureDate),
-  };
-}
-
 const FORM_TITLE = 'EMPLOYEE DISCIPLINARY NOTICE FORM';
 
 /* Section wording is the paper form's own, verbatim — see the 2026-08-12
@@ -106,12 +94,11 @@ const SECTIONS = [
   [7, 'If behavior is not corrected/performance does not improve', 'ifNotCorrected'],
 ];
 
-// A verbal warning is a coaching conversation -- there's no formal statement
-// to take down, so section 4 is skipped (numbering intentionally keeps its
-// gap rather than renumbering, matching the paper form's own section
-// numbers used elsewhere, e.g. the "Section 5" readiness-check label).
-function sectionsForModel(model) {
-  return isVerbalWarning(model) ? SECTIONS.filter(([number]) => number !== 4) : SECTIONS;
+// Every level prints all seven sections. Verbal warnings used to skip
+// section 4; since 2026-09-28 (Fonzo) the employee gets their say on a
+// verbal warning too.
+function sectionsForModel() {
+  return SECTIONS;
 }
 
 export async function drawDisciplinaryPdf(model, onProgress) {
@@ -147,12 +134,6 @@ export async function drawDisciplinaryPdf(model, onProgress) {
 
   doc.space(8);
   doc.grayBar('Signatures');
-
-  if (isVerbalWarning(model)) {
-    doc.keepTogether(60);
-    doc.multiSignatureRow(await withEmbeddedSignatures(doc, [verbalOnlyRow(model)]));
-    return doc.finish();
-  }
 
   doc.note('Employee signature acknowledges receipt and does not necessarily indicate agreement.');
 
@@ -197,15 +178,10 @@ export function disciplinaryFacsimileBlocks(model) {
   blocks.push({ type: 'grayBar', text: 'Signatures' });
 
   /* Same call sequence as drawDisciplinaryPdf above, block for block --
-     verbal's single row, the receipt note, the witness statement, then one
-     three-across row. Sharing approvalPeople() is what keeps them honest:
-     this preview and the printed copy had already drifted apart once, when
-     the witness printed on paper and was missing here. */
-  if (isVerbalWarning(model)) {
-    blocks.push({ type: 'multiSignatureRow', items: [verbalOnlyRow(model)] });
-    return blocks;
-  }
-
+     the receipt note, the witness statement, then one three-across row.
+     Sharing approvalPeople() is what keeps them honest: this preview and
+     the printed copy had already drifted apart once, when the witness
+     printed on paper and was missing here. */
   blocks.push({ type: 'note', text: 'Employee signature acknowledges receipt and does not necessarily indicate agreement.' });
   if (model.witnessSignatureData || model.witnessName) {
     blocks.push({ type: 'note', text: model.witnessStatement || 'I was present when this was discussed.' });

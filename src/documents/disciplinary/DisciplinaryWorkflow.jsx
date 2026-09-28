@@ -1,7 +1,7 @@
 import { lazy, Suspense, useRef } from 'react';
 import {
   DISCIPLINARY_STEPS, WARNING_LEVELS,
-  getDisciplinaryReadinessChecks, isDisciplinaryReady, isDisciplinaryPrintFinal, isVerbalWarning,
+  getDisciplinaryReadinessChecks, isDisciplinaryReady, isDisciplinaryPrintFinal,
   disciplinaryStepStatus, employeeSignMethod, EMPLOYEE_SIGN_METHODS,
 } from './disciplinaryModel';
 import { disciplinaryFacsimileBlocks } from './disciplinaryPdfDraw';
@@ -60,11 +60,9 @@ function StepNotice({ model, upd, next }) {
           employeeStatement in disciplinaryModel.js for why it stopped
           being, and why that reason no longer holds.
 
-          Skipped entirely for a verbal warning, which is a coaching
-          conversation with no formal statement to take down -- the same
-          rule sectionsForModel applies when printing. */}
-      {!isVerbalWarning(model) && (
-        <NumberedSection number={4} title="Employee Statement" help="The employee's own words. Type what they say, or leave it blank and the notice prints a ruled box for them to write in by hand.">
+          Used to be skipped for a verbal warning. Fonzo, 2026-09-28: verbal
+          warnings get the employee's side too, same as every other level. */}
+      <NumberedSection number={4} title="Employee Statement" help="The employee's own words. Type what they say, or leave it blank and the notice prints a ruled box for them to write in by hand.">
           {/* If he wrote it himself on his own phone, it stops being
               something anybody here can retype. See EmployeeOwned. */}
           <EmployeeOwned when={model.employeeResponseAt}>
@@ -85,7 +83,6 @@ function StepNotice({ model, upd, next }) {
             </p>
           )}
         </NumberedSection>
-      )}
 
       <StepFooter hasNext onNext={next} />
     </StepPanel>
@@ -172,13 +169,9 @@ function witnessStatementFor(model) {
 }
 
 function StepSignatures({ model, upd, prev, next }) {
-  const verbal = isVerbalWarning(model);
   const method = employeeSignMethod(model);
   return (
     <StepPanel title="Signatures" intro="Everyone signs here — management, the employee, and a witness who was in the room. Nothing has to be printed to be signed.">
-      {verbal && (
-        <p className="helperText">A verbal warning is a coaching conversation, not a signed notice — the employee doesn&apos;t sign this at all. Document what was said in Notice Details; only management signs below.</p>
-      )}
       <div className="formPairRow">
         <SignaturePad label="Management Signature" value={model.managerSignatureData} onChange={data => upd({ managerSignatureData: data, managerSignatureDate: data ? today() : model.managerSignatureDate })} />
         <Field label="Management Signature Date" type="date" value={model.managerSignatureDate} onChange={v => upd({ managerSignatureDate: v })} />
@@ -199,10 +192,10 @@ function StepSignatures({ model, upd, prev, next }) {
         happen to be the same person. This is the name that prints under the signature.
       </p>
 
-      {/* A verbal warning is not signed by anybody but the manager, so none
-          of the rest of this belongs on screen for one. */}
-      {!verbal && (
-        <>
+      {/* Every level, verbal included (Fonzo, 2026-09-28). This used to be
+          hidden for a verbal warning, which is how the QR code went missing
+          on one. */}
+      <>
           {/* ONE QUESTION, THEN ONE ROAD. The QR panel and the signature
               pads used to sit on screen together, so it read as though the
               employee was going to scan a code AND sign the iPad. Fonzo:
@@ -320,8 +313,7 @@ function StepSignatures({ model, upd, prev, next }) {
             <Field label="Witness Name and Title" value={model.witnessName} onChange={v => upd({ witnessName: v })} />
           </div>
           <p className="helperText">{witnessStatementFor(model)}</p>
-        </>
-      )}
+      </>
 
       <StepFooter hasBack hasNext onBack={prev} onNext={next} nextLabel="Go to Review" />
     </StepPanel>

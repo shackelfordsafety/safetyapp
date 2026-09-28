@@ -170,8 +170,10 @@ export const DISCIPLINARY_STEPS = [
   { id: 'export', label: 'Submit', helper: 'Send it for review, or make a paper copy' },
 ];
 
-// A verbal warning is a coaching conversation, not a signed notice -- the
-// employee never signs it (see disciplinaryPdfDraw.js's employeeSigNote).
+// Verbal warnings used to skip the employee's statement and signature
+// entirely. Since 2026-09-28 (Fonzo) they don't -- every level gets the
+// employee's side -- so nothing branches on this any more. Kept exported
+// in case something outside this folder still asks.
 export function isVerbalWarning(model) {
   return model.warningLevel === 'verbal';
 }
