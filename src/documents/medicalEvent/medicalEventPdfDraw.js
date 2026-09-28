@@ -9,8 +9,8 @@
 import { createFormPdf, loadLogoPngBytes, fmtDate } from '../pdfDraw';
 import {
   SYMPTOM_ONSET_OPTIONS, RESPONSE_ACTIONS, MEDICAL_EVALUATION_TYPES, WORK_STATUS_OPTIONS,
-  INITIAL_CLASSIFICATIONS, MEDICAL_ATTACHMENT_OPTIONS,
-  
+  INITIAL_CLASSIFICATIONS, MEDICAL_ATTACHMENT_OPTIONS, printedEmployeeSignature,
+
 } from './medicalEventModel';
 
 const FORM_TITLE = 'EMPLOYEE MEDICAL EVENT FORM';
@@ -109,8 +109,8 @@ export async function drawMedicalEventPdf(model, onProgress) {
   doc.signatureRow({
     label: 'Employee Signature (if able)',
     nameValue: model.employeeSignatureName || model.employeeName,
-    image: await doc.embedSignature(model.employeeSignatureData),
-    dateValue: fmtDate(model.employeeSignatureDate),
+    image: await doc.embedSignature(printedEmployeeSignature(model).data),
+    dateValue: fmtDate(printedEmployeeSignature(model).date),
   });
   doc.signatureRow({
     label: 'Safety / Supervisor Signature',
@@ -193,8 +193,8 @@ export function medicalEventFacsimileBlocks(model) {
     type: 'signatureRow',
     label: 'Employee Signature (if able)',
     nameValue: model.employeeSignatureName || model.employeeName,
-    dataUrl: model.employeeSignatureData,
-    dateValue: fmtDate(model.employeeSignatureDate),
+    dataUrl: printedEmployeeSignature(model).data,
+    dateValue: fmtDate(printedEmployeeSignature(model).date),
   });
   blocks.push({
     type: 'signatureRow',

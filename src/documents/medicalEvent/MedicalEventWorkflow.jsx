@@ -1,19 +1,21 @@
-import { useRef } from 'react';
+import { lazy, Suspense, useRef } from 'react';
 import {
   MEDICAL_EVENT_STEPS,
   SYMPTOM_ONSET_OPTIONS, RESPONSE_ACTIONS, MEDICAL_EVALUATION_TYPES, WORK_STATUS_OPTIONS, INITIAL_CLASSIFICATIONS,
   MEDICAL_ATTACHMENT_OPTIONS,
   getMedicalEventReadinessChecks, isMedicalEventReady, isMedicalEventPrintFinal,
-  medicalEventStepStatus,
+  medicalEventStepStatus, employeeSignMethod, EMPLOYEE_SIGN_METHODS,
 } from './medicalEventModel';
 import { medicalEventFacsimileBlocks } from './medicalEventPdfDraw';
 import {
   Field, TextAreaField, SegmentedToggle, ChipGroup, StepPanel, StepFooter,
   BuilderHeader, StepNav, ReviewExportPanel, ReadinessChecklist, SignaturePad, DocFacsimile,
-  useIsTouchPrimary, useElementWidth,
+  useIsTouchPrimary, useElementWidth, EmployeeOwned,
 } from '../FormPrimitives';
 import { LockedContext } from '../lockedContext';
 import { downloadDraftFile, buildDraftFilename } from '../../shared/draftTransfer';
+
+const EmployeeHandoffPanel = lazy(() => import('../../employee/EmployeeHandoffPanel'));
 
 function toggleInList(list, item) {
   return (list || []).includes(item) ? list.filter(x => x !== item) : [...(list || []), item];
@@ -140,15 +142,87 @@ function StepReview({ checks, prev, next, onJumpCheck }) {
   );
 }
 
-/* ── Step: Signature — Safety/Supervisor only. The employee doesn't sign
-   digitally in this app at all (Fonzo, 2026-08-29: "the only thing i wanted
-   digitized is the superintendent, foreman, safety parts") -- an employee
-   name field stays available since it's just metadata, printed above a
-   blank line, not something authored by the employee. ── */
+function today() { return new Date().toISOString().slice(0, 10); }
+
+function fmtWhen(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return 'their own device';
+  return d.toLocaleString(undefined, {
+    month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
+  });
+}
+
+/* ── Step: Signatures. Safety/Supervisor always signs. The employee signs
+   only "if able" -- on 2026-08-29 Fonzo only wanted the supervisor side
+   digital, which left the employee line printing blank every time. On
+   2026-09-28 he asked for anything an employee fills in to be doable from
+   their own phone, so the employee line gets the same fork Separation
+   uses: their phone, this device, or not signing. Still never required. ── */
 function StepSignatures({ model, upd, prev, next }) {
+  const method = employeeSignMethod(model);
+  const empLabel = model.employeeName ? `${model.employeeName} — Employee Signature` : 'Employee Signature';
   return (
-    <StepPanel title="Signatures" intro="Safety/Supervisor signs here. Leave a name blank to print the employee/supervisor named on Event & Response.">
+    <StepPanel title="Signatures" intro="Safety/Supervisor signs here. The employee can sign too, if able. Leave a name blank to print the employee/supervisor named on Event & Response.">
       <Field label="Employee Name (printed)" value={model.employeeSignatureName} placeholder={model.employeeName} onChange={v => upd({ employeeSignatureName: v })} />
+
+      <EmployeeOwned when={model.employeeResponseAt}>
+        <SegmentedToggle
+          label="How is the employee signing?"
+          value={method}
+          onChange={v => upd({ employeeSignMethod: v })}
+          options={EMPLOYEE_SIGN_METHODS}
+        />
+      </EmployeeOwned>
+
+      {method === 'phone' && (
+        <Suspense fallback={null}>
+          <EmployeeHandoffPanel
+            docType="medicalEvent"
+            model={model}
+            employeeName={model.employeeName}
+            needs={['signature']}
+            respondedAt={model.employeeResponseAt}
+            onReceived={answer => (answer.signatureData ? upd({
+              employeeSignatureData: answer.signatureData,
+              employeeSignatureDate: today(),
+              employeeResponseAt: answer.respondedAt || new Date().toISOString(),
+            }) : null)}
+          />
+        </Suspense>
+      )}
+
+      {method === 'phone' && model.employeeResponseAt && (
+        <>
+          <EmployeeOwned when>
+            <div className="formPairRow">
+              <SignaturePad label={empLabel} value={model.employeeSignatureData} onChange={() => {}} />
+              <Field label="Employee Signature Date" type="date" value={model.employeeSignatureDate} onChange={() => {}} />
+            </div>
+          </EmployeeOwned>
+          <p className="helperText">
+            Signed by {model.employeeName || 'the employee'} on their own phone on{' '}
+            {fmtWhen(model.employeeResponseAt)}. Nobody here can replace or remove it.
+          </p>
+        </>
+      )}
+
+      {method === 'device' && (
+        <div className="formPairRow">
+          <SignaturePad
+            label={empLabel}
+            value={model.employeeSignatureData}
+            onChange={data => upd({ employeeSignatureData: data, employeeSignatureDate: data ? today() : model.employeeSignatureDate })}
+          />
+          <Field label="Employee Signature Date" type="date" value={model.employeeSignatureDate} onChange={v => upd({ employeeSignatureDate: v })} />
+        </div>
+      )}
+
+      {method === 'none' && (
+        <p className="helperText">
+          The employee line prints blank. That&rsquo;s fine &mdash; it&rsquo;s marked &ldquo;if able&rdquo; on the form.
+          {model.employeeSignatureData ? ' There is a signature saved from earlier — it will not print while this is selected.' : ''}
+        </p>
+      )}
 
       <div className="formPairRow">
         <SignaturePad label="Safety / Supervisor Signature" value={model.supervisorSignatureData} onChange={data => upd({ supervisorSignatureData: data, supervisorSignatureDate: data ? new Date().toISOString().slice(0, 10) : model.supervisorSignatureDate })} />

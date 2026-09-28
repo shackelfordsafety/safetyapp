@@ -1,4 +1,4 @@
-import { useId, useRef, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useId, useRef, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import {
   INCIDENT_STEPS, INJURY_NATURE_OPTIONS, CAUSE_CATEGORIES, causeKey,
   emptyWitness, emptyTeamMember, getIncidentReadinessChecks, isIncidentReady, printedIncidentFingerprint,
@@ -10,12 +10,14 @@ import IncidentPhotos from './IncidentPhotos';
 import { IncidentPageShell, Page1Content } from './IncidentPdf';
 import { buildIncidentPagePlan } from './incidentPdfGenerate';
 import { LockedContext, useLocked } from '../documents/lockedContext';
-import { ConfirmDialog, StepNav } from '../documents/FormPrimitives';
+import { ConfirmDialog, StepNav, SegmentedToggle, EmployeeOwned } from '../documents/FormPrimitives';
 import SpeakButton from '../voice/SpeakButton';
 import FileToArchiveButton from '../archive/FileToArchiveButton';
 import SubmitArea from '../open/SubmitArea';
 import { ARCHIVE_FILING_ENABLED } from '../archive/filingEnabled';
 import { downloadDraftFile, buildDraftFilename } from '../shared/draftTransfer';
+
+const EmployeeHandoffPanel = lazy(() => import('../employee/EmployeeHandoffPanel'));
 
 /* Touch/width layout detection, duplicated from main.jsx's private
    useIsTouchPrimary/useElementWidth rather than imported -- this module is
@@ -280,7 +282,31 @@ function StepInjury({ incident, upd, prev, next }) {
   );
 }
 
-/* ── Step: Witnesses ── */
+/* ── Step: Witnesses ──
+   Each witness can write and sign their statement on their own phone
+   (Fonzo, 2026-09-28: anything that needs input from somebody other than
+   the person building the form should be doable by QR code or link).
+
+   What goes to the phone is ONLY what that witness needs to know which
+   incident this is -- date, time, where. Not the injured person's name,
+   injuries, or anything else on the report: a coworker has no business
+   reading someone's medical details to give a statement about what they
+   saw. */
+function witnessMethod(w) {
+  if (w.signMethod) return w.signMethod;
+  return w.responseAt ? 'phone' : 'device';
+}
+
+function witnessHandoffSnapshot(incident, w) {
+  return {
+    witnessName: w.name || '',
+    incidentDate: incident.incidentDate || '',
+    incidentTime: incident.incidentTime || '',
+    workplaceLocation: incident.workplaceLocation || '',
+    incidentSpecificLocation: incident.incidentSpecificLocation || '',
+  };
+}
+
 function StepWitnesses({ incident, upd, prev, next }) {
   const c = t.witnesses;
   const locked = useLocked();
@@ -291,6 +317,21 @@ function StepWitnesses({ incident, upd, prev, next }) {
   }
   function updWitness(id, patch) {
     upd({ witnesses: witnesses.map(w => (w.id === id ? { ...w, ...patch } : w)) });
+  }
+  /* Their answer lands seconds after the code was drawn, so it is patched
+     onto the latest incident, not the one this render saw. An empty
+     statement must not wipe one typed for them earlier. */
+  function receiveWitness(id, answer) {
+    upd(prevIncident => ({
+      witnesses: (prevIncident.witnesses || []).map(w => (w.id !== id ? w : {
+        ...w,
+        ...(answer.statement ? { statement: answer.statement } : {}),
+        ...(answer.signatureData
+          ? { signatureData: answer.signatureData, signatureDate: new Date().toISOString().slice(0, 10) }
+          : {}),
+        responseAt: answer.respondedAt || new Date().toISOString(),
+      })),
+    }));
   }
   function removeWitness(id) {
     if (locked) return;
@@ -317,11 +358,44 @@ function StepWitnesses({ incident, upd, prev, next }) {
               <Field label={c.email} type="email" value={w.email} onChange={v => updWitness(w.id, { email: v })} />
             </div>
           </div>
-          <TextAreaField label={c.statement} rows={3} value={w.statement} onChange={v => updWitness(w.id, { statement: v })} voice />
-          <div className="formPairRow">
-            <SignaturePad label={c.signature} value={w.signatureData} onChange={data => updWitness(w.id, { signatureData: data, signatureDate: data ? new Date().toISOString().slice(0, 10) : w.signatureDate })} />
-            <Field label={c.signatureDate} type="date" value={w.signatureDate} onChange={v => updWitness(w.id, { signatureDate: v })} />
-          </div>
+          {/* Same fork as the disciplinary/separation employee signature:
+              pick one road, change it any time until they've answered.
+              "On this device" is the default so a witness added before this
+              existed (or one being interviewed right here) works as it
+              always did. */}
+          <EmployeeOwned when={w.responseAt}>
+            <SegmentedToggle
+              label={c.method}
+              value={witnessMethod(w)}
+              onChange={v => updWitness(w.id, { signMethod: v })}
+              options={[{ value: 'device', label: c.methodDevice }, { value: 'phone', label: c.methodPhone }]}
+            />
+          </EmployeeOwned>
+          {witnessMethod(w) === 'phone' && !locked && !w.responseAt && !String(w.name || '').trim() && (
+            <p className="helperText">{c.needsName}</p>
+          )}
+          {witnessMethod(w) === 'phone' && !locked && (
+            <Suspense fallback={null}>
+              <EmployeeHandoffPanel
+                docType="incidentWitness"
+                model={witnessHandoffSnapshot(incident, w)}
+                employeeName={w.name}
+                needs={['statement', 'signature']}
+                respondedAt={w.responseAt}
+                onReceived={answer => receiveWitness(w.id, answer)}
+              />
+            </Suspense>
+          )}
+          {(witnessMethod(w) === 'device' || w.responseAt) && (
+            <EmployeeOwned when={w.responseAt}>
+              <TextAreaField label={c.statement} rows={3} value={w.statement} onChange={v => updWitness(w.id, { statement: v })} voice />
+              <div className="formPairRow">
+                <SignaturePad label={c.signature} value={w.signatureData} onChange={data => updWitness(w.id, { signatureData: data, signatureDate: data ? new Date().toISOString().slice(0, 10) : w.signatureDate })} />
+                <Field label={c.signatureDate} type="date" value={w.signatureDate} onChange={v => updWitness(w.id, { signatureDate: v })} />
+              </div>
+            </EmployeeOwned>
+          )}
+          {w.responseAt && <p className="helperText">{c.sentBack}</p>}
         </div>
       ))}
       {!locked && (witnesses.length < 3
@@ -599,7 +673,10 @@ export default function IncidentWorkflow({
   );
   function upd(patch) {
     setIncident(prev => {
-      const next = { ...prev, ...patch };
+      // A function patch is worked out against the LATEST incident, for
+      // callers that answer later than the render they came from (a
+      // witness's phone answering a code, seconds after it was shown).
+      const next = { ...prev, ...(typeof patch === 'function' ? patch(prev) : patch) };
       // Editing any printed field after the report was marked ready/completed
       // returns it to draft (and clears completedAt) -- a "final" PDF must
       // never silently go stale without the user having to notice and

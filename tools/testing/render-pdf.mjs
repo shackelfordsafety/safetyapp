@@ -20,7 +20,7 @@ const scale = Number(scaleArg || 2);
 
 const b64 = readFileSync(path.resolve(pdfPath)).toString('base64');
 
-const browser = await chromium.launch();
+const browser = await chromium.launch().catch(() => chromium.launch({ channel: 'chrome' }));
 const page = await browser.newPage({ viewport: { width: 900, height: 900 } });
 page.on('console', m => { if (m.type() === 'error') console.log('  page error:', m.text()); });
 

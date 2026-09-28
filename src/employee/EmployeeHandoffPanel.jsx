@@ -22,6 +22,32 @@ import './employee.css';
    work and the notice can still be finished. A handoff that can trap a
    document half-done would be worse than no handoff at all. */
 
+/* The words on this panel, per kind of request. The notice wording is the
+   original; the rest say what the other person is actually being asked. */
+const PANEL_COPY = {
+  notice: {
+    intro: 'They scan one code and get the whole notice to read, a box for their statement, and somewhere to sign. Nothing leaves your hands.',
+    doneWithStatement: 'Their statement and signature are on the notice now.',
+    doneSignatureOnly: 'Their signature is on the notice now. They chose not to give a statement.',
+    already: 'What they wrote and signed is on the notice below and cannot be changed here.',
+    redo: 'Only if it genuinely has to be redone. A new code replaces what they sent the first time on this notice.',
+  },
+  medicalEvent: {
+    intro: 'They scan one code, read the form, and sign it on their phone. Nothing leaves your hands.',
+    doneWithStatement: 'Their signature is on the form now.',
+    doneSignatureOnly: 'Their signature is on the form now.',
+    already: 'Their signature is on the form below and cannot be changed here.',
+    redo: 'Only if it genuinely has to be redone. A new code replaces the signature they sent the first time.',
+  },
+  incidentWitness: {
+    intro: 'They scan one code and get a box to write what they saw and somewhere to sign. They see the incident date and location only — not the rest of the report.',
+    doneWithStatement: 'Their statement and signature are in this witness slot now.',
+    doneSignatureOnly: 'Their signature is in this witness slot now.',
+    already: 'What they wrote and signed is below and cannot be changed here.',
+    redo: 'Only if it genuinely has to be redone. A new code replaces what they sent the first time.',
+  },
+};
+
 function QrImage({ url }) {
   const [png, setPng] = useState('');
   useEffect(() => {
@@ -55,6 +81,7 @@ export default function EmployeeHandoffPanel({ docType, model, employeeName, nee
      stray tap away. */
   const [redoing, setRedoing] = useState(false);
   const timer = useRef(null);
+  const copy = PANEL_COPY[docType] || PANEL_COPY.notice;
 
   const stop = useCallback(() => { clearInterval(timer.current); timer.current = null; }, []);
   useEffect(() => stop, [stop]);
@@ -102,12 +129,12 @@ export default function EmployeeHandoffPanel({ docType, model, employeeName, nee
   if (received) {
     return (
       <div className="card empPanel empPanelDone">
-        <div className="cardHeader"><strong>The employee sent their part back</strong></div>
+        <div className="cardHeader">
+          <strong>{docType === 'incidentWitness' ? 'The witness sent their statement back' : 'The employee sent their part back'}</strong>
+        </div>
         <div className="cardBody">
           <p className="empMuted">
-            {received.statement
-              ? 'Their statement and signature are on the notice now.'
-              : 'Their signature is on the notice now. They chose not to give a statement.'}
+            {received.statement ? copy.doneWithStatement : copy.doneSignatureOnly}
           </p>
         </div>
       </div>
@@ -132,16 +159,12 @@ export default function EmployeeHandoffPanel({ docType, model, employeeName, nee
         <div className="cardHeader"><strong>They have already done their part</strong></div>
         <div className="cardBody">
           <p className="empMuted">
-            {employeeName || 'The employee'} sent it back {said}. What they wrote and
-            signed is on the notice below and cannot be changed here.
+            {employeeName || 'They'} sent it back {said}. {copy.already}
           </p>
           <button type="button" className="btn ghost sm" onClick={() => setRedoing(true)}>
             Ask them again
           </button>
-          <p className="empMuted">
-            Only if it genuinely has to be redone. A new code replaces what they sent
-            the first time on this notice.
-          </p>
+          <p className="empMuted">{copy.redo}</p>
         </div>
       </div>
     );
@@ -151,11 +174,12 @@ export default function EmployeeHandoffPanel({ docType, model, employeeName, nee
     return (
       <div className="card empPanel">
         <div className="cardHeader">
-          <strong>Let the employee do their part on their own phone</strong>
-          <p>
-            They scan one code and get the whole notice to read, a box for their
-            statement, and somewhere to sign. Nothing leaves your hands.
-          </p>
+          <strong>
+            {docType === 'incidentWitness'
+              ? 'Let the witness do this on their own phone'
+              : 'Let the employee do their part on their own phone'}
+          </strong>
+          <p>{copy.intro}</p>
         </div>
         <div className="cardBody">
           {error && <p className="empError">{error}</p>}

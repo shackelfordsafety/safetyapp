@@ -118,6 +118,13 @@ export function emptyMedicalEvent() {
     employeeSignatureName: '',
     employeeSignatureData: null, // employee may not always be able to sign
     employeeSignatureDate: '',
+    // How the employee is signing: '' (not asked yet) | 'phone' | 'device' |
+    // 'none'. Same fork as Disciplinary/Separation. Still optional -- the
+    // line says "if able" and nothing requires it.
+    employeeSignMethod: '',
+    // Set when the employee signed on their own phone. Seals their signature
+    // on this device (see EmployeeOwned in FormPrimitives).
+    employeeResponseAt: '',
     supervisorSignatureName: '',
     supervisorSignatureData: null,
     supervisorSignatureDate: '',
@@ -157,6 +164,28 @@ export const MEDICAL_EVENT_STEPS = [
   { id: 'export', label: 'Submit', helper: 'Send it for review, or make a paper copy' },
 ];
 
+/* Same fork as Separation's employeeSignMethod: derived, so a report saved
+   before this question existed opens on the path it was already on. */
+export function employeeSignMethod(model) {
+  if (model?.employeeSignMethod) return model.employeeSignMethod;
+  if (model?.employeeResponseAt) return 'phone';
+  if (model?.employeeSignatureData) return 'device';
+  return '';
+}
+
+export const EMPLOYEE_SIGN_METHODS = [
+  { value: 'phone', label: 'On their own phone' },
+  { value: 'device', label: 'On this device' },
+  { value: 'none', label: 'They are not signing', tone: 'no' },
+];
+
+/* What prints on the employee line. "Not signing" wins over a signature
+   left over from before the answer was changed. */
+export function printedEmployeeSignature(model) {
+  if (employeeSignMethod(model) === 'none') return { data: null, date: '' };
+  return { data: model.employeeSignatureData, date: model.employeeSignatureDate };
+}
+
 export function getMedicalEventReadinessChecks(model) {
   const has = v => String(v || '').trim().length > 0;
   const checks = [
@@ -167,8 +196,9 @@ export function getMedicalEventReadinessChecks(model) {
     { key: 'symptomsOnset', label: 'When symptoms first appeared', ok: has(model.symptomsOnset), step: 'condition' },
     { key: 'specificWorkEventReported', label: 'Specific work event/exposure question answered', ok: has(model.specificWorkEventReported), step: 'condition' },
     { key: 'initialClassification', label: 'Initial classification selected', ok: has(model.initialClassification), step: 'evaluation' },
-    // Employee signature stays optional ("if able") -- the app never asks
-    // the employee to sign. Only the Safety/Supervisor signature is required.
+    // Employee signature stays optional ("if able") -- it can be collected
+    // (on this device or their phone) but is never required. Only the
+    // Safety/Supervisor signature is.
     { key: 'supervisorSignature', label: 'Safety / Supervisor signature', ok: Boolean(model.supervisorSignatureData), step: 'signatures' },
   ];
   if (model.specificWorkEventReported === 'yes') {

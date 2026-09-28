@@ -80,6 +80,11 @@ export const incidentCopy = {
     signatureDate: 'Date',
     empty: 'No witnesses added yet.',
     maxReached: 'Maximum of 3 witnesses reached.',
+    method: 'How is this witness giving their statement?',
+    methodPhone: 'On their own phone',
+    methodDevice: 'On this device',
+    needsName: 'Put the witness’s name in first, so their phone shows who it’s for.',
+    sentBack: 'Written and signed by the witness on their own phone. Nobody here can change it.',
   },
   property: {
     title: 'Property Damage',

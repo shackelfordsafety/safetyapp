@@ -49,6 +49,12 @@
 .empMuted + .empTextarea,
 .empMuted + .signaturePad { margin-top: 10px; }
 
+/* Which incident a witness statement is about. */
+.empFacts { margin: 0; display: grid; gap: 8px; }
+.empFacts div { display: grid; grid-template-columns: 7.5em 1fr; gap: 10px; }
+.empFacts dt { color: var(--text-2, var(--muted)); font-size: 14px; }
+.empFacts dd { margin: 0; font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
+
 /* The notice itself. It gets its own scroll so a long write-up cannot push
    the signature so far down the page that somebody signs without reaching
    it -- the whole point is that he read it. */

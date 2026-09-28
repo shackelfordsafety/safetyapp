@@ -130,6 +130,11 @@ export function emptyWitness() {
     statement: '',
     signatureData: null,
     signatureDate: '',
+    // 'device' (typed/signed here) | 'phone' (QR to their own phone). Blank
+    // means device -- see witnessMethod in IncidentWorkflow.
+    signMethod: '',
+    // Set when they answered on their own phone; seals statement+signature.
+    responseAt: '',
   };
 }
 
