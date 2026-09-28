@@ -1,6 +1,7 @@
 import { readableColumns } from './board';
 import { formatPhone, isDialable, phoneDigits } from '../shared/phone';
 import './jsaContents.css';
+import { CREW_TEXT_EN, STANDARD_ACK_EN } from './crewText';
 
 /* ── The JSA, readable ───────────────────────────────────────────────────
    Shared by the crew sign-in page (a man reading what he is about to sign)
@@ -20,7 +21,7 @@ function mapsHref(address) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 }
 
-function MapLine({ label, name, address }) {
+function MapLine({ label, name, address, directions = 'directions' }) {
   const hasName = String(name || '').trim();
   const hasAddress = String(address || '').trim();
   if (!hasName && !hasAddress) return null;
@@ -31,7 +32,7 @@ function MapLine({ label, name, address }) {
         {hasName}
         {hasAddress && (
           <a className="jsaMapLink" href={mapsHref(hasAddress)} target="_blank" rel="noopener noreferrer">
-            {hasName ? `${hasAddress} — directions` : `${hasAddress} — directions`}
+            {`${hasAddress} — ${directions}`}
           </a>
         )}
       </strong>
@@ -76,34 +77,51 @@ function ListBox({ title, items }) {
   );
 }
 
-export default function JsaContents({ jsa, title = 'The JSA' }) {
+/* `t` is the crew page's words (crewText.jsx) -- English unless the crew
+   member picked Español. Everything the superintendent TYPED is shown as
+   written, in whatever language he wrote it; only the app's own labels
+   change. */
+export default function JsaContents({ jsa, title, t = CREW_TEXT_EN }) {
   if (!jsa) return null;
   const cols = readableColumns(jsa);
+  const ack = String(jsa.acknowledgement || '').trim();
+  /* The Spanish acknowledgement is only shown for the company's standard
+     wording -- a translation of text somebody edited would be a guess. */
+  const ackIsStandard = ack.replace(/\s+/g, ' ') === STANDARD_ACK_EN;
   return (
     <div className="jsaDoc">
-      <div className="jsaDocTitle">{title}</div>
+      <div className="jsaDocTitle">{title || t.docTitle}</div>
 
-      <Line label="Area" value={jsa.area} />
-      <Line label="Job site" value={jsa.jobSite} />
-      <Line label="Location" value={jsa.location} />
-      <Line label="Job #" value={jsa.jobNumber} />
-      <Line label="Supervisor" value={jsa.superintendentForeman} />
-      <Line label="Overall task" value={jsa.overallWorkTask} />
-      <Line label="Good from" value={[jsa.timeIssued, jsa.timeExpired].filter(Boolean).join(' to ')} />
-      <PhoneLine label="Superintendent" value={jsa.siteContactPhone} />
-      <PhoneLine label="Emergency" value={jsa.emergencyPhone} />
-      <MapLine label="Nearest medical" name={jsa.nearestMedicalFacility} address={jsa.nearestMedicalAddress} />
-      <Line label="Muster point" value={jsa.musterPoint} />
-      <Line label="Tailgate topic" value={jsa.tailgateTopic} />
+      <Line label={t.area} value={jsa.area} />
+      <Line label={t.jobSite} value={jsa.jobSite} />
+      <Line label={t.location} value={jsa.location} />
+      <Line label={t.jobNumber} value={jsa.jobNumber} />
+      <Line label={t.supervisor} value={jsa.superintendentForeman} />
+      <Line label={t.overallTask} value={jsa.overallWorkTask} />
+      <Line label={t.goodFrom} value={[jsa.timeIssued, jsa.timeExpired].filter(Boolean).join(` ${t.to} `)} />
+      <PhoneLine label={t.superintendent} value={jsa.siteContactPhone} />
+      <PhoneLine label={t.emergency} value={jsa.emergencyPhone} />
+      <MapLine label={t.nearestMedical} name={jsa.nearestMedicalFacility} address={jsa.nearestMedicalAddress} directions={t.directions} />
+      <Line label={t.musterPoint} value={jsa.musterPoint} />
+      <Line label={t.tailgateTopic} value={jsa.tailgateTopic} />
 
-      <ListBox title="Today's tasks" items={cols.tasks} />
-      <ListBox title="Hazards" items={cols.hazards} />
-      <ListBox title="Controls" items={cols.controls} />
+      {t.typedAsWritten && <p className="jsaAsWritten">{t.typedAsWritten}</p>}
+      <ListBox title={t.tasks} items={cols.tasks} />
+      <ListBox title={t.hazards} items={cols.hazards} />
+      <ListBox title={t.controls} items={cols.controls} />
 
-      {String(jsa.acknowledgement || '').trim() && (
+      {ack && (
         <>
-          <div className="jsaDocTitle">What you are signing</div>
-          <p className="jsaAck">{jsa.acknowledgement}</p>
+          <div className="jsaDocTitle">{t.whatYouSign}</div>
+          {t.ackStandard && ackIsStandard ? (
+            <>
+              <p className="jsaAck">{t.ackStandard}</p>
+              <p className="jsaAckOriginalLabel">{t.ackOriginal}</p>
+              <p className="jsaAck jsaAckOriginal">{jsa.acknowledgement}</p>
+            </>
+          ) : (
+            <p className="jsaAck">{jsa.acknowledgement}</p>
+          )}
         </>
       )}
     </div>

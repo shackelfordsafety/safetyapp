@@ -73,6 +73,7 @@ import { IncidentPdfExportRoot, generateIncidentPdf, incidentPdfFingerprint, bui
 import { DOCUMENT_REGISTRY, DOCUMENT_CATEGORIES } from './documents/registry';
 import { StepNav } from './documents/FormPrimitives';
 import PublishToBoardButton from './crew/PublishToBoardButton';
+import AddToHomeScreen from './shared/AddToHomeScreen';
 import { loadModule } from './shared/loadModule';
 import ErrorBoundary from './shared/ErrorBoundary';
 import DemoBanner from './shared/DemoBanner';
@@ -3403,6 +3404,10 @@ function HomeView({ customTemplates, setTab, docEntries, waitingCount = 0, waiti
             before he has done anything. The first screen's job is to get
             him into the right document; Records is where searching belongs. */}
       </header>
+
+      {/* One tap to open, like any other app (Fonzo, 2026-09-28). Hides
+          itself once installed, on a desktop, or after "Not now". */}
+      <AddToHomeScreen where="home" />
 
       {/* Today at a glance. Every line is a number and a way into the
           rows behind it -- no line is the only copy of anything. Lines

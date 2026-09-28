@@ -4110,3 +4110,26 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 .nameSetup { max-width: 460px; gap: 14px; }
 .nameSetup h3 { font-size: 21px; }
 .nameSetup .btn.lg { width: 100%; }
+
+/* Add to Home Screen (shared/AddToHomeScreen.jsx). The crew version sits on
+   the crew page's always-white card, so it carries its own colours. */
+.a2hs {
+  display: grid; grid-template-columns: 1fr auto; gap: 10px 14px; align-items: center;
+  padding: 14px 16px; margin: 0 0 16px; border-radius: 12px;
+  border: 1px solid var(--line); background: var(--surface);
+}
+.a2hsText { display: grid; gap: 2px; }
+.a2hsText strong { font-size: 15.5px; }
+.a2hsText span { font-size: 14px; color: var(--text-2, var(--muted)); }
+.a2hsActions { display: flex; gap: 8px; align-items: center; }
+.a2hsGo {
+  min-height: 42px; padding: 0 16px; border-radius: 10px; border: none; cursor: pointer;
+  background: var(--accent, #C51F3A); color: #fff; font-weight: 700; font-size: 15px;
+}
+.a2hsNo { background: none; border: none; color: var(--text-2, var(--muted)); font-size: 14px; cursor: pointer; padding: 8px 4px; }
+.a2hsSteps { grid-column: 1 / -1; margin: 4px 0 0; padding-left: 22px; display: grid; gap: 6px; font-size: 15px; line-height: 1.4; }
+.a2hs--crew { background: #F4F6F9; border-color: #D5DAE1; color: #171719; margin: 14px 0 18px; }
+.a2hs--crew .a2hsText span, .a2hs--crew .a2hsNo { color: #4A4F57; }
+@media (max-width: 520px) {
+  .a2hs { grid-template-columns: 1fr; }
+}

@@ -124,3 +124,8 @@ html[data-theme='dark'] .jsaBox {
 html[data-theme='dark'] .jsaBoxList li::marker { color: #93939B; }
 html[data-theme='dark'] .jsaMapLink,
 html[data-theme='dark'] .jsaTelLink { color: #FF7A84; }
+
+/* Spanish only: the supervisor's own words are shown as written. */
+.jsaAsWritten { margin: 14px 0 6px; font-size: 14px; line-height: 1.45; color: #5E4510; background: #FBEFDC; border: 1px solid #D9BE86; border-radius: 10px; padding: 10px 12px; }
+.jsaAckOriginalLabel { margin: 10px 0 2px; font-size: 13px; font-weight: 700; color: #5A5A60; }
+.jsaAckOriginal { opacity: .8; font-size: 14px; }

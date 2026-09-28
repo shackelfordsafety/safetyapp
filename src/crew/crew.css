@@ -249,3 +249,12 @@
   font-weight: 600;
   color: var(--crew-closed-note, #7A2E2E);
 }
+
+/* English / Español, top right of the brand bar (crewText.jsx). */
+.crewBrandBar { position: relative; }
+.crewLang {
+  position: absolute; top: 8px; right: 8px;
+  min-height: 32px; padding: 0 12px; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.55); background: rgba(0,0,0,.25);
+  color: #fff; font-weight: 700; font-size: 13px; cursor: pointer;
+}

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import SignaturePad from '../incident/SignaturePad';
 import { fetchBoard, signPublication, isSignable, fmtOpens } from './board';
 import JsaContents from './JsaContents';
+import { useCrewLang } from './crewText';
+import AddToHomeScreen from '../shared/AddToHomeScreen';
 import './crew.css';
 
 /* The company mark. This page is the one outsiders actually see -- every
@@ -34,11 +36,11 @@ const LOGO = `${import.meta.env.BASE_URL}icons/shackelford-logo.webp`;
 
 const NAME_KEY = 'sdc.crew.name.v1';
 
-function fmtDate(d) {
+function fmtDate(d, lang) {
   if (!d) return '';
   const parsed = new Date(`${d}T00:00:00`);
   return Number.isNaN(parsed.getTime()) ? d
-    : parsed.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+    : parsed.toLocaleDateString(lang === 'es' ? 'es-US' : undefined, { weekday: 'long', month: 'short', day: 'numeric' });
 }
 
 export default function CrewSignIn({ boardOwnerId }) {
@@ -52,6 +54,13 @@ export default function CrewSignIn({ boardOwnerId }) {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const signFormRef = useRef(null);
+  const { lang, setLang, t } = useCrewLang();
+  /* English / Español, on every screen of this page, same corner. */
+  const langToggle = (
+    <button type="button" className="crewLang" aria-label={t.switchToLabel} onClick={() => setLang(lang === 'es' ? 'en' : 'es')}>
+      {t.switchTo}
+    </button>
+  );
 
   /* Bring the form to him. Tapping Sign from the sticky bar can happen
      while he is anywhere in a five-screen document, and landing him back
@@ -77,7 +86,7 @@ export default function CrewSignIn({ boardOwnerId }) {
       setRows(await fetchBoard(boardOwnerId));
       setStatus('ready');
     } catch (ex) {
-      setError(ex?.message || 'Could not load the board. Check your signal and try again.');
+      setError(ex?.message || t.loadError);
       setStatus('error');
     }
   }, [boardOwnerId]);
@@ -93,7 +102,7 @@ export default function CrewSignIn({ boardOwnerId }) {
 
   async function submit(e) {
     e.preventDefault();
-    if (!signature) { setError('Sign in the box before you finish.'); return; }
+    if (!signature) { setError(t.signFirst); return; }
     setBusy(true);
     setError('');
     try {
@@ -107,7 +116,7 @@ export default function CrewSignIn({ boardOwnerId }) {
       try { localStorage.setItem(NAME_KEY, name.trim()); } catch { /* private mode */ }
       setDone(true);
     } catch (ex) {
-      setError(ex?.message || 'Could not record your signature. Check your signal and try again.');
+      setError(ex?.message || t.signError);
     } finally {
       setBusy(false);
     }
@@ -118,10 +127,10 @@ export default function CrewSignIn({ boardOwnerId }) {
       <div className="crewWrap">
         <div className="crewDone">
           <div className="crewBrandBar">
-            <img src={LOGO} alt="Shackelford Construction and Hauling" />
+            <img src={LOGO} alt={t.brandAlt} />{langToggle}
           </div>
           <div className="crewCheck" aria-hidden="true">✓</div>
-          <h1>You&apos;re signed in</h1>
+          <h1>{t.doneTitle}</h1>
           <p>{picked.area_label}</p>
           <p className="crewFine">{name.trim()} — {new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</p>
           <button
@@ -129,14 +138,14 @@ export default function CrewSignIn({ boardOwnerId }) {
             className="crewBtn ghost"
             onClick={() => { setDone(false); setSigning(false); }}
           >
-            See the JSA again
+            {t.seeAgain}
           </button>
           <button
             type="button"
             className="crewBtn ghost"
             onClick={() => { setDone(false); backToList(); load(); }}
           >
-            Back to the list
+            {t.backToList}
           </button>
         </div>
       </div>
@@ -148,39 +157,39 @@ export default function CrewSignIn({ boardOwnerId }) {
       <div className="crewWrap">
         <div className="crewCard">
           <div className="crewBrandBar">
-            <img src={LOGO} alt="Shackelford Construction and Hauling" />
+            <img src={LOGO} alt={t.brandAlt} />{langToggle}
           </div>
           <div className="crewConfirm">
-            <span className="crewEyebrow">{picked.status === 'closed' ? 'Closed' : picked.status === 'scheduled' ? 'Scheduled' : 'Job Safety Analysis'}</span>
+            <span className="crewEyebrow">{picked.status === 'closed' ? t.tagClosed : picked.status === 'scheduled' ? t.tagScheduled : t.eyebrow}</span>
             <h1>{picked.area_label}</h1>
-            <p>{fmtDate(picked.doc_date)}{picked.job_site ? ` · ${picked.job_site}` : ''}</p>
+            <p>{fmtDate(picked.doc_date, lang)}{picked.job_site ? ` · ${picked.job_site}` : ''}</p>
             {picked.version > 1 && (
-              <p className="crewRevised">Revised — version {picked.version}</p>
+              <p className="crewRevised">{t.revised(picked.version)}</p>
             )}
             {/* Put up early: readable now, signable 30 minutes before the start
                 (Fonzo, 2026-09-28). The database refuses it before then too. */}
             {picked.status === 'scheduled' && (
               <p className="crewLate">
-                Not open yet. You can read it now. Signing opens at <strong>{fmtOpens(picked.opensAt)}</strong>, 30 minutes before the shift starts.
+                {t.scheduledNote(fmtOpens(picked.opensAt))}
               </p>
             )}
             {!picked.live && (
               <p className="crewLate">
-                This one&apos;s finished for the day. You can still read it, but it can&apos;t be signed.
+                {t.closedNote}
               </p>
             )}
           </div>
 
-          <JsaContents jsa={picked.data} />
+          <JsaContents jsa={picked.data} t={t} />
 
           {isSignable(picked.status) && signing && (
             <form className="crewSignForm" ref={signFormRef} onSubmit={submit}>
               <label className="crewField">
-                <span>Your name</span>
+                <span>{t.yourName}</span>
                 <input
                   value={name}
                   onChange={e => setName(e.target.value)}
-                  placeholder="First and last"
+                  placeholder={t.namePlaceholder}
                   autoComplete="name"
                   required
                 />
@@ -190,7 +199,7 @@ export default function CrewSignIn({ boardOwnerId }) {
                   SignaturePad: this screen is a man in a lot at 6:30am,
                   and every extra tap is a place to give up. */}
               <SignaturePad
-                label="Your signature"
+                label={t.yourSignature}
                 value={signature}
                 onChange={setSignature}
                 autoOpen
@@ -200,13 +209,13 @@ export default function CrewSignIn({ boardOwnerId }) {
               {error && <p className="crewError">{error}</p>}
 
               <button type="submit" className="crewBtn primary" disabled={busy || !name.trim()}>
-                {busy ? 'Signing…' : 'Finish'}
+                {busy ? t.signing : t.finish}
               </button>
             </form>
           )}
 
           <button type="button" className="crewBtn ghost" onClick={backToList}>
-            {signing ? 'Not yet — go back' : 'Back to the list'}
+            {signing ? t.notYet : t.backToList}
           </button>
 
         {/* ── "Where do I sign this thing?" ──
@@ -226,7 +235,7 @@ export default function CrewSignIn({ boardOwnerId }) {
         {isSignable(picked.status) && !signing && (
           <div className="crewStickyBar">
             <button type="button" className="crewBtn primary" onClick={() => setSigning(true)}>
-              Sign the JSA
+              {t.signButton}
             </button>
           </div>
         )}
@@ -239,26 +248,29 @@ export default function CrewSignIn({ boardOwnerId }) {
     <div className="crewWrap">
       <div className="crewCard">
           <div className="crewBrandBar">
-            <img src={LOGO} alt="Shackelford Construction and Hauling" />
+            <img src={LOGO} alt={t.brandAlt} />{langToggle}
           </div>
-        <span className="crewEyebrow">Job Safety Analysis</span>
-        <h1>Where are you working?</h1>
-        <p className="crewLead">Tap yours to read it. Ask your foreman if you&apos;re not sure.</p>
+        <span className="crewEyebrow">{t.eyebrow}</span>
+        <h1>{t.listTitle}</h1>
+        <p className="crewLead">{t.listLead}</p>
+        {/* Save it to the home screen: the crew's one real complaint was
+            scanning the code every single morning. */}
+        <AddToHomeScreen lang={lang} where="crew" />
 
-        {status === 'loading' && <p className="crewFine">Loading…</p>}
+        {status === 'loading' && <p className="crewFine">{t.loading}</p>}
 
         {status === 'error' && (
           <>
             <p className="crewError">{error}</p>
-            <button type="button" className="crewBtn ghost" onClick={load}>Try again</button>
+            <button type="button" className="crewBtn ghost" onClick={load}>{t.tryAgain}</button>
           </>
         )}
 
         {status === 'ready' && rows.length === 0 && (
           <div className="crewEmpty">
-            <strong>Nothing published yet</strong>
-            <span>Your superintendent hasn&apos;t put today&apos;s JSA up. Check with him.</span>
-            <button type="button" className="crewBtn ghost" onClick={load}>Check again</button>
+            <strong>{t.emptyTitle}</strong>
+            <span>{t.emptyBody}</span>
+            <button type="button" className="crewBtn ghost" onClick={load}>{t.checkAgain}</button>
           </div>
         )}
 
@@ -283,21 +295,21 @@ export default function CrewSignIn({ boardOwnerId }) {
             <span className="crewPickTop">
               <strong>{r.area_label}</strong>
               <span className={`crewTag crewTag--${r.status}`}>
-                {r.status === 'open' ? 'Live' : r.status === 'upcoming' ? 'Starts soon' : r.status === 'scheduled' ? 'Scheduled' : 'Closed'}
+                {r.status === 'open' ? t.tagOpen : r.status === 'upcoming' ? t.tagUpcoming : r.status === 'scheduled' ? t.tagScheduled : t.tagClosed}
               </span>
             </span>
             <span>
-              {fmtDate(r.doc_date)}{r.job_site ? ` · ${r.job_site}` : ''}
+              {fmtDate(r.doc_date, lang)}{r.job_site ? ` · ${r.job_site}` : ''}
               {r.status === 'upcoming' && r.startsAt
-                ? ` · starts ${r.startsAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
+                ? ` · ${t.starts(r.startsAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }))}`
                 : ''}
-              {r.status === 'scheduled' && r.opensAt ? ` · signing opens ${fmtOpens(r.opensAt)}` : ''}
+              {r.status === 'scheduled' && r.opensAt ? ` · ${t.signingOpens(fmtOpens(r.opensAt))}` : ''}
             </span>
             {r.status === 'closed' && (
               <span className="crewPickClosed">
                 {r.expires_at
-                  ? `Signing closed at ${new Date(r.expires_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}. Ask your superintendent for today's JSA.`
-                  : "Signing is closed. Ask your superintendent for today's JSA."}
+                  ? t.closedAt(new Date(r.expires_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }))
+                  : t.closedNoTime}
               </span>
             )}
           </button>
