@@ -46,7 +46,7 @@ function StepDetails({ model, upd, next }) {
       </div>
 
       <div className="formSection">
-        <span className="formSectionHeading">Separation Details</span>
+        <span className="formSectionHeading">Type and Reason</span>
         <SegmentedToggle
           label="Separation Type"
           value={model.separationType}

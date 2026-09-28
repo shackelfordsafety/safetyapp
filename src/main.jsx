@@ -154,13 +154,6 @@ function nowNice(d = new Date()) {
   const v = d instanceof Date ? d : new Date(d);
   return v.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
-function buildStamp(iso, commit) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  const datePart = d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
-  const timePart = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  return `Updated ${datePart} · ${timePart}${commit ? ` · ${commit}` : ''}`;
-}
 function safeJson(str, fallback) {
   try { return str ? JSON.parse(str) : fallback; } catch { return fallback; }
 }
@@ -3416,6 +3409,11 @@ function HomeView({ customTemplates, setTab, docEntries, waitingCount = 0, waiti
           his job. */}
       <section className="homeSection homeToday">
         <span className="homeSectionEyebrow">Today</span>
+        {/* All zeros said the same thing as "Nothing to finish" below it,
+            twice (tidiness audit, 2026-09-28). The numbers only show when
+            one of them isn't zero. */}
+        {!(inProgress.length === 0 && waitingCount === 0
+          && glance.outForSigning.length === 0 && glance.filedToday === 0) && (
         <div className="glanceRow">
           <button type="button" className="glanceItem" onClick={() => setTab('today')}>
             <span className="glanceNum">{inProgress.length}</span>
@@ -3444,6 +3442,7 @@ function HomeView({ customTemplates, setTab, docEntries, waitingCount = 0, waiti
             </button>
           )}
         </div>
+        )}
 
         {/* The number above says you are behind. This says on WHAT.
 
@@ -3608,7 +3607,10 @@ function HomeView({ customTemplates, setTab, docEntries, waitingCount = 0, waiti
                     type, with details". */}
                 {e.draft && (
                   <p className="startDocTileOpen">
-                    <strong>{e.draft.title}<NeedsYouMark /></strong>
+                    {/* Was a bare red "!" that nobody could read the meaning
+                        of (tidiness audit, 2026-09-28). Says it in words. */}
+                    <span className="startDocTileTag">Not finished</span>
+                    <strong>{e.draft.title}</strong>
                     <span>{e.draft.nextStep} &middot; saved {e.draft.savedLabel}</span>
                   </p>
                 )}
@@ -3642,17 +3644,12 @@ function HomeView({ customTemplates, setTab, docEntries, waitingCount = 0, waiti
         <div className="workspaceAccessGrid">
           <button className="accessRow" onClick={() => setTab('documents')}>
             <IconDocuments className="accessRowIcon" />
-            <span className="accessRowText"><strong>Documents</strong><small>Every document type, with details</small></span>
+            <span className="accessRowText"><strong>Documents</strong><small>What each form is for</small></span>
             <IconChevronRight className="accessRowChevron" />
           </button>
-          <button className="accessRow" onClick={() => setTab('today')}>
-            <IconDrafts className="accessRowIcon" />
-            {/* Called "Today" here and "My Work" in the nav until
-                2026-09-12 -- the same two-names-for-one-place problem the
-                archive had. The nav name wins. */}
-            <span className="accessRowText"><strong>My Work</strong><small>What you started and finished today</small></span>
-            <IconChevronRight className="accessRowChevron" />
-          </button>
+          {/* My Work used to be here too -- it is already in the sidebar
+              and the bottom bar on every screen (tidiness audit,
+              2026-09-28). */}
           <button className="accessRow" onClick={() => setTab('templates')}>
             <IconTemplates className="accessRowIcon" />
             <span className="accessRowText"><strong>Templates</strong><small>{customTemplates.length > 0 ? `${customTemplates.length} saved` : 'Reusable starting points'}</small></span>
@@ -4978,7 +4975,10 @@ function SettingsView({ settings, setSettings }) {
       <div className="card">
         <div className="cardHeader"><h3>About</h3></div>
         <div className="cardBody">
-          <p className="aboutVersionLine">v{APP_VERSION}{BUILD_TIME ? ` · ${buildStamp(BUILD_TIME, BUILD_COMMIT)}` : ''}</p>
+          {/* Plain date first; the version code stays, smaller, for whoever
+              supports the app next (tidiness audit, 2026-09-28). */}
+          {BUILD_TIME && <p>Last updated {new Date(BUILD_TIME).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })}</p>}
+          <p className="aboutVersionLine">For support: v{APP_VERSION}{BUILD_COMMIT ? ` · ${BUILD_COMMIT}` : ''}</p>
         </div>
       </div>
     </div>
@@ -5107,7 +5107,7 @@ function JsaPreview({ jsa }) {
       </div>
       <div className="previewTruthBar">
         <span className={`previewFit ${fit.status}`}>{fit.label}</span>
-        <p>Exact Letter-page preview with standard default-margin space.</p>
+        <p>This is the real printed page, shrunk to fit.</p>
         {plan.totalPages > 1 && (
           <button type="button" className="btn ghost sm previewViewAllBtn" onClick={() => openPager(0)}>View All {plan.totalPages} Pages</button>
         )}

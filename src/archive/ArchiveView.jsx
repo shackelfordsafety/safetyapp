@@ -130,7 +130,7 @@ function SignIn({ onSignedIn }) {
         </label>
         {err && <div className="arcErr">{err}</div>}
         <button type="submit" className="btn primary lg" disabled={busy}>{busy ? 'Signing in…' : 'Sign In'}</button>
-        <p className="arcFine">This is the only part of the app that asks anybody to sign in. Filling out documents never does.</p>
+        <p className="arcFine">You can fill out documents without signing in. Sending them, publishing a JSA, and Records need it.</p>
       </form>
     </div>
   );

@@ -84,7 +84,7 @@ function IncidentPreview({ incident }) {
         <span className="previewTotal"><strong>Total</strong> {totalPages}</span>
       </div>
       <div className="previewTruthBar">
-        <p>Exact Letter-page preview with standard default-margin space.</p>
+        <p>This is the real printed page, shrunk to fit.</p>
       </div>
       <div className="previewSheetViewport" ref={viewportRef} style={{ height: `${1056 * scale + 28}px` }}>
         <div className="previewSheetCanvas" style={{ transform: `scale(${scale})` }}>

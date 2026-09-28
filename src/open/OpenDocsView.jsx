@@ -233,7 +233,7 @@ export default function OpenDocsView({ onPickUp, embedded = false }) {
       <div className="page">
         <div className="odEmpty">
           <strong>Sign in to see open documents</strong>
-          <span>Use the button at the top right. Building a document never needs a login — this does.</span>
+          <span>Tap Sign in at the top right to see documents waiting on you.</span>
         </div>
       </div>
     );

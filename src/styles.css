@@ -2051,6 +2051,9 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 }
 .previewPanelHeader strong { font-weight: 700; font-size: 14px; }
 .previewPanelHeader span { color: var(--muted); font-size: 12px; }
+/* Title over subtitle -- side by side with no space they read as one
+   word: "What Will PrintA preview of…" (tidiness audit, 2026-09-28). */
+.previewPanelHeader > div { display: grid; gap: 2px; }
 .previewFit {
   font-size: 5.5px;
   border-radius: 999px;
@@ -4132,4 +4135,11 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 .a2hs--crew .a2hsText span, .a2hs--crew .a2hsNo { color: #4A4F57; }
 @media (max-width: 520px) {
   .a2hs { grid-template-columns: 1fr; }
+}
+
+/* "Not finished" on a Home tile whose document is started -- words, not a
+   bare red "!". */
+.startDocTileTag {
+  display: inline-block; margin-bottom: 2px; font-size: 11px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--warn, #B7791F);
 }

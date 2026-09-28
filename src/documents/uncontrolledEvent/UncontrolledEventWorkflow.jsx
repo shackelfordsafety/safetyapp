@@ -23,7 +23,7 @@ function StepEvent({ model, upd, next }) {
   return (
     <StepPanel title="Event Info & Classification" intro="Where and when this happened, and what kind of event it was. Check every classification and outcome that applies.">
       <div className="formSection">
-        <span className="formSectionHeading">Event Information</span>
+        <span className="formSectionHeading">Where and When</span>
         <div className="formGrid">
           <Field label="Workplace Location / Project" value={model.workplaceLocation} onChange={v => upd({ workplaceLocation: v })} />
           <div className="formPairRow">
