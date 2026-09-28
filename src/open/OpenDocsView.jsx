@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { loadModule } from '../shared/loadModule';
 import './opendocs.css';
+
+const ViewOnlyDocument = lazy(() => import('./ViewOnlyDocument'));
 
 /* ── Open ────────────────────────────────────────────────────────────────
    Everything the company has started and not finished. The half that never
@@ -122,6 +124,7 @@ export default function OpenDocsView({ onPickUp, embedded = false }) {
   const [handing, setHanding] = useState(null);
   const [sendingBack, setSendingBack] = useState(null);
   const [people, setPeople] = useState([]);
+  const [viewing, setViewing] = useState(null);
 
   const load = useCallback(async () => {
     setError('');
@@ -197,6 +200,18 @@ export default function OpenDocsView({ onPickUp, embedded = false }) {
     } finally {
       setBusy(false);
     }
+  }
+
+  /* Waiting for sign-off and not yours to sign off: look, don't touch.
+     Opening it into the workflow made an editable copy on this device that
+     looked like the submitted one and wasn't (Fonzo, 2026-09-28). The
+     approver still opens it for real, to fix a typo before filing. */
+  function openRow(row) {
+    if (row.state === 'submitted' && !canSignOff(row.doc_type, me?.role)) {
+      setViewing(row);
+      return;
+    }
+    pickUp(row);
   }
 
   async function openHandOver(row) {
@@ -277,7 +292,7 @@ export default function OpenDocsView({ onPickUp, embedded = false }) {
           {forMe.map(r => (
             <Row
               key={r.id} row={r} me={me} busy={busy}
-              onOpen={pickUp}
+              onOpen={openRow}
               onHandOver={openHandOver}
               onSignOff={row => act(async () => {
                 const mod = await loadModule(() => import('./openDocs'));
@@ -305,7 +320,7 @@ export default function OpenDocsView({ onPickUp, embedded = false }) {
           {everythingElse.map(r => (
             <Row
               key={r.id} row={r} me={me} busy={busy}
-              onOpen={pickUp}
+              onOpen={openRow}
               onHandOver={openHandOver}
               onSignOff={() => {}}
               onSendBack={() => {}}
@@ -316,6 +331,16 @@ export default function OpenDocsView({ onPickUp, embedded = false }) {
             />
           ))}
         </section>
+      )}
+
+      {viewing && (
+        <Suspense fallback={null}>
+          <ViewOnlyDocument
+            row={viewing}
+            label={DOC_LABELS[viewing.doc_type] || viewing.doc_type}
+            onClose={() => setViewing(null)}
+          />
+        </Suspense>
       )}
 
       {handing && (

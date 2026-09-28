@@ -331,3 +331,35 @@
 }
 .viewAsActive strong { font-size: 14.5px; }
 .viewAsActive span { font-size: 13px; color: var(--text-2, var(--muted)); }
+
+/* ── View only: a document waiting for sign-off (ViewOnlyDocument) ── */
+.vodOverlay {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(0, 0, 0, .55);
+  display: flex; justify-content: center; align-items: flex-start;
+  padding: max(16px, env(safe-area-inset-top, 0px)) 16px 16px;
+  overflow-y: auto;
+}
+.vodPanel {
+  width: 100%; max-width: 900px;
+  background: var(--panel, var(--surface, #fff)); color: var(--text);
+  border-radius: 14px; padding: 18px;
+  display: grid; gap: 14px;
+}
+.vodHead { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.vodKicker { display: block; font-size: 12px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--text-2); }
+.vodTitle { font-size: 20px; }
+.vodNotice {
+  margin: 0; padding: 12px 14px; border-radius: 10px;
+  border: 1px solid var(--warn-border, #E0B84C);
+  background: var(--warn-tint, rgba(224, 184, 76, .12));
+  font-size: 15px; line-height: 1.45;
+}
+.vodBody { min-height: 120px; }
+/* The Incident report's real pages, brought on-screen and shrunk to fit. */
+.vodIncident { width: 100%; overflow: hidden; }
+.vodIncident .incidentPdfExportRoot {
+  position: static; left: auto; pointer-events: none;
+  zoom: var(--vod-scale, .5);
+  display: grid; gap: 16px;
+}

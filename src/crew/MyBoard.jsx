@@ -229,7 +229,7 @@ export default function MyBoard() {
       <div className="page">
         <div className="brdEmpty">
           <strong>Sign in to see your board</strong>
-          <span>Use the button at the top right. Building JSAs never needs a login — this does.</span>
+          <span>Tap <strong>Sign in</strong> at the top right. You need to be signed in to put JSAs on your Crew Board.</span>
         </div>
       </div>
     );
@@ -243,8 +243,8 @@ export default function MyBoard() {
       <div className="brdHead">
         <div>
           <div className="titleWithHelp">
-            <h2>Sign-In</h2>
-            <HelpButton title="Sign-In">
+            <h2>Crew Board</h2>
+            <HelpButton title="Crew Board">
               <p>
                 This is what your crew sees when they scan the code on your trailer.
               </p>
@@ -271,6 +271,15 @@ export default function MyBoard() {
         <button type="button" className="btn ghost sm" onClick={load}>Refresh</button>
       </div>
 
+      {/* The how-to, on the screen, not behind the "?" -- Fonzo, 2026-09-28:
+          new people had no idea what to do after finishing a JSA. */}
+      <ol className="brdHowTo">
+        <li><strong>First time?</strong> Print the QR poster at the bottom of this page and put it on your trailer. You only do this once.</li>
+        <li>Finish a JSA and pick <strong>On their phones</strong>. It shows up here.</li>
+        <li>The crew scans the poster and signs. The number counts up by itself. Tap it to see who signed.</li>
+        <li>No phone on somebody? Tap <strong>Sign on this device</strong>.</li>
+      </ol>
+
       {error && <div className="archiveError">{error}</div>}
 
       {state.status === 'loading' && <p className="helperText">Loading…</p>}
@@ -278,7 +287,7 @@ export default function MyBoard() {
       {state.status === 'ready' && state.rows.length === 0 && (
         <div className="brdEmpty">
           <strong>Nothing published today</strong>
-          <span>Finish a JSA and hit “Publish to my board” on the last step. It shows up here and the crew can scan for it.</span>
+          <span>Finish a JSA, pick “On their phones”, and tap “Publish to my board”. It shows up here.</span>
         </div>
       )}
 

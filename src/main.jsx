@@ -2524,7 +2524,7 @@ function App() {
     setTemplateId('blank-jsa');
     setPdfExportState(null);
     goToBoard();
-    showToast('Published. It is on your board now — start a new JSA when you need one.');
+    showToast('Published. Your crew can scan and sign it now.');
   }
 
   /* Submitting one of the five for review is the same hand-off publishing
@@ -3094,7 +3094,7 @@ function App() {
               {waitingCount > 0 && <span className="navBadge" aria-label={`${waitingCount} waiting on you`}>{waitingCount}</span>}
             </button>
             <button className={`sidebarNavItem${tab === 'board' ? ' active' : ''}`} onClick={() => setTab('board')}>
-              <IconBoard className="sidebarNavIcon" /><span className="sidebarNavLabel">Sign-In</span>
+              <IconBoard className="sidebarNavIcon" /><span className="sidebarNavLabel">Crew Board</span>
             </button>
             <button className={`sidebarNavItem${tab === 'archive' ? ' active' : ''}`} onClick={() => setTab('archive')}>
               <IconArchive className="sidebarNavIcon" /><span className="sidebarNavLabel">Records</span>
@@ -3337,7 +3337,7 @@ function MobileBottomNav({ tab, goHome, goDocs, setTab, waitingCount = 0 }) {
         {waitingCount > 0 && <span className="navBadge navBadge--mobile" aria-label={`${waitingCount} waiting on you`}>{waitingCount}</span>}
       </button>
       <button className={`mobileNavItem${tab === 'board' ? ' active' : ''}`} onClick={() => setTab('board')}>
-        <IconBoard className="mobileNavIcon" /><span>Sign-In</span>
+        <IconBoard className="mobileNavIcon" /><span>Crew Board</span>
       </button>
       <button className={`mobileNavItem${tab === 'archive' ? ' active' : ''}`} onClick={() => setTab('archive')}>
         <IconArchive className="mobileNavIcon" /><span>Records</span>
@@ -4614,11 +4614,9 @@ function StepFinish({
       <div className="stepPanel">
         <div className="stepPanelHeader">
           <h3>Finish</h3>
-          <p>Check it over, then say how the crew signs it.</p>
+          <p>Last step: pick how your crew signs it.</p>
         </div>
         <div className="formGrid">
-          <TA label="Internal Notes / Special Instructions" value={jsa.notes} onChange={v => upd({ notes: v })} rows={3} placeholder="Optional notes visible in the draft only, not on the printed JSA." />
-
           {allGood ? (
             <div className="reviewAllGoodBanner">
               <span className="reviewAllGoodCheck" aria-hidden="true">✓</span>
@@ -4668,9 +4666,18 @@ function StepFinish({
                 board, that's where you can get the link or the QR code for
                 everybody to sign." */}
 
+            {/* Each route spells out what happens next, in order, BEFORE it
+                is picked. Fonzo, 2026-09-28: someone finished a JSA and
+                asked "so what do i do" -- it was "throwing a baby in a pool
+                and hoping they figure it out." */}
             <button type="button" className={`signRoute${route === 'board' ? ' active' : ''}`} onClick={chooseBoard}>
-              <strong>On their phones</strong>
-              <span>They scan the QR on your trailer and sign. You watch the count.</span>
+              <strong>On their phones <em className="signRouteTag">most crews</em></strong>
+              <span className="signRouteSteps">
+                <span>1. Publish it to your Crew Board.</span>
+                <span>2. The crew scans the QR poster on your trailer and signs on their own phone.</span>
+                <span>3. Watch the count on your Crew Board.</span>
+              </span>
+              <span className="signRouteDone">That&apos;s it. When the shift ends it files itself into Records.</span>
             </button>
             {route === 'board' && (
               <div className="signRouteBody">
@@ -4680,7 +4687,12 @@ function StepFinish({
 
             <button type="button" className={`signRoute${route === 'paper' ? ' active' : ''}`} onClick={choosePaper}>
               <strong>On paper</strong>
-              <span>Print it and sign in pen. Nothing is captured on a screen.</span>
+              <span className="signRouteSteps">
+                <span>1. Make the printout and print it.</span>
+                <span>2. The crew signs in pen.</span>
+                <span>3. Keep the signed copy in the job box.</span>
+              </span>
+              <span className="signRouteDone">Paper copies are not saved in the app.</span>
             </button>
             {route === 'paper' && (
               <div className="signRouteBody">
@@ -4730,23 +4742,34 @@ function StepFinish({
               </div>
             </div>
           )}
-          <div className="reviewSecondaryActions">
-            <button type="button" className="btn ghost sm" onClick={() => setShowDocOptions(true)} disabled={isGenerating}>Document Options</button>
-            <span className="reviewAutosaveNote">Drafts autosave automatically.</span>
-          </div>
+          {/* Everything that isn't "get it signed" is folded away, so the
+              two routes above are the only thing a first-timer has to read.
+              Nothing here was removed -- notes, templates and Document
+              Options all still work, one tap down. */}
+          <details className="finishMore">
+            <summary>More options — notes, save as template</summary>
+            <div className="finishMoreBody">
+              <TA label="Internal Notes (not printed)" value={jsa.notes} onChange={v => upd({ notes: v })} rows={3} placeholder="Only you see these." />
 
-          <div className="card">
-            <div className="cardHeader"><strong>Save as Template</strong></div>
-            <label className="field">
-              <span>Template name</span>
-              <input value={saveName} onChange={e => setSaveName(e.target.value)} placeholder="Example: Entergy JSA" />
-            </label>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button type="button" className="btn primary sm" onClick={saveTemplate}>Save template</button>
-              <button type="button" className="btn ghost sm" onClick={updateTemplate}>Update loaded template</button>
+              <div className="card">
+                <div className="cardHeader"><strong>Save as Template</strong></div>
+                <p className="helperText">Reuse this JSA another day. The date, times and signatures are left off.</p>
+                <label className="field">
+                  <span>Template name</span>
+                  <input value={saveName} onChange={e => setSaveName(e.target.value)} placeholder="e.g. Entergy TAPS" />
+                </label>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button type="button" className="btn primary sm" onClick={saveTemplate}>Save as new template</button>
+                  <button type="button" className="btn ghost sm" onClick={updateTemplate}>Update the template I started from</button>
+                </div>
+              </div>
+
+              <div className="reviewSecondaryActions">
+                <button type="button" className="btn ghost sm" onClick={() => setShowDocOptions(true)} disabled={isGenerating}>Document Options</button>
+                <span className="reviewAutosaveNote">Your draft saves by itself.</span>
+              </div>
             </div>
-            <p className="helperText">Loading a template starts a fresh JSA for today and never carries over signatures or daily work details.</p>
-          </div>
+          </details>
         </div>
       </div>
       {showDocOptions && (

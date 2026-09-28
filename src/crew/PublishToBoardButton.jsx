@@ -140,8 +140,8 @@ export default function PublishToBoardButton({ jsa, pdfBlob, pdfPending, disable
       </button>
       {phase === 'error' && <p className="archiveError">{message}</p>}
       <p className="helperText">
-        Puts this JSA on your board so the crew can scan the QR and sign it.
-        Publishing locks it — to change it afterwards, publish a revision.
+        Double-check it first — once it&apos;s published it can&apos;t be edited. If it&apos;s
+        wrong, take it down from your Crew Board before anyone signs and make a new one.
       </p>
 
       {/* The 5:00 PM / 5:00 AM catch. States the length out loud, because
