@@ -94,7 +94,10 @@ async function main() {
        reading "Not finished - 1"; Home now leads with a row of counts and
        the rows themselves live in My Work. Same number, same meaning, new
        element -- so this reads the tile instead of the heading. */
-    const notFinished = await page.locator('.glanceItem', { hasText: /Not finished/i }).first().innerText();
+    /* Since the 2026-09-28 tidiness pass the count row is hidden when every
+       number is zero -- so "no row at all" is also the right answer. */
+    const glance = page.locator('.glanceItem', { hasText: /Not finished/i }).first();
+    const notFinished = (await glance.count()) ? await glance.innerText() : '0';
     check('JSA: Home counts no unfinished work', /(^|\D)0(\D|$)/.test(notFinished.trim()), notFinished.trim().replace(/\n/g, ' '));
     /* And the start tile must be offering to START one, not to continue
        one -- a tile that still said "Continue JSA" would mean the draft

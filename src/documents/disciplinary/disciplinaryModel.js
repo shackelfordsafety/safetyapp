@@ -1,3 +1,4 @@
+import { localISODate } from '../../shared/localDate';
 /* ── Employee Disciplinary Notice data model ──
    Field-for-field from the company Employee Disciplinary Notice form:
    employee/supervisor/position/date, a four-level warning checkbox, and
@@ -16,7 +17,7 @@ function makeId() {
 }
 
 function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  return localISODate();
 }
 
 export const WARNING_LEVELS = [

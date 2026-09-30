@@ -138,6 +138,11 @@ async function main() {
       const { ctx, page } = await openDraft(browser, c);
 
       // ── Their statement (disciplinary only; separation has no statement) ──
+      // The statement now lives with the employee's signature on the
+      // Signatures step ("statement lives with the employee"), so go there
+      // first. The jump below is repeated later; harmless.
+      await page.locator('.stepNav button', { hasText: c.step }).first().click();
+      await page.waitForTimeout(1200);
       if (c.draft.employeeStatement) {
         /* Found by its VALUE, not its position: the sections above it are
            free to move around without quietly pointing this at the wrong
@@ -186,7 +191,9 @@ async function main() {
         stillLocked ? 'step is locked — the fixture is missing required fields, NOT TESTED below' : '');
 
       const pads = page.locator('.signaturePad');
-      const empPad = pads.filter({ hasText: /Employee Signature/ }).first();
+      /* "Their Signature" since the 2026-09-2x signatures cleanup; the old
+         label kept so the check still reads on an older build. */
+      const empPad = pads.filter({ hasText: /Their Signature|Employee Signature/ }).first();
       check('their signature is on the notice',
         (await empPad.locator('img.signaturePreview').count()) > 0);
       check('it cannot be replaced or removed',
@@ -225,7 +232,7 @@ async function main() {
       }
 
       check('the screen says when they did it',
-        /on their own phone/i.test(await page.locator('.helperText').allInnerTexts().then(a => a.join(' '))));
+        /on their (own )?phone/i.test(await page.locator('.helperText').allInnerTexts().then(a => a.join(' '))));
 
       await page.screenshot({ path: path.join(outDir, `${c.doc}-signature.png`), fullPage: true });
       await ctx.close();

@@ -77,29 +77,53 @@ function drop(id) {
 
    Order matters: the row is only dropped once send() has RESOLVED. A throw
    leaves it exactly where it was for the next attempt. */
-export async function flushSignatures(send) {
+let inFlight = null;
+
+export function flushSignatures(send) {
+  /* One flush at a time. The kiosk fires a flush per signature without
+     waiting, and men sign faster than a PNG uploads on a job-site
+     connection -- two overlapping flushes both read the same queue and
+     the same signature went up twice: a phantom signer on the count and
+     on the filed sign-in sheet. A flush that starts while one is running
+     simply joins it. */
+  if (inFlight) return inFlight;
+  inFlight = flushOnce(send).finally(() => { inFlight = null; });
+  return inFlight;
+}
+
+async function flushOnce(send) {
   const list = read();
-  if (!list.length) return { sent: 0, stuck: 0 };
+  if (!list.length) return { sent: 0, stuck: 0, refused: 0 };
   let sent = 0;
   let stuck = 0;
+  let refused = 0;
   for (const item of list) {
     try {
       await send(item);
       drop(item.id);
       sent += 1;
     } catch (err) {
+      const msg = err?.message || '';
+      /* Sent last time, but the reply never made it back to the iPad: the
+         row is there under the queued id, so this counts as sent. */
+      if (/duplicate key|already exists|23505/i.test(msg)) {
+        drop(item.id);
+        sent += 1;
+        continue;
+      }
       /* A signature the database refuses will NEVER succeed -- the JSA
          expired, or the posting was taken down. Retrying it forever would
-         block everything queued behind it, so it is dropped and counted as
-         stuck rather than kept for eternity. */
-      const permanent = /row-level security|violates row-level|expired/i.test(err?.message || '');
+         block everything queued behind it, so it is dropped -- and counted
+         separately, because the man who signed it has walked off believing
+         he is on the JSA. The screen must say so. */
+      const permanent = /row-level security|violates row-level|expired/i.test(msg);
       if (permanent) {
         drop(item.id);
-        stuck += 1;
+        refused += 1;
       } else {
         stuck += 1;
       }
     }
   }
-  return { sent, stuck };
+  return { sent, stuck, refused };
 }

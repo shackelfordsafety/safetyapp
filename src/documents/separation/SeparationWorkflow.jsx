@@ -13,6 +13,7 @@ import {
 } from '../FormPrimitives';
 import { LockedContext } from '../lockedContext';
 import { downloadDraftFile, buildDraftFilename } from '../../shared/draftTransfer';
+import { localISODate } from '../../shared/localDate';
 
 const EmployeeHandoffPanel = lazy(() => import('../../employee/EmployeeHandoffPanel'));
 
@@ -169,7 +170,7 @@ function StepReview({ checks, prev, next, onJumpCheck }) {
    printed copy by hand (Fonzo, 2026-08-29: "the only thing i wanted
    digitized is the superintendent, foreman, safety parts"). ── */
 function today() {
-  return new Date().toISOString().slice(0, 10);
+  return localISODate();
 }
 
 /* When the employee sent his signature back, said the way a person says

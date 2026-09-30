@@ -109,10 +109,51 @@ export async function createFormPdf({ formTitle, logoBytes }) {
   let colW = CONTENT_W;
 
   const flip = topY => PAGE_H - topY;
-  const widthOf = (text, size, f = font) => f.widthOfTextAtSize(String(text ?? ''), size);
+
+  /* The standard Helvetica fonts only know WinAnsi. An arrow typed from an
+     iPad keyboard, an emoji, a tab, a "≥", or a decomposed accent from an
+     Android keyboard made pdf-lib throw "WinAnsi cannot encode", and the
+     whole document could not be printed or submitted, with nothing on
+     screen saying which field was at fault. Found in the 2026-09-30 audit.
+     Every string that reaches the page goes through here: known symbols
+     get a readable stand-in, anything else the font cannot draw becomes
+     "?" rather than a crash. */
+  const PDF_CHAR_MAP = {
+    '\t': '    ', '\u00a0': ' ', '\u2007': ' ', '\u202f': ' ', '\u200b': '',
+    '\u2192': '->', '\u2190': '<-', '\u2191': '^', '\u2193': 'v', '\u21d2': '=>',
+    '\u2265': '>=', '\u2264': '<=', '\u2260': '!=', '\u2212': '-', '\u2248': '~',
+    '\u2713': 'x', '\u2714': 'x', '\u2717': 'x', '\u2718': 'x', '\u2610': '[ ]', '\u2611': '[x]', '\u2612': '[x]',
+    '\u2032': "'", '\u2033': '"', '\u00b0': '\u00b0',
+  };
+  const pdfCharCache = new Map();
+  function pdfSafeChar(ch, f) {
+    const key = `${f === font ? 'r' : f === bold ? 'b' : 'i'}${ch}`;
+    if (pdfCharCache.has(key)) return pdfCharCache.get(key);
+    let out;
+    if (Object.prototype.hasOwnProperty.call(PDF_CHAR_MAP, ch)) {
+      out = PDF_CHAR_MAP[ch];
+    } else {
+      try { f.encodeText(ch); out = ch; } catch {
+        const plain = ch.normalize('NFKD').replace(/\p{M}/gu, '');
+        try { if (plain && plain !== ch) { f.encodeText(plain); out = plain; } else out = '?'; } catch { out = '?'; }
+      }
+    }
+    pdfCharCache.set(key, out);
+    return out;
+  }
+  function toPdfText(text, f = font) {
+    const str = String(text ?? '');
+    if (!str) return '';
+    try { f.encodeText(str); return str; } catch { /* fall through: fix it up per character */ }
+    let out = '';
+    for (const ch of str) out += pdfSafeChar(ch, f);
+    return out;
+  }
+
+  const widthOf = (text, size, f = font) => f.widthOfTextAtSize(toPdfText(text, f), size);
 
   function drawTextAt(text, x, topBaselineY, size, f = font, color = INK) {
-    const str = String(text ?? '');
+    const str = toPdfText(text, f);
     if (!str) return;
     page.drawText(str, { x, y: flip(topBaselineY), size, font: f, color });
   }

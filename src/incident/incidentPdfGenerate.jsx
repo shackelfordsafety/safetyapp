@@ -59,7 +59,20 @@ export function allocateFlexibleSections(needs, budget, minEach) {
   const safeBudget = Math.max(0, budget);
   const totalNeed = needs.reduce((a, b) => a + b, 0);
   if (totalNeed <= safeBudget) {
-    return needs.map((need) => Math.max(need, Math.min(minEach, safeBudget)));
+    const floored = needs.map((need) => Math.max(need, Math.min(minEach, safeBudget)));
+    const sum = floored.reduce((a, b) => a + b, 0);
+    /* Raising the small box to its floor can push the pair past the
+       budget (one long witness statement next to an empty second slot):
+       the page is overflow:hidden, so the second box's signature row was
+       silently cut off the printed page. Take the excess back from the
+       boxes that are above their floor. */
+    if (sum > safeBudget) {
+      const over = sum - safeBudget;
+      const slack = floored.map((h, i) => Math.max(0, h - Math.min(minEach, safeBudget)));
+      const totalSlack = slack.reduce((a, b) => a + b, 0);
+      if (totalSlack > 0) return floored.map((h, i) => h - over * (slack[i] / totalSlack));
+    }
+    return floored;
   }
   const floor = Math.min(minEach, safeBudget / needs.length);
   const remaining = Math.max(0, safeBudget - floor * needs.length);

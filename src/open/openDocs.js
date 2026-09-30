@@ -525,14 +525,18 @@ export async function approveWithEdits({ id, model }) {
      has still been told -- better than a silent correction. */
   const { diffDocuments } = await import('./documentDiff');
   const changes = diffDocuments(row.data, model);
+  let noticeFailed = null;
   if (changes.length && row.created_by && row.created_by !== user.id) {
-    await db.from('document_edits').insert({
+    const { error: noteError } = await db.from('document_edits').insert({
       open_document_id: id,
       doc_type: row.doc_type,
       edited_by: user.id,
       notify_user: row.created_by,
       changes,
     });
+    /* The filing goes ahead regardless -- but the screen must not claim
+       the author "has been told" when the notice never landed. */
+    if (noteError) noticeFailed = noteError.message;
   }
 
   /* Marked complete for the draw, not on the saved document -- the status
@@ -563,7 +567,7 @@ export async function approveWithEdits({ id, model }) {
   const { data: newId, error: fileError } = await db.rpc('file_reviewed_document', { open_id: id });
   if (fileError) throw new Error(fileError.message);
 
-  return { id: newId, changes };
+  return { id: newId, changes, noticeFailed };
 }
 
 /* What this person has been told about and not yet acknowledged. Drives

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { loadModule } from '../shared/loadModule';
 import './account.css';
-import { readStoredSession, onSessionChanged, notifySessionChanged } from '../shared/session';
+import { readStoredSession, onSessionChanged, notifySessionChanged, clearStoredSession } from '../shared/session';
 
 /* ── Who you are, top right, always visible ──────────────────────────────
    Fonzo's model: "sign in once and forget about it. logging in unlocks
@@ -92,9 +92,13 @@ export default function AccountButton() {
     setBusy(true);
     try {
       const { db } = await loadModule(() => import('../archive/archiveClient'));
-      await db.auth.signOut();
+      const { error } = await db.auth.signOut();
+      if (error) clearStoredSession();
       notifySessionChanged();
-    } catch { /* clearing the local session below is what actually matters */ }
+    } catch { clearStoredSession(); }
+    // Belt and braces: whatever signOut() did or did not manage, the
+    // session must be off this device before the paperwork is.
+    clearStoredSession();
     clearWorkFromThisDevice();
     refresh();
     setSession(null);

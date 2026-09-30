@@ -68,7 +68,10 @@ export default function ApproveAndFileButton({ docType, model }) {
     return () => { dead = true; };
   }, [docType, model?.id]);
 
-  const allowed = link && me && (APPROVERS[docType] || []).includes(me.role);
+  // Same rule as can_file_doc_type() in the database: the admin flag
+  // approves anything. SubmitArea already honoured it; this did not, so an
+  // admin whose role was not pm/hr/owner got no button at all.
+  const allowed = link && me && ((APPROVERS[docType] || []).includes(me.role) || me.is_admin);
   if (!allowed) return null;
 
   if (!canDraw) {
@@ -86,10 +89,10 @@ export default function ApproveAndFileButton({ docType, model }) {
     try {
       const mod = await loadModule(() => import('./openDocs'));
       const { clearPickedUpLink } = await loadModule(() => import('./pickUp'));
-      const { changes } = await mod.approveWithEdits({ id: link.openDocumentId, model });
+      const { changes, noticeFailed } = await mod.approveWithEdits({ id: link.openDocumentId, model });
       clearPickedUpLink();
       setMessage(changes.length
-        ? `Filed. ${changes.length === 1 ? '1 change was' : `${changes.length} changes were`} recorded and the person who wrote it has been told.`
+        ? `Filed. ${changes.length === 1 ? '1 change was' : `${changes.length} changes were`} recorded${noticeFailed ? ', but the person who wrote it could NOT be notified -- tell them yourself' : ' and the person who wrote it has been told'}.`
         : 'Filed. Nothing was changed.');
       setPhase('done');
     } catch (ex) {

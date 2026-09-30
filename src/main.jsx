@@ -79,6 +79,7 @@ import ErrorBoundary from './shared/ErrorBoundary';
 import DemoBanner from './shared/DemoBanner';
 import { useUserSync } from './sync/useUserSync';
 import { recordTemplateDeletion, markSettingsChanged } from './sync/syncMeta';
+import { localISODate } from './shared/localDate';
 import { readStoredSession } from './shared/session';
 import { SIM_ON } from './sim/simMode';
 import { formatPhone } from './shared/phone';
@@ -148,7 +149,8 @@ const BUILD_COMMIT = typeof __BUILD_COMMIT__ !== 'undefined' ? __BUILD_COMMIT__ 
 
 /* ── Helpers ── */
 function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  // Local calendar day, not UTC -- see shared/localDate.js.
+  return localISODate();
 }
 function nowNice(d = new Date()) {
   const v = d instanceof Date ? d : new Date(d);
@@ -806,11 +808,15 @@ function calcFitFromPlan(plan) {
       message: 'At least one task row is too large to fit cleanly on a continuation page. Shorten that row or divide it into smaller task rows.',
     };
   }
-  if (plan.continuationPages.length) {
+  // continuationColumns is what actually prints (see getPagePlan). The
+  // row-based continuationPages over-counted routinely -- a JSA that fit
+  // on one sheet was told a continuation sheet would be generated.
+  const continuationCount = (plan.continuationColumns || plan.continuationPages || []).length;
+  if (continuationCount) {
     return {
       status: 'warn',
       label: 'Continuation sheet required',
-      message: `${plan.continuationPages.length} JSA continuation page${plan.continuationPages.length === 1 ? '' : 's'} will be generated. Complete rows will move together and will not be split between pages.`,
+      message: `${continuationCount} JSA continuation page${continuationCount === 1 ? '' : 's'} will be generated. Complete rows will move together and will not be split between pages.`,
     };
   }
   if (plan.mainUsed >= plan.mainCapacity * 0.82) {
@@ -1038,7 +1044,20 @@ function asStoredList(value) {
 }
 
 function makeTodayFromTemplate(data) {
-  return { ...sanitizeJsa(data), id: crypto.randomUUID?.() || String(Date.now()), status: 'draft', date: todayISO(), timeIssued: '', timeExpired: '', tailgateTopic: '', previousDaySafety: '', signatureLineCount: Number(data?.signatureLineCount) || 30, signInMode: 'kiosk', crewSignatures: [], notes: '', lastSavedAt: '', taskRows: withRowIds(data?.taskRows) };
+  const clean = sanitizeJsa(data);
+  return { ...clean, id: crypto.randomUUID?.() || String(Date.now()), status: 'draft', date: todayISO(), timeIssued: '', timeExpired: '', tailgateTopic: '', previousDaySafety: '', signatureLineCount: Number(data?.signatureLineCount) || 30, signInMode: 'kiosk', crewSignatures: [], notes: '', lastSavedAt: '', taskRows: withRowIds(clean.taskRows) };
+}
+/* Drops any template already using this name -- and leaves a deletion
+   marker for each, or cloud sync would union the old one straight back
+   and the Templates list would grow a duplicate every time a template was
+   re-saved under its own name. */
+function replaceTemplateByName(list, name) {
+  const wanted = String(name || '').toLowerCase();
+  return list.filter(x => {
+    const same = String(x?.name || '').toLowerCase() === wanted;
+    if (same) recordTemplateDeletion(x?.id);
+    return !same;
+  });
 }
 function templatePayload(jsa, name) {
   return {
@@ -1764,6 +1783,9 @@ function App() {
   // ── Incident Report state (fully separate from JSA state/storage above) ──
   const [savedIncidentDraft, setSavedIncidentDraft] = useState(() => migrateIncidentShape(loadIncidentDraft()));
   const [incident, setIncident] = useState(() => emptyIncident());
+  // Always the current report, for async work that finishes after edits.
+  const incidentRef = useRef(incident);
+  incidentRef.current = incident;
   const [incidentStep, setIncidentStep] = useState('details');
   const [incidentSaveStatus, setIncidentSaveStatus] = useState('idle');
   const incidentAutoSaveTimer = useRef(null);
@@ -1884,11 +1906,23 @@ function App() {
        and push its month-old settings over everything the phone had
        changed since. Whoever opened an app last won, which is not what
        anyone means by newest. Found by an outside reviewer, 2026-09-11. */
-    if (next !== localStorage.getItem(KEYS.settings)) {
-      localStorage.setItem(KEYS.settings, next);
+    const stored = localStorage.getItem(KEYS.settings);
+    if (next !== stored) {
+      try {
+        localStorage.setItem(KEYS.settings, next);
+      } catch {
+        // Storage full or blocked (Safari private mode). The setting still
+        // applies for this session; a throw here would take the whole app
+        // down through the ErrorBoundary.
+        return;
+      }
       // Records WHEN this device last changed settings, so sync can tell
       // whose copy is newer. localStorage only -- see syncMeta.js.
-      markSettingsChanged();
+      // NOT on the very first write of a fresh (or emptied) device: that
+      // is the defaults being laid down, not a person changing anything,
+      // and stamping it made a blank iPad "newest" -- it then pushed its
+      // defaults over the account's real settings on every other device.
+      if (stored !== null) markSettingsChanged();
     }
   }, [settings]);
 
@@ -1900,8 +1934,24 @@ function App() {
   }, [isTouchPrimary]);
 
   useEffect(() => {
-    localStorage.setItem(KEYS.templates, JSON.stringify(customTemplates));
+    try {
+      localStorage.setItem(KEYS.templates, JSON.stringify(customTemplates));
+    } catch {
+      // Storage full or blocked. Keep the app up; the templates still
+      // exist in memory for this session.
+      showToast?.('Could not save templates -- this device is out of storage room.');
+    }
   }, [customTemplates]);
+
+  /* The crash screen's "Reload" sets a flag so a SECOND crash offers to set
+     the document aside instead of reloading forever. Nothing cleared it, so
+     weeks later an unrelated first-time crash in the same tab jumped
+     straight to "Still broken". Once the app has been up and stable for a
+     while, the reload evidently worked. */
+  useEffect(() => {
+    const t = setTimeout(() => { try { sessionStorage.removeItem('sdc.crashReload.v1'); } catch { /* private mode */ } }, 20000);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
@@ -1925,6 +1975,9 @@ function App() {
     jsaPendingSave.current = { snapshot, jsa };
     clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
+      // Sign-out wiped storage and is reloading; the old page is still
+      // running until the new one commits. Do not write the draft back.
+      if (workWasClearedForSignOut()) { jsaPendingSave.current = null; return; }
       const next = { ...jsa, status: jsa.status === 'ready' ? 'ready' : 'draft', lastSavedAt: new Date().toISOString() };
       try {
         localStorage.setItem(KEYS.draft, JSON.stringify(next));
@@ -1951,6 +2004,7 @@ function App() {
     incidentPendingSave.current = { snapshot, incident };
     clearTimeout(incidentAutoSaveTimer.current);
     incidentAutoSaveTimer.current = setTimeout(() => {
+      if (workWasClearedForSignOut()) { incidentPendingSave.current = null; return; }
       const next = { ...incident, lastSavedAt: new Date().toISOString() };
       if (saveIncidentDraft(next)) {
         lastIncidentAutoSaveSnapshot.current = snapshot;
@@ -2346,14 +2400,18 @@ function App() {
       });
       setIncidentPdfExportState({ phase: 'ready', blob, filename, pageCount, fingerprint, shareMessage: null });
       const savedAt = new Date().toISOString();
+      /* Merge onto the LATEST report, not the one captured before the
+         await: generating seven pages on an iPad takes seconds, and a
+         sentence typed meanwhile used to be overwritten by this save. */
+      const latest = incidentRef.current;
       if (!draft) {
-        const completed = { ...incident, status: 'completed', completedAt: savedAt, lastSavedAt: savedAt };
+        const completed = { ...latest, status: 'completed', completedAt: savedAt, lastSavedAt: savedAt };
         saveIncidentDraft(completed);
         setIncident(completed);
         setSavedIncidentDraft(completed);
         upsertIncidentRecord(completed, { pageCount });
       } else {
-        const savedNow = { ...incident, lastSavedAt: savedAt };
+        const savedNow = { ...latest, lastSavedAt: savedAt };
         saveIncidentDraft(savedNow);
         setIncident(savedNow);
         setSavedIncidentDraft(savedNow);
@@ -2395,7 +2453,7 @@ function App() {
   }
 
   function saveDraft(msg = true) {
-    const next = { ...jsa, status: 'draft', lastSavedAt: new Date().toISOString() };
+    const next = { ...jsa, status: jsa.status === 'ready' ? 'ready' : 'draft', lastSavedAt: new Date().toISOString() };
     try {
       localStorage.setItem(KEYS.draft, JSON.stringify(next));
       setJsa(next);
@@ -2564,7 +2622,7 @@ function App() {
     setJsa(normalized);
     setSavedDraft(normalized);
     setTemplateId('blank-jsa');
-    localStorage.setItem(KEYS.draft, JSON.stringify(normalized));
+    try { localStorage.setItem(KEYS.draft, JSON.stringify(normalized)); } catch { /* autosave will retry */ }
     goJsa('job');
     showToast('JSA draft imported. Review each step and finish when ready.');
   }
@@ -2614,7 +2672,7 @@ function App() {
     const name = saveName.trim();
     if (!name) { showToast('Enter a name for the template first.'); return; }
     const t = templatePayload(jsa, name);
-    setCustomTemplates(prev => [t, ...prev.filter(x => x.name.toLowerCase() !== name.toLowerCase())]);
+    setCustomTemplates(prev => [t, ...replaceTemplateByName(prev, name)]);
     setSaveName('');
     showToast(`Saved template: ${name}`);
   }
@@ -2650,7 +2708,7 @@ function App() {
   function shareTemplate(t) {
     // Not buildDraftFilename -- that always appends "_Draft_<date>", which
     // reads as wrong (this is a template, not a draft).
-    const day = new Date().toISOString().slice(0, 10);
+    const day = todayISO();
     downloadTemplateFile('jsa', t.data, `${sanitizeForFilename(t.name)}_JSA_Template_${day}`);
   }
   async function importTemplateFile(file) {
@@ -2664,7 +2722,7 @@ function App() {
     const parsed = parseTemplateFileText(text);
     if (!parsed.ok) { showToast(parsed.error); return; }
     if (parsed.docType !== 'jsa') { showToast('This app only supports importing JSA templates right now.'); return; }
-    const name = parsed.data.templateName?.trim() || 'Imported Template';
+    const name = String(parsed.data.templateName ?? '').trim() || 'Imported Template';
     const t = {
       id: crypto.randomUUID?.() || String(Date.now()),
       source: 'custom',
@@ -2674,7 +2732,7 @@ function App() {
       updatedAt: new Date().toISOString(),
       data: { ...parsed.data, templateName: name },
     };
-    setCustomTemplates(prev => [t, ...prev.filter(x => x.name.toLowerCase() !== name.toLowerCase())]);
+    setCustomTemplates(prev => [t, ...replaceTemplateByName(prev, name)]);
     showToast(`Imported template: ${name}`);
   }
 
@@ -2796,16 +2854,26 @@ function App() {
     };
   }, []);
 
+  /* Read through a ref inside the async work below rather than listed as
+     a dependency: re-running this effect while a filing is in flight used
+     to mark it "cancelled", skip advancing the queue, and then run the
+     same publication again once the user's own PDF finished -- a second,
+     permanent copy in an archive nothing can delete. */
+  const pdfExportPhaseRef = useRef(null);
+  pdfExportPhaseRef.current = pdfExportState?.phase || null;
   useEffect(() => {
     if (!archiveTarget || archiveBusyRef.current) return undefined;
-    // Never compete with a PDF the user asked for.
-    if (pdfExportState?.phase === 'generating') return undefined;
 
     archiveBusyRef.current = true;
     let cancelled = false;
 
     (async () => {
       try {
+        // Never compete with a PDF the user asked for: wait it out.
+        const userPdfDeadline = Date.now() + 60000;
+        while (pdfExportPhaseRef.current === 'generating' && Date.now() < userPdfDeadline) {
+          await new Promise(r => setTimeout(r, 250));
+        }
         const expected = archiveTarget.jsa?.crewSignatures?.length || 0;
         const deadline = Date.now() + 10000;
         while (Date.now() < deadline) {
@@ -2829,12 +2897,15 @@ function App() {
         // from the archive, so the next open picks it up again.
       } finally {
         archiveBusyRef.current = false;
-        if (!cancelled) setArchiveQueue(q => q.slice(1));
+        // Always move on from THIS item, whether or not the effect was
+        // re-run meanwhile -- the work either filed it or left it for the
+        // next lookForExpired pass.
+        setArchiveQueue(q => (q[0] === archiveTarget ? q.slice(1) : q));
       }
     })();
 
     return () => { cancelled = true; };
-  }, [archiveTarget, pdfExportState?.phase]);
+  }, [archiveTarget]);
 
   async function exportPdf() {
     if (pdfExportState?.phase === 'generating') return; // guard against duplicate concurrent generation
@@ -3866,7 +3937,7 @@ function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, onPubl
   const continuationBaselineRef = useRef(null);
   useEffect(() => {
     if (!plan.measured) return;
-    const needsContinuation = plan.continuationPages.length > 0;
+    const needsContinuation = (plan.continuationColumns || []).length > 0;
     const timer = setTimeout(() => {
       if (continuationBaselineRef.current !== null && needsContinuation && !continuationBaselineRef.current) {
         showToast?.('Heads up: this JSA will now print with a continuation page.');
@@ -3874,7 +3945,7 @@ function JsaWorkflow({ jsa, upd, jsaStep, setJsaStep, goDocs, goJsaStart, onPubl
       continuationBaselineRef.current = needsContinuation;
     }, 700);
     return () => clearTimeout(timer);
-  }, [plan.measured, plan.continuationPages.length, showToast]);
+  }, [plan.measured, (plan.continuationColumns || []).length, showToast]);
   const measurements = usePageMeasurements();
   const checks = useMemo(() => getReviewChecks(jsa, measurements), [jsa, measurements]);
   const idx = STEPS.findIndex(s => s.id === jsaStep);
@@ -5007,11 +5078,11 @@ function PrintDebugPanel({ jsa, plan }) {
     <div className="printDebugPanel">
       <strong>Print Debug (?debug=print)</strong>
       <dl>
-        <div><dt>logical pages</dt><dd>{plan.totalPages} (1 main + {plan.continuationPages.length} continuation + {plan.signInPages.length} sign-in)</dd></div>
+        <div><dt>logical pages</dt><dd>{plan.totalPages} (1 main + {(plan.continuationColumns || []).length} continuation + {plan.signInPages.length} sign-in)</dd></div>
         <div><dt>main capacity / used</dt><dd>{plan.mainCapacity} / {plan.mainUsed} {plan.measured ? 'px' : 'units (heuristic)'}</dd></div>
         <div><dt>main populated / filler rows</dt><dd>{plan.mainContentRows.length} populated + {plan.mainRows.length - plan.mainContentRows.length} filler = {plan.mainRows.length} total</dd></div>
         <div><dt>continuation capacity</dt><dd>{plan.measured ? 'see row-height measurement below' : `${continuationRowCapacity()} units/page (heuristic)`}</dd></div>
-        <div><dt>continuation pages</dt><dd>{plan.continuationPages.length}</dd></div>
+        <div><dt>continuation pages</dt><dd>{(plan.continuationColumns || []).length}</dd></div>
         <div><dt>sign-in pages</dt><dd>{plan.signInPages.length}</dd></div>
         <div><dt>oversized row detected</dt><dd>{String(plan.oversized)}</dd></div>
         <div><dt>upper-section wrapped lines</dt><dd>{estimateUpperSectionLines(jsa)}</dd></div>
@@ -5101,7 +5172,7 @@ function JsaPreview({ jsa }) {
       {printDebug && <PrintDebugPanel jsa={jsa} plan={plan} />}
       <div className="previewPageManager">
         <span><strong>Main JSA</strong> 1</span>
-        <span><strong>Continuation</strong> {plan.continuationPages.length}</span>
+        <span><strong>Continuation</strong> {(plan.continuationColumns || []).length}</span>
         <span><strong>Sign-In</strong> {plan.signInPages.length}</span>
         <span className="previewTotal"><strong>Total</strong> {plan.totalPages}</span>
       </div>
@@ -5152,8 +5223,8 @@ function JsaPreviewPagerModal({ jsa, plan, initialIndex = 0, onClose }) {
   const pages = useMemo(() => [
     { kind: 'main', label: 'Main JSA' },
     ...(plan.continuationColumns || []).map((cols, idx) => ({
-      kind: 'continuation', rows, idx,
-      label: `Continuation ${idx + 1} of ${plan.continuationPages.length}`,
+      kind: 'continuation', columns: cols, idx,
+      label: `Continuation ${idx + 1} of ${(plan.continuationColumns || []).length}`,
     })),
     ...plan.signInPages.map((lines, idx) => ({
       kind: 'signin', lines, idx,
@@ -5215,7 +5286,8 @@ function JsaPreviewPagerModal({ jsa, plan, initialIndex = 0, onClose }) {
               {current.kind === 'continuation' && (
                 <TaskContinuationPage
                   jsa={jsa}
-                  rows={current.rows}
+                  columns={current.columns}
+                  start={plan.columnOffsets && plan.columnOffsets[current.idx + 1]}
                   pageNumber={2 + current.idx}
                   totalPages={plan.totalPages}
                   continuationNumber={current.idx + 1}
@@ -5297,8 +5369,8 @@ function QuickPanel({ title, groups, onPick, onRemove, existingValue = '', itemT
     }
     const next = [label, ...recent.filter(value => normalizeEntry(value) !== normalizeEntry(label))].slice(0, 10);
     setRecent(next);
-    localStorage.setItem(recentKey, JSON.stringify(next));
     onPick(item);
+    try { localStorage.setItem(recentKey, JSON.stringify(next)); } catch { /* storage full: the pick still happened */ }
   }
 
   function toggleFavorite(event, item) {
@@ -5310,7 +5382,7 @@ function QuickPanel({ title, groups, onPick, onRemove, existingValue = '', itemT
       ? favorites.filter(value => normalizeEntry(value) !== normalizeEntry(label))
       : [label, ...favorites].slice(0, 20);
     setFavorites(next);
-    localStorage.setItem(favoriteKey, JSON.stringify(next));
+    try { localStorage.setItem(favoriteKey, JSON.stringify(next)); } catch { /* storage full: favourite still applies this session */ }
   }
 
   return (
@@ -5856,7 +5928,7 @@ function PdfExportRoot({ jsa, plan, pageRefsRef }) {
   useLayoutEffect(() => {
     const ordered = [];
     if (mainRef.current) ordered.push({ type: 'main', el: mainRef.current });
-    plan.continuationPages.forEach((_, i) => {
+    (plan.continuationColumns || []).forEach((_, i) => {
       if (continuationRefs.current[i]) ordered.push({ type: 'continuation', el: continuationRefs.current[i] });
     });
     plan.signInPages.forEach((_, i) => {

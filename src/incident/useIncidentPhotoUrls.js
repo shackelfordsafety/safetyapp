@@ -22,7 +22,12 @@ export function useIncidentPhotoUrls(photos) {
   const photoIds = (photos || []).map(p => p.id).join(',');
 
   useEffect(() => {
-    let cancelled = false;
+    /* No per-run "cancelled" flag: a second photo arriving while the first
+       is still being read from IndexedDB used to cancel the first read,
+       and because its entry already existed the next run skipped it -- so
+       it sat on "Loading photo..." for good, and that text printed in the
+       PDF. A late result is simply ignored if the photo has since been
+       removed (its entry is gone) or already resolved. */
     const ids = new Set((photos || []).map(p => p.id));
     let changed = false;
 
@@ -41,21 +46,23 @@ export function useIncidentPhotoUrls(photos) {
       changed = true;
       getPhotoBlob(p.id)
         .then((blob) => {
-          if (cancelled) return;
+          const cur = entriesRef.current[p.id];
+          if (!cur || cur.status !== 'loading') { return; }
           entriesRef.current[p.id] = blob
             ? { url: URL.createObjectURL(blob), status: 'ready' }
             : { url: null, status: 'missing' };
           forceRender((n) => n + 1);
         })
         .catch(() => {
-          if (cancelled) return;
+          const cur = entriesRef.current[p.id];
+          if (!cur || cur.status !== 'loading') return;
           entriesRef.current[p.id] = { url: null, status: 'error' };
           forceRender((n) => n + 1);
         });
     });
 
     if (changed) forceRender((n) => n + 1);
-    return () => { cancelled = true; };
+    return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [photoIds]);
 

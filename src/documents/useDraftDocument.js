@@ -42,13 +42,34 @@ export function useDraftDocument({ storageKey, emptyModel, hasMeaningfulContent,
 
   useEffect(() => {
     if (!active) return undefined;
-    if (!hasMeaningfulContent(model)) return undefined;
+    if (!hasMeaningfulContent(model)) {
+      /* Nothing worth saving -- and nothing HELD either. Typing a letter
+         and deleting it inside the 900ms used to leave the deleted text in
+         `pending`, and the next flush (Home, app switch, tab close) wrote
+         that ghost back to storage as a draft. It also left the header
+         stuck on "Saving..." with Save now disabled. */
+      if (pending.current) {
+        pending.current = null;
+        clearTimeout(autoSaveTimer.current);
+        setSaveStatus('idle');
+      }
+      return undefined;
+    }
     const snapshot = JSON.stringify({ ...model, lastSavedAt: '' });
-    if (snapshot === lastSnapshot.current) return undefined;
+    if (snapshot === lastSnapshot.current) {
+      if (pending.current) { pending.current = null; clearTimeout(autoSaveTimer.current); setSaveStatus('saved'); }
+      return undefined;
+    }
     setSaveStatus('saving');
     pending.current = { snapshot, model };
     clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
+      /* Sign-out wipes storage and calls reload(), but the old page keeps
+         running until the new one commits -- offline, with the service
+         worker waiting on the network first, that is seconds. This timer
+         used to fire in that gap and write the wiped draft straight back.
+         Reproduced by tools/testing/verify-signout-still-clears.mjs. */
+      if (workWasClearedForSignOut()) { pending.current = null; return; }
       const next = { ...model, lastSavedAt: new Date().toISOString() };
       if (saveDraft(storageKey, next)) {
         lastSnapshot.current = snapshot;
@@ -243,6 +264,12 @@ export function useDraftDocument({ storageKey, emptyModel, hasMeaningfulContent,
     stopAutosave();
     clearDraft(storageKey);
     setSavedDraft(null);
+    /* The deleted draft must leave memory too, or the next tap on this
+       document's tile asks "replace the current draft?" about a draft the
+       person just deleted -- and cancelling left no way into the form. */
+    setModelRaw(emptyModel());
+    setStep(firstStepId);
+    lastSnapshot.current = '';
   }
 
   return {

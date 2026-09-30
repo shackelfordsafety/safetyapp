@@ -1,3 +1,4 @@
+import { localISODate } from '../../shared/localDate';
 /* ── Employee Separation data model ──
    The historical company document combines Employee Data Change and
    Employee Separation on one form. This app implements ONLY the
@@ -23,7 +24,7 @@ function makeId() {
 }
 
 function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  return localISODate();
 }
 
 export const SEPARATION_TYPES = [

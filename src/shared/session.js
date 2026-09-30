@@ -29,6 +29,23 @@ export function readStoredSession() {
   return null;
 }
 
+/* Removes the stored session directly. supabase-js's signOut() RETURNS an
+   error (it does not throw) when the access token has expired and the
+   refresh cannot reach the server -- and in that case it never removes the
+   stored session either. On a trailer iPad with no signal that meant
+   "Sign out" wiped the paperwork, reloaded, and left the same person
+   signed in for whoever picked it up next. Found in the 2026-09-30 audit. */
+export function clearStoredSession() {
+  try {
+    const doomed = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (key && /^sb-.*-auth-token/.test(key)) doomed.push(key);
+    }
+    doomed.forEach(key => localStorage.removeItem(key));
+  } catch { /* private mode */ }
+}
+
 /* A stable-ish name for this device, so a sync conflict can say "your
    iPhone" instead of "another device". Generated once and kept locally;
    it never leaves this browser except as a label on the sync row. */

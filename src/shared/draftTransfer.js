@@ -1,3 +1,4 @@
+import { localISODate } from './localDate';
 /* ── Field-to-office draft handoff ──
    Lets a superintendent/foreman export the document they're working on as a
    small editable file (NOT a PDF — the PDF is a flattened, unreadable-by-
@@ -36,7 +37,7 @@ export function sanitizeForFilename(str) {
 }
 
 export function buildDraftFilename(identifyingName, typeLabel, date) {
-  const day = date || new Date().toISOString().slice(0, 10);
+  const day = date || localISODate();
   return `${sanitizeForFilename(identifyingName)}_${sanitizeForFilename(typeLabel)}_Draft_${day}`;
 }
 

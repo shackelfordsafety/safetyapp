@@ -1,3 +1,4 @@
+import { localISODate } from '../../shared/localDate';
 /* ── Employee Medical Event data model ──
    Field-for-field from the company Employee Medical Event form. This form
    documents an employee-reported medical condition/event WITHOUT the app
@@ -16,7 +17,7 @@ function makeId() {
 }
 
 function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  return localISODate();
 }
 
 function nowHM() {

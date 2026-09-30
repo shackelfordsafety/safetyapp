@@ -56,7 +56,13 @@ export default function PublishToBoardButton({ jsa, pdfBlob, pdfPending, disable
     setPhase('working');
     setMessage('');
     try {
-      const { publishToBoard, NotSignedInError } = await loadModule(() => import('./board'));
+      const { publishToBoard, NotSignedInError, computeExpiry } = await loadModule(() => import('./board'));
+      /* A draft carried over from yesterday keeps yesterday's date. Publishing
+         it made a posting that had already expired: "Live on your board",
+         nothing on the board, and it auto-filed with zero signatures. */
+      if (computeExpiry(jsa) <= new Date()) {
+        throw new Error("This JSA's date and Time Expired are already in the past. Fix the date on the Job step, then publish.");
+      }
       try {
         const { boardUrl: url } = await publishToBoard({ jsa, pdfBlob });
         setBoardUrl(url);

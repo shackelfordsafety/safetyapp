@@ -107,13 +107,13 @@ async function main() {
 
       const meRow = rows.filter({ hasText: 'Pat Foster' });
       check('you cannot change your own role, and it says so',
-        (await meRow.locator('.peopleLocked').count()) === 1,
-        (await meRow.locator('.peopleLocked').innerText().catch(() => '')).trim());
+        (await meRow.locator('.peopleNow').count()) === 1,
+        (await meRow.locator('.peopleNow').innerText().catch(() => '')).trim());
 
       const ownerRow = rows.filter({ hasText: 'Hunter Shackelford' });
       check('HR cannot change an owner, and it says so',
-        (await ownerRow.locator('.peopleLocked').count()) === 1,
-        (await ownerRow.locator('.peopleLocked').innerText().catch(() => '')).trim());
+        (await ownerRow.locator('.peopleNow').count()) === 1,
+        (await ownerRow.locator('.peopleNow').innerText().catch(() => '')).trim());
 
       const foremanRow = rows.filter({ hasText: 'Jake Lytle' });
       check('an ordinary person is editable',
@@ -135,11 +135,13 @@ async function main() {
       // The picker has to explain itself, or somebody guesses wrong.
       await foremanRow.locator('select').selectOption('clerk');
       await page.waitForTimeout(200);
-      const meaning = await foremanRow.locator('.helperText').first().innerText();
+      /* The meaning now sits in the confirm strip beside Save (tidiness pass
+         1, 2026-09-2x), not in a helperText under the picker. */
+      const meaning = await foremanRow.locator('.peopleConfirm span, .helperText').first().innerText();
       check('the picker says what the role means',
         /every filed document/i.test(meaning), JSON.stringify(meaning));
 
-      await foremanRow.getByRole('button', { name: /Save role/i }).click();
+      await foremanRow.getByRole('button', { name: /^Save( role)?$/i }).click();
       await page.waitForTimeout(600);
       const sent = await page.evaluate(() => window.__rpc);
       check('Save sends exactly one set_person_role, with the right arguments',

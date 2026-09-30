@@ -16,6 +16,7 @@ import FileToArchiveButton from '../archive/FileToArchiveButton';
 import SubmitArea from '../open/SubmitArea';
 import { ARCHIVE_FILING_ENABLED } from '../archive/filingEnabled';
 import { downloadDraftFile, buildDraftFilename } from '../shared/draftTransfer';
+import { localISODate } from '../shared/localDate';
 
 const EmployeeHandoffPanel = lazy(() => import('../employee/EmployeeHandoffPanel'));
 
@@ -327,7 +328,7 @@ function StepWitnesses({ incident, upd, prev, next }) {
         ...w,
         ...(answer.statement ? { statement: answer.statement } : {}),
         ...(answer.signatureData
-          ? { signatureData: answer.signatureData, signatureDate: new Date().toISOString().slice(0, 10) }
+          ? { signatureData: answer.signatureData, signatureDate: localISODate() }
           : {}),
         responseAt: answer.respondedAt || new Date().toISOString(),
       })),
@@ -390,7 +391,7 @@ function StepWitnesses({ incident, upd, prev, next }) {
             <EmployeeOwned when={w.responseAt}>
               <TextAreaField label={c.statement} rows={3} value={w.statement} onChange={v => updWitness(w.id, { statement: v })} voice />
               <div className="formPairRow">
-                <SignaturePad label={c.signature} value={w.signatureData} onChange={data => updWitness(w.id, { signatureData: data, signatureDate: data ? new Date().toISOString().slice(0, 10) : w.signatureDate })} />
+                <SignaturePad label={c.signature} value={w.signatureData} onChange={data => updWitness(w.id, { signatureData: data, signatureDate: data ? localISODate() : w.signatureDate })} />
                 <Field label={c.signatureDate} type="date" value={w.signatureDate} onChange={v => updWitness(w.id, { signatureDate: v })} />
               </div>
             </EmployeeOwned>
@@ -514,7 +515,7 @@ function StepNotes({ incident, upd, prev, next }) {
               <Field label={c.memberTitle} value={m.title} onChange={v => updMember(m.id, { title: v })} />
             </div>
             <div className="formPairRow">
-              <SignaturePad label={c.memberSignature} value={m.signatureData} onChange={data => updMember(m.id, { signatureData: data, date: data ? new Date().toISOString().slice(0, 10) : m.date })} />
+              <SignaturePad label={c.memberSignature} value={m.signatureData} onChange={data => updMember(m.id, { signatureData: data, date: data ? localISODate() : m.date })} />
               <Field label={c.memberDate} type="date" value={m.date} onChange={v => updMember(m.id, { date: v })} />
             </div>
           </div>

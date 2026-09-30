@@ -12,6 +12,7 @@ import {
 } from '../FormPrimitives';
 import { LockedContext } from '../lockedContext';
 import { downloadDraftFile, buildDraftFilename } from '../../shared/draftTransfer';
+import { localISODate } from '../../shared/localDate';
 
 /* Lazy like everything that talks to the cloud: a manager filling this in
    with no signal never downloads the handoff machinery. */
@@ -115,7 +116,7 @@ function StepReview({ checks, prev, next, onJumpCheck }) {
    behind, describing a form that no longer existed, while the step
    underneath it captured all three. ── */
 function today() {
-  return new Date().toISOString().slice(0, 10);
+  return localISODate();
 }
 
 /* When the employee sent his part back, said the way a person says it.

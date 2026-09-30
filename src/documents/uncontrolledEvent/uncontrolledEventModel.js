@@ -1,3 +1,4 @@
+import { localISODate } from '../../shared/localDate';
 /* ── Uncontrolled Event Report data model ──
    Field-for-field from the company Uncontrolled Event Report form: event
    information, classification, outcome/impact, a narrative, notifications/
@@ -14,7 +15,7 @@ function makeId() {
 }
 
 function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  return localISODate();
 }
 
 function localDateTimeNow() {

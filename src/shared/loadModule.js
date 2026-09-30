@@ -31,6 +31,13 @@ export async function loadModule(importer) {
   } catch (err) {
     if (!looksLikeStaleChunk(err)) throw err;
 
+    /* Offline produces exactly the same "Failed to fetch" as a stale
+       deploy. Reloading then does nothing useful (the page itself may not
+       even come back), so say what is actually wrong instead. */
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      throw new Error('This part of the app needs a signal the first time it is opened. Connect, then try again.');
+    }
+
     let alreadyTried = false;
     try { alreadyTried = sessionStorage.getItem(RELOAD_FLAG) === '1'; } catch { /* private mode */ }
     if (alreadyTried) {

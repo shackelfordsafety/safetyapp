@@ -24,7 +24,7 @@ let dbPromise = null;
 
 function openDb() {
   if (dbPromise) return dbPromise;
-  dbPromise = new Promise((resolve, reject) => {
+  const thisOpen = new Promise((resolve, reject) => {
     if (typeof indexedDB === 'undefined') {
       reject(new Error('IndexedDB is not available in this browser.'));
       return;
@@ -43,14 +43,23 @@ function openDb() {
         store.createIndex('incidentId', 'incidentId', { unique: false });
       }
     };
-    request.onsuccess = () => resolve(request.result);
+    request.onsuccess = () => {
+      const db = request.result;
+      /* iOS Safari closes IndexedDB connections when the tab has been in
+         the background a while. Without this the dead connection stayed
+         cached and every photo read/write failed until a full reload. */
+      db.onclose = () => { if (dbPromise === thisOpen) dbPromise = null; };
+      db.onversionchange = () => { db.close(); if (dbPromise === thisOpen) dbPromise = null; };
+      resolve(db);
+    };
     request.onerror = () => reject(request.error || new Error('Failed to open photo storage.'));
     request.onblocked = () => reject(new Error('Photo storage is blocked by another open tab.'));
   });
   // If opening ever fails, don't cache the rejected promise forever -- a
   // later retry (e.g. after the user closes another tab) should get a
   // fresh attempt instead of the same permanent rejection.
-  dbPromise.catch(() => { dbPromise = null; });
+  dbPromise = thisOpen;
+  dbPromise.catch(() => { if (dbPromise === thisOpen) dbPromise = null; });
   return dbPromise;
 }
 

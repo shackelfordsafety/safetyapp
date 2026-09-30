@@ -72,7 +72,21 @@ export default function SendForReviewButton({ docType, model, pdfBlob, ensurePdf
            exist before it can be submitted against. shareOpenDocument is
            an upsert on the id it returns, so tapping this twice does not
            make two documents. */
-        const { id } = await mod.shareOpenDocument({ id: null, docType, model });
+        /* If this document was picked up out of the queue (an assignee
+           finishing their part, a reviewer sending it back round), submit
+           the SAME row. Sending with id:null matched only rows this person
+           created, so the assignee's submit made a second open document:
+           the author's original sat "with <assignee>" forever, and the
+           approver filed the copy under the wrong author. */
+        let existingId = null;
+        try {
+          const { readPickedUpLink } = await loadModule(() => import('./pickUp'));
+          const link = readPickedUpLink();
+          if (link?.openDocumentId && link.docType === docType && (!link.original?.id || link.original.id === model?.id)) {
+            existingId = link.openDocumentId;
+          }
+        } catch { /* no link: a fresh submission */ }
+        const { id } = await mod.shareOpenDocument({ id: existingId, docType, model });
         await mod.submitForSignOff({ id, pdfBlob: blob, note });
         /* Hand it off. It stops being this device's unfinished work the
            moment somebody else owns what happens next -- Fonzo, 2026-09-11,

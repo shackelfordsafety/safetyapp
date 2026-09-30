@@ -42,6 +42,14 @@ const CONTENT_KEYS = [
   // holds WHICH of them this person keeps on their own shortlist, and that
   // is theirs. It comes back on the next sign-in.
   'sdc.jobs.v1',
+  // The list of completed incident reports (number, location, date).
+  'sdc.incident.records.v1',
+  // When THIS device last changed its settings, and which templates it
+  // deleted. Both describe the previous person's account; left behind,
+  // the next person's first sync treated this iPad's stamp as theirs and
+  // could push the previous person's settings over their own.
+  'sdc.sync.meta.v1',
+  'sdc.jsa.templates.tombstones.v1',
 ];
 
 const LABELS = {
@@ -99,6 +107,17 @@ export function clearWorkFromThisDevice() {
   CONTENT_KEYS.forEach((key) => {
     try { localStorage.removeItem(key); } catch { /* best effort, per key */ }
   });
+
+  /* Copies the crash screen set aside ("sdc.<doc>.draft.<v>.broken.<stamp>")
+     are whole documents too, and used to outlive sign-out. */
+  try {
+    const doomed = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (key && /^sdc\..*\.broken\./.test(key)) doomed.push(key);
+    }
+    doomed.forEach(key => localStorage.removeItem(key));
+  } catch { /* best effort */ }
 
   /* Not awaited. A photo left behind is bad; a sign-out that hangs on a
      database call and leaves somebody apparently still signed in is worse. */

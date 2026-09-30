@@ -3,7 +3,7 @@ import { db } from './archiveClient';
 import UploadDocument from './UploadDocument';
 import './archive.css';
 import HelpButton from '../shared/HelpButton';
-import { notifySessionChanged } from '../shared/session';
+import { notifySessionChanged, clearStoredSession } from '../shared/session';
 
 /* ── Company document archive (office side) ──────────────────────────────
    The one part of this app that requires a login and a network. Everything
@@ -409,7 +409,11 @@ export default function ArchiveView() {
       );
       if (!ok) return;
     }
-    await db.auth.signOut();
+    try { await db.auth.signOut(); } catch { /* offline: cleared below regardless */ }
+    // signOut() returns rather than throws when the token has expired and
+    // cannot refresh offline -- and leaves the session stored. Remove it
+    // ourselves either way; see clearStoredSession.
+    clearStoredSession();
     notifySessionChanged();
     clearWorkFromThisDevice();
     setSession(null);

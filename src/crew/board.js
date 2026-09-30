@@ -338,9 +338,11 @@ export function boardStatus(row, live, now = new Date()) {
    The database is what enforces it (see the migration); this refusal is
    only the readable version of the same rule. The is_late column stays for
    the signatures already recorded under the old behaviour. */
-export async function signPublication({ publicationId, signerName, signatureData, source = 'phone', expiresAt }) {
+export async function signPublication({ id: givenId, publicationId, signerName, signatureData, source = 'phone', expiresAt }) {
   blockInDemo(`Signing`);
-  const id = (crypto.randomUUID && crypto.randomUUID())
+  /* The kiosk queue passes its own id, so a retry after a timed-out reply
+     hits the primary key instead of inserting the same man twice. */
+  const id = givenId || (crypto.randomUUID && crypto.randomUUID())
     || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
   const { error } = await db.from('jsa_signatures').insert({
@@ -568,10 +570,17 @@ export async function fetchUnfiledExpired() {
 
      The marker lives inside the filed document's own data because the
      archive is append-only and has no column to add. */
+  /* Only the markers for THESE candidates. This used to read the marker
+     off every JSA in the archive the caller could see; PostgREST caps a
+     query at 1,000 rows by default, so once the archive grew past that the
+     older markers silently went missing and already-filed postings would
+     have been filed again, forever, into an archive nothing can delete. */
+  const candidateIds = candidates.map(p => p.id);
   const { data: filed, error: filedErr } = await db
     .from('documents')
     .select('marker:data->>archivedPublicationId')
-    .eq('doc_type', 'jsa');
+    .eq('doc_type', 'jsa')
+    .in('data->>archivedPublicationId', candidateIds);
   if (filedErr) throw new Error(filedErr.message);
   const already = new Set((filed || []).map(r => r.marker).filter(Boolean));
 
@@ -643,9 +652,10 @@ export async function fetchUnfiledExpired() {
    Lands in exactly the same table as a phone signature, which is the point:
    the two used to live apart (cloud vs the JSA on the device) and that
    split caused every blank sign-in sheet of 2026-09-09. */
-export async function signOnKiosk({ publicationId, signatureData, expiresAt }) {
+export async function signOnKiosk({ id, publicationId, signatureData, expiresAt }) {
   blockInDemo(`Signing`);
   return signPublication({
+    id,
     publicationId,
     signerName: null,
     signatureData,

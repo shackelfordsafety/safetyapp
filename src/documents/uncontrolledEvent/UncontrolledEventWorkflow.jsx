@@ -13,6 +13,7 @@ import {
 } from '../FormPrimitives';
 import { LockedContext } from '../lockedContext';
 import { downloadDraftFile, buildDraftFilename } from '../../shared/draftTransfer';
+import { localISODate } from '../../shared/localDate';
 
 function toggleInList(list, item) {
   return (list || []).includes(item) ? list.filter(x => x !== item) : [...(list || []), item];
@@ -121,7 +122,7 @@ function StepSignatures({ model, upd, prev, next }) {
       <div className="formSection">
         <span className="formSectionHeading">Reported By</span>
         <div className="formPairRow">
-          <SignaturePad label="Reported By Signature" value={model.reportedBySignatureData} onChange={data => upd({ reportedBySignatureData: data, reportedBySignatureDate: data ? new Date().toISOString().slice(0, 10) : model.reportedBySignatureDate })} />
+          <SignaturePad label="Reported By Signature" value={model.reportedBySignatureData} onChange={data => upd({ reportedBySignatureData: data, reportedBySignatureDate: data ? localISODate() : model.reportedBySignatureDate })} />
           <Field label="Reported By Signature Date" type="date" value={model.reportedBySignatureDate} onChange={v => upd({ reportedBySignatureDate: v })} />
         </div>
       </div>
@@ -129,7 +130,7 @@ function StepSignatures({ model, upd, prev, next }) {
       <div className="formSection">
         <span className="formSectionHeading">Supervisor Review</span>
         <div className="formPairRow">
-          <SignaturePad label="Supervisor Signature" value={model.supervisorSignatureData} onChange={data => upd({ supervisorSignatureData: data, supervisorSignatureDate: data ? new Date().toISOString().slice(0, 10) : model.supervisorSignatureDate })} />
+          <SignaturePad label="Supervisor Signature" value={model.supervisorSignatureData} onChange={data => upd({ supervisorSignatureData: data, supervisorSignatureDate: data ? localISODate() : model.supervisorSignatureDate })} />
           <Field label="Supervisor Signature Date" type="date" value={model.supervisorSignatureDate} onChange={v => upd({ supervisorSignatureDate: v })} />
         </div>
       </div>

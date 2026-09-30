@@ -39,8 +39,8 @@ const APPROVERS = {
   jsa: [],
 };
 
-function canSignOff(docType, role) {
-  return (APPROVERS[docType] || []).includes(role);
+function canSignOff(docType, me) {
+  return (APPROVERS[docType] || []).includes(me?.role) || !!me?.is_admin;
 }
 
 function fmtWhen(iso) {
@@ -57,7 +57,7 @@ function Row({ row, me, onOpen, onHandOver, onSignOff, onSendBack, onAbandon, bu
   const waiting = row.state === 'submitted';
   const mine = row.created_by === me?.id;
   const heldByMe = row.assigned_to === me?.id;
-  const iCanSign = waiting && canSignOff(row.doc_type, me?.role);
+  const iCanSign = waiting && canSignOff(row.doc_type, me);
 
   return (
     <div className={`odRow${waiting ? ' odRow--waiting' : ''}`}>
@@ -150,7 +150,7 @@ export default function OpenDocsView({ onPickUp, embedded = false }) {
     const a = [];
     const b = [];
     rows.forEach((r) => {
-      const needsMe = (r.state === 'submitted' && canSignOff(r.doc_type, me?.role))
+      const needsMe = (r.state === 'submitted' && canSignOff(r.doc_type, me))
         || (r.state === 'open' && r.assigned_to === me?.id);
       (needsMe ? a : b).push(r);
     });
@@ -207,7 +207,7 @@ export default function OpenDocsView({ onPickUp, embedded = false }) {
      looked like the submitted one and wasn't (Fonzo, 2026-09-28). The
      approver still opens it for real, to fix a typo before filing. */
   function openRow(row) {
-    if (row.state === 'submitted' && !canSignOff(row.doc_type, me?.role)) {
+    if (row.state === 'submitted' && !canSignOff(row.doc_type, me)) {
       setViewing(row);
       return;
     }

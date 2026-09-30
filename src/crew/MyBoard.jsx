@@ -151,12 +151,22 @@ export default function MyBoard() {
      on screen rather than hidden, because a superintendent can only decide
      to fall back to paper if somebody tells him. */
   async function sendQueuedSignatures() {
-    const { stuck } = await flushSignatures(entry => signOnKiosk({
+    const { stuck, refused } = await flushSignatures(entry => signOnKiosk({
+      id: entry.id,
       publicationId: entry.publicationId,
       signatureData: entry.signatureData,
       expiresAt: entry.expiresAt,
     }));
     setKioskPending(pendingCount());
+    if (refused > 0) {
+      /* Dropped for good -- the JSA had closed by the time it went up. The
+         count on the pad already went up for that man, so take it back
+         down and say it out loud; he needs to sign the paper sheet. */
+      setKioskSigned(n => Math.max(0, n - refused));
+      setKioskError(`${refused} signature${refused === 1 ? '' : 's'} could not be recorded -- this JSA had already closed. `
+        + 'Have them sign the paper sheet.');
+      return;
+    }
     setKioskError(stuck > 0 && pendingCount() > 0
       ? `${pendingCount()} signature${pendingCount() === 1 ? '' : 's'} still waiting to send. Keep this open until they clear, or sign the paper sheet.`
       : '');
@@ -372,6 +382,21 @@ export default function MyBoard() {
             </button>
           </div>
         </>
+      )}
+
+      {/* Outside the kiosk block on purpose: signatures still held from an
+          earlier session must be visible the moment the board opens, not
+          only once somebody happens to open "Sign on this device". */}
+      {!kiosk && (kioskPending > 0 || kioskError) && (
+        <div className="sigPendingBar" role="alert">
+          <strong>
+            {kioskPending > 0
+              ? `${kioskPending} signature${kioskPending === 1 ? '' : 's'} not sent yet`
+              : 'Signature problem'}
+          </strong>
+          <span>{kioskError || 'Still trying. Keep this open until it clears.'}</span>
+          <button type="button" className="btn secondary sm" onClick={sendQueuedSignatures}>Try again</button>
+        </div>
       )}
 
       {kiosk && (

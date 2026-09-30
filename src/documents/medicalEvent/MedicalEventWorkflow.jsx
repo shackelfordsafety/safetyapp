@@ -14,6 +14,7 @@ import {
 } from '../FormPrimitives';
 import { LockedContext } from '../lockedContext';
 import { downloadDraftFile, buildDraftFilename } from '../../shared/draftTransfer';
+import { localISODate } from '../../shared/localDate';
 
 const EmployeeHandoffPanel = lazy(() => import('../../employee/EmployeeHandoffPanel'));
 
@@ -142,7 +143,7 @@ function StepReview({ checks, prev, next, onJumpCheck }) {
   );
 }
 
-function today() { return new Date().toISOString().slice(0, 10); }
+function today() { return localISODate(); }
 
 function fmtWhen(iso) {
   const d = new Date(iso);
