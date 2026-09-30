@@ -80,10 +80,22 @@ repo's own checks.
 | Ctrl+P on non-JSA forms printed a blank JSA | FIXED. Ctrl+P shows "use Print a copy"; printing from the browser menu prints a one-page note instead of a blank JSA. |
 | HR alerts | ADDED. Settings → "Alerts on this computer": once turned on, the app checks every two minutes while open in a tab and pops up a desktop notification for new documents waiting on you. No email (needs a mail service + DNS). |
 
-Still requires a person: **run the migration** (Supabase → SQL Editor → paste
-`supabase/migrations/20260930120000_audit_hardening.sql` → Run). It now also
-strips signature images from the anonymous board lookup and restricts JSA
-filing, and is written in full — no TODOs left in it.
+Database: **APPLIED to the live project on 2026-09-30** through the Supabase
+connector. The live functions were checked against the repo first (they
+matched); every new rule was then verified on the live database: the
+archive refuses edits and a second copy of an already-filed JSA, size limits
+and the 72-hour board window validated against all existing rows, a normal
+hand-off request still saves (with the answer blanked and a 2-hour life),
+`set_person_role` and the filing function are no longer callable by anon,
+and the board lookup no longer returns signature images. Signature cap
+raised to 500 KB (real ones on the live project run up to 171 KB).
+
+**One duplicate already existed**: the TAPS JSA of 2026-09-18 was filed
+twice, six seconds apart, on 2026-09-19 (documents e7d3e0d4… and 784f3811…)
+-- the exact race these fixes close. Filed records are never deleted, so the
+second copy is left in place and excluded from the "file once" rule. If
+anybody wants it gone, that is a deliberate decision for the owner, made in
+the Supabase SQL editor (the new trigger has to be dropped for it).
 
 ---
 

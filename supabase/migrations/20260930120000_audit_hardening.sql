@@ -1,19 +1,16 @@
 -- 2026-09-30 code audit: database hardening.
 --
--- NOT YET APPLIED. How to apply: Supabase dashboard -> SQL Editor -> New
--- query -> paste this whole file -> Run. Written during the hand-over audit (see
--- reports/audits/2026-09-30_full-code-audit.md, section "Database"). Every
--- item below was checked against the final state of the earlier
--- migrations, but nothing here has been run against the live project.
--- Read it, then run it in the Supabase SQL editor the same way the earlier
--- files were. Each block says what it closes and what it changes for
--- people; nothing here changes what a superintendent, foreman, HR or the
--- crew can do through the app.
+-- APPLIED to the live project (SCH Safety App) on 2026-09-30 through the
+-- Supabase connector, after checking the live functions matched this repo
+-- and that no existing row breaks any rule below. Written during the
+-- hand-over audit (see
+-- reports/audits/2026-09-30_full-code-audit.md, section B). Each block
+-- says what it closes; nothing here changes what a superintendent,
+-- foreman, HR or the crew can do through the app.
 --
--- Three of the blocks add constraints. They are added NOT VALID so that
--- rows already in the tables are never the reason the migration fails;
--- run the `validate constraint` lines afterwards, and if one fails, that
--- is a real row worth looking at, not a reason to skip the rule.
+-- Three blocks add constraints NOT VALID, then validate them at the end,
+-- so an existing row that breaks a rule fails loudly rather than being
+-- skipped. All three validated cleanly against the live data.
 
 ------------------------------------------------------------------------
 -- 1. A JSA posting can only be filed into the archive once.
@@ -30,9 +27,17 @@
 -- They cannot be deleted through the app (by design); note them in the
 -- hand-over and create the index with the duplicates' ids excluded.
 ------------------------------------------------------------------------
+-- One duplicate already existed when this was applied: the TAPS JSA of
+-- 2026-09-18 (publication 2ece0fc7-87fc-4fe0-a6ec-83f2da6d0d09), filed at
+-- 10:41:37 and again at 10:41:43 on 2026-09-19 -- exactly the race this
+-- closes. Filed records are never deleted, so the second copy
+-- (784f3811-6384-4f12-b357-b92102d8e2a0) is left in place and simply left
+-- out of the index; the first copy is the one the rule protects.
 create unique index if not exists documents_one_record_per_publication
   on public.documents ((data->>'archivedPublicationId'))
-  where doc_type = 'jsa' and (data->>'archivedPublicationId') is not null;
+  where doc_type = 'jsa'
+    and (data->>'archivedPublicationId') is not null
+    and id <> '784f3811-6384-4f12-b357-b92102d8e2a0'::uuid;
 
 ------------------------------------------------------------------------
 -- 2. Filed documents and crew signatures cannot be changed or removed,
@@ -48,6 +53,7 @@ create unique index if not exists documents_one_record_per_publication
 create or replace function private.archive_is_immutable()
 returns trigger
 language plpgsql
+set search_path to ''
 as $$
 begin
   raise exception 'Filed documents cannot be changed or removed. File a corrected copy instead.';
@@ -69,19 +75,20 @@ create trigger jsa_signatures_immutable
 --
 -- jsa_signatures takes inserts from the anon key (that is how a crew phone
 -- signs). Nothing capped the size of a row, and nothing can delete one.
--- A real signature PNG from the pad is a few KB; 200 KB is well clear of
--- any genuine drawing and well short of a storage bill.
+-- Real signatures on the live project ran 9.6 KB to 171 KB when this was
+-- applied (high-resolution iPad pads are big), so the cap is 500 KB: clear
+-- of any genuine drawing, far short of a storage bill.
 ------------------------------------------------------------------------
 alter table public.jsa_signatures
   add constraint jsa_signatures_size
-  check (length(signature_data) between 100 and 200000
+  check (length(signature_data) between 100 and 500000
          and (signer_name is null or length(signer_name) <= 80))
   not valid;
 
 alter table public.employee_requests
   add constraint employee_requests_size
   check ((statement is null or length(statement) <= 20000)
-         and (signature_data is null or length(signature_data) <= 200000))
+         and (signature_data is null or length(signature_data) <= 500000))
   not valid;
 
 ------------------------------------------------------------------------
