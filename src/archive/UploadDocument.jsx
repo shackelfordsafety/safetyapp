@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { uploadExistingDocument } from './fileToArchive';
+import { uploadExistingDocument, describeUploadProblem } from './fileToArchive';
+import { canFileDocType } from './archiveRoles';
 
 /* ── Add a document that already exists as a file ────────────────────────
    The way years of existing write-ups, separations and incident reports get
@@ -22,8 +23,16 @@ const TYPES = [
   ['jsa', 'Job Safety Analysis'],
 ];
 
-export default function UploadDocument({ onDone, onCancel }) {
+export default function UploadDocument({ profile, onDone, onCancel }) {
+  /* Only the kinds this account may actually file. Offering the rest let a
+     superintendent pick Disciplinary, upload the file, and only THEN be
+     refused by the database -- in raw Postgres, with the file left behind
+     in storage for good. Same rule as the database; checked again right
+     before uploading in uploadExistingDocument(). Audit 2026-09-30. */
+  const types = TYPES.filter(([v]) => canFileDocType(profile, v));
+  const limited = types.length < TYPES.length;
   const [file, setFile] = useState(null);
+  const [fileProblem, setFileProblem] = useState('');
   const [docType, setDocType] = useState('');
   const [employeeName, setEmployeeName] = useState('');
   const [jobSite, setJobSite] = useState('');
@@ -33,7 +42,13 @@ export default function UploadDocument({ onDone, onCancel }) {
   const [error, setError] = useState('');
   const [doneCount, setDoneCount] = useState(0);
 
-  const canSubmit = file && docType && !busy;
+  const canSubmit = file && !fileProblem && docType && !busy;
+
+  function pickFile(picked) {
+    setFile(picked);
+    setError('');
+    setFileProblem(picked ? (describeUploadProblem(picked) || '') : '');
+  }
 
   async function submit(e) {
     e.preventDefault();
@@ -46,6 +61,7 @@ export default function UploadDocument({ onDone, onCancel }) {
       // person's hard drive, and retyping the same job for thirty files is
       // how somebody gives up halfway through.
       setFile(null);
+      setFileProblem('');
       setEmployeeName('');
       setDocDate('');
       setNote('');
@@ -82,18 +98,31 @@ export default function UploadDocument({ onDone, onCancel }) {
           <input
             id="arcUploadFile"
             type="file"
-            accept=".pdf,.png,.jpg,.jpeg,.heic,image/*,application/pdf"
-            onChange={e => setFile(e.target.files?.[0] || null)}
+            /* No .heic here on purpose: when the list does not ask for it,
+               the iPad and iPhone hand over a JPEG instead, which the office
+               computer can open. A HEIC that still arrives (a file picked
+               on a PC) is converted or refused -- see prepareUploadFile. */
+            accept=".pdf,.png,.jpg,.jpeg,image/*,application/pdf"
+            onChange={e => pickFile(e.target.files?.[0] || null)}
           />
-          <span className="arcHint">A PDF or a photo of the paperwork. Both work.</span>
+          {fileProblem
+            ? <div className="arcErr" role="alert">{fileProblem}</div>
+            : <span className="arcHint">A PDF or a photo of the paperwork. Both work. Up to 25 MB.</span>}
         </label>
 
         <label className="arcField">
           <span>What kind of document</span>
           <select value={docType} onChange={e => setDocType(e.target.value)} required>
             <option value="">Choose one…</option>
-            {TYPES.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
+            {types.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
           </select>
+          {limited && (
+            <div className="arcHint">
+              {types.length === 1
+                ? 'Your account can add JSAs. Write-ups and separations are added by HR; incident, medical and uncontrolled event paperwork by a PM or HR.'
+                : 'Only the kinds your account can file are listed. Write-ups and separations are added by HR.'}
+            </div>
+          )}
         </label>
 
         <label className="arcField">

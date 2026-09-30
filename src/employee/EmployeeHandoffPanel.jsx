@@ -71,47 +71,158 @@ function QrImage({ url }) {
   return <img className="empQr" src={png} alt="Scan this with the employee's phone" />;
 }
 
-export default function EmployeeHandoffPanel({ docType, model, employeeName, needs, respondedAt, onReceived }) {
-  const [handoff, setHandoff] = useState(null);
+/* Same address handoffRequests.employeeUrlFor builds. Repeated here so a
+   code saved on the document can be drawn again straight away on reopen,
+   even with no signal and before the cloud module has loaded. */
+function urlForToken(token) {
+  const { origin, pathname } = window.location;
+  return `${origin}${pathname}#/me/${token}`;
+}
+
+/* A code lives two hours (the database enforces it -- see the
+   new_handoff_is_blank trigger). Kept on the saved code only as a backstop
+   for when the server cannot say (see watch() below). */
+const CODE_LIFETIME_MS = 2 * 60 * 60 * 1000;
+
+function fmtTime(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+
+/* PENDING CODES ARE SAVED ON THE DOCUMENT (audit 2026-09-30, C3).
+   `pending` is { token, createdAt, expiresAt } -- employeeHandoff on the
+   HR documents, handoff on an incident witness -- and `onPendingChange`
+   writes it back through the workflow's own upd(), so autosave keeps it.
+
+   It used to live only in this component. Tap Next, Home, or reload while
+   they were still signing, and the panel forgot the code: their phone said
+   "Sent", the answer never came back into the document, and the manager
+   was offered a brand-new code and had to make them do it all again. Now
+   the code outlives the screen, and whichever copy of this panel is open
+   next picks the wait back up where it left off. */
+export default function EmployeeHandoffPanel({
+  docType, model, employeeName, needs, respondedAt, onReceived, pending, onPendingChange,
+}) {
+  const pendingToken = pending?.token || '';
+  const [handoff, setHandoff] = useState(() => (
+    pendingToken ? { token: pendingToken, url: urlForToken(pendingToken), expiresAt: pending?.expiresAt || '' } : null
+  ));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [received, setReceived] = useState(null);
+  const [expired, setExpired] = useState(false);
   /* Whether the manager has deliberately asked to go round again. Starts
      false every time the screen is opened, so the button is never one
      stray tap away. */
   const [redoing, setRedoing] = useState(false);
   const timer = useRef(null);
+  /* Which code is being watched, and a counter bumped by every stop(): an
+     answer still in flight from a poll that has since been stopped (screen
+     closed, code cancelled) is dropped, not applied twice or to nothing. */
+  const watching = useRef('');
+  const generation = useRef(0);
+  const mounted = useRef(true);
+  /* The newest callbacks, not the ones from the render the poll started
+     in -- the answer can land minutes later, after the document changed. */
+  const onReceivedRef = useRef(onReceived);
+  const onPendingRef = useRef(onPendingChange);
+  onReceivedRef.current = onReceived;
+  onPendingRef.current = onPendingChange;
   const copy = PANEL_COPY[docType] || PANEL_COPY.notice;
 
-  const stop = useCallback(() => { clearInterval(timer.current); timer.current = null; }, []);
-  useEffect(() => stop, [stop]);
+  const stop = useCallback(() => {
+    clearInterval(timer.current);
+    timer.current = null;
+    watching.current = '';
+    generation.current += 1;
+  }, []);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; stop(); };
+  }, [stop]);
+
+  /* Polled rather than pushed. They are standing in front of you and this
+     takes a minute; a realtime subscription would be more machinery for
+     a wait that somebody is watching anyway. Every four seconds is often
+     enough to feel immediate and rare enough to be free.
+
+     It stops for good on an answer, and on an expired code -- it used to
+     keep asking every four seconds forever after the two hours were up.
+     A null (the server cannot see the code: cancelled, or a different
+     account signed in) is not treated as expiry until the saved expiry time
+     has passed too, so a sign-in hiccup cannot throw away a live code. */
+  function watch(mod, token, expiresAt) {
+    stop();
+    const gen = generation.current;
+    watching.current = token;
+    const tick = async () => {
+      let answer;
+      try {
+        answer = await mod.checkHandoff(token);
+      } catch { return; /* a dropped poll is not worth showing; the next one retries */ }
+      if (gen !== generation.current) return;
+      if (answer && !answer.waiting) {
+        stop();
+        setHandoff(null);
+        setReceived(answer);
+        onPendingRef.current?.(null);
+        onReceivedRef.current?.(answer);
+        return;
+      }
+      const pastSaved = expiresAt && new Date(expiresAt).getTime() <= Date.now();
+      if ((answer && answer.expired) || (!answer && pastSaved)) {
+        stop();
+        setHandoff(null);
+        setExpired(true);
+        onPendingRef.current?.(null);
+      }
+    };
+    timer.current = setInterval(tick, 4000);
+    return tick;
+  }
+
+  /* Reopened with a code still out -- pick the wait back up. Checked once
+     straight away, because the answer has usually been sitting there the
+     whole time the manager was on another step. */
+  useEffect(() => {
+    if (!pendingToken || watching.current === pendingToken) return undefined;
+    let alive = true;
+    setHandoff({ token: pendingToken, url: urlForToken(pendingToken), expiresAt: pending?.expiresAt || '' });
+    setExpired(false);
+    (async () => {
+      try {
+        const mod = await loadModule(() => import('./handoffRequests'));
+        if (!alive || !mounted.current) return;
+        watch(mod, pendingToken, pending?.expiresAt || '')();
+      } catch { /* offline and the module is not cached: the code still shows, and reopening retries */ }
+    })();
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingToken]);
 
   async function start() {
     setBusy(true);
     setError('');
     try {
       const mod = await loadModule(() => import('./handoffRequests'));
-      const made = await mod.createHandoff({ docType, model, employeeName, needs });
-      setHandoff(made);
-
-      /* Polled rather than pushed. They are standing in front of you and this
-         takes a minute; a realtime subscription would be more machinery for
-         a wait that somebody is watching anyway. Every four seconds is
-         often enough to feel immediate and rare enough to be free. */
-      timer.current = setInterval(async () => {
-        try {
-          const answer = await mod.checkHandoff(made.token);
-          if (answer && !answer.waiting) {
-            stop();
-            setReceived(answer);
-            onReceived?.(answer);
-          }
-        } catch { /* a dropped poll is not worth showing; the next one retries */ }
-      }, 4000);
+      /* The saved code is bookkeeping, not part of what they read. */
+      const { employeeHandoff: _saved, ...snapshot } = model || {};
+      const made = await mod.createHandoff({ docType, model: snapshot, employeeName, needs });
+      const createdAt = new Date().toISOString();
+      const expiresAt = new Date(Date.now() + CODE_LIFETIME_MS).toISOString();
+      /* Saved first, so a code made while the manager was already tapping
+         away is not lost with the screen. */
+      if (mounted.current) {
+        setExpired(false);
+        setHandoff({ ...made, expiresAt });
+        watch(mod, made.token, expiresAt);
+      }
+      onPendingRef.current?.({ token: made.token, createdAt, expiresAt });
     } catch (ex) {
-      setError(ex?.message || 'Could not create the code.');
+      if (mounted.current) setError(ex?.message || 'Could not create the code.');
     } finally {
-      setBusy(false);
+      if (mounted.current) setBusy(false);
     }
   }
 
@@ -119,6 +230,7 @@ export default function EmployeeHandoffPanel({ docType, model, employeeName, nee
     stop();
     const token = handoff?.token;
     setHandoff(null);
+    onPendingRef.current?.(null);
     if (!token) return;
     try {
       const mod = await loadModule(() => import('./handoffRequests'));
@@ -177,9 +289,14 @@ export default function EmployeeHandoffPanel({ docType, model, employeeName, nee
           <p>{copy.intro}</p>
         </div>
         <div className="cardBody">
+          {/* A code that ran out is said out loud, not quietly swapped for
+              the fresh-start screen as if nothing had been sent. */}
+          {expired && !error && (
+            <p className="empExpired" role="status">This code expired before they sent it back — make a new one.</p>
+          )}
           {error && <p className="empError">{error}</p>}
           <button type="button" className="btn primary" onClick={start} disabled={busy}>
-            {busy ? 'Making the code…' : 'Show the QR code'}
+            {busy ? 'Making the code…' : (expired ? 'Make a new code' : 'Show the QR code')}
           </button>
           {/* Points back at the fork above -- choosing this path is what put
               this panel here. */}
@@ -193,7 +310,7 @@ export default function EmployeeHandoffPanel({ docType, model, employeeName, nee
     <div className="card empPanel">
       <div className="cardHeader">
         <strong>Have them scan this</strong>
-        <p>Leave this open. It fills in by itself when they send it back.</p>
+        <p>It fills in by itself when they send it back. You can leave this step and come back — it keeps waiting.</p>
       </div>
       <div className="cardBody empQrBody">
         <QrImage url={handoff.url} />
@@ -201,7 +318,9 @@ export default function EmployeeHandoffPanel({ docType, model, employeeName, nee
             focus on a QR code in the sun is not a rare event on a job site.
             Selectable so it can be texted to them. */}
         <p className="empLink">{handoff.url}</p>
-        <p className="empMuted">Works for 2 hours, one time only.</p>
+        <p className="empMuted">
+          {fmtTime(handoff.expiresAt) ? `Works until ${fmtTime(handoff.expiresAt)}, one time only.` : 'Works for 2 hours, one time only.'}
+        </p>
         <button type="button" className="btn ghost sm" onClick={cancel}>Cancel this code</button>
       </div>
     </div>

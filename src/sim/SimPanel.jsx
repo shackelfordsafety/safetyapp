@@ -64,6 +64,19 @@ export default function SimPanel() {
        go. */
     const field = MARKED_FIELD[docType];
     if (field) marked[field] = `${code} ${seed[field] || ''}`.trim();
+    /* Every PERSON on it too, not just the headline. An incident filed
+       from the live site in sim mode read "Marcus Doyle" as the injured
+       party, with only the location saying SIM -- a permanent archive
+       record under a plausible real name. */
+    const tag = v => (typeof v === 'string' && v.trim() && !v.startsWith(code) ? `${code} ${v}` : v);
+    Object.keys(marked).forEach((k) => {
+      if (/Name$/.test(k)) marked[k] = tag(marked[k]);
+      else if (Array.isArray(marked[k])) {
+        marked[k] = marked[k].map(item => (item && typeof item === 'object'
+          ? Object.fromEntries(Object.entries(item).map(([ik, iv]) => [ik, (ik === 'name' || /Name$/.test(ik)) ? tag(iv) : iv]))
+          : item));
+      }
+    });
 
     marked.id = (crypto.randomUUID && crypto.randomUUID()) || String(Date.now());
     marked.status = 'draft';

@@ -295,6 +295,21 @@ export default function OpenDocsView({ onPickUp, embedded = false }) {
               onOpen={openRow}
               onHandOver={openHandOver}
               onSignOff={row => act(async () => {
+                /* Signing off from this list files the copy on the server.
+                   If this person opened it here to correct it, their
+                   corrections are on this device and would be left behind
+                   -- the archive would get the uncorrected original. */
+                const { readPickedUpLink } = await loadModule(() => import('./pickUp'));
+                const link = readPickedUpLink();
+                if (link?.openDocumentId === row.id) {
+                  const fileOriginal = window.confirm(
+                    'You opened this one to correct it on this device.\n\n'
+                    + 'Signing off from here files the ORIGINAL, without your corrections. '
+                    + 'To file your corrected version, tap Cancel, open it, and use "Approve & file" at the end of the form.\n\n'
+                    + 'File the original anyway?'
+                  );
+                  if (!fileOriginal) return;
+                }
                 const mod = await loadModule(() => import('./openDocs'));
                 await mod.signOffAndFile(row.id);
               })}

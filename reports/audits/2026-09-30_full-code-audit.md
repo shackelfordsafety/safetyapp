@@ -56,6 +56,37 @@ pull the branch some other way before it is lost with the container.
 
 ---
 
+## Round 2 (same day) — section C, fixed
+
+Fonzo, after round 1 shipped: "fix it all please, tomorrow is my last day".
+Everything in section C below was fixed except where marked. Each piece
+was checked against real output: rendered PDF pages looked at by eye,
+browser runs against a faked Supabase that records every call, and the
+repo's own checks.
+
+| Section C item | Status |
+| --- | --- |
+| 1. Approver corrections on an incident were lost | FIXED. "Approve & file" now works for incidents: it makes the printout from the corrected form, saves the corrections, notifies the author and files. Verified against a faked server (the corrected name and a fresh PDF are what get filed). My Work's "Sign off & file" warns before filing the original of a document you picked up to correct. |
+| 2. Incident photos never left the device | FIXED. Submit (and Approve & file) upload the photos into the author's storage folder; picking the report up downloads any that are missing. A PDF can no longer be made with a photo missing — it stops with "N photos aren't on this device yet…". Photo appendix pages are JPEG now (a 3-photo report went from 6.4 MB to 1.8 MB). |
+| 3. Employee/witness phone hand-off lost | FIXED. The pending code is saved on the document; leaving the step, going Home, or reloading resumes waiting on the SAME code. Expired codes stop polling and say so. |
+| 4. Witness statement contradicted the employee line | FIXED. If the employee's signed/refused answer flips after the witness signed, the witness signature is taken off with a note saying why. Only that flip — a phone answer landing later, or switching device/phone, leaves the witness alone because their sentence is still true. |
+| 5. PDF layout overflows | FIXED. Signature labels and "Other — …" text wrap inside their column; section headings move with their box; medical's two signature rows stay together. 18 of 21 existing fixtures render pixel-identical; the 3 that differ each had an orphaned heading. Incident page-2 remarks now have a limit (about 1,700 characters) so the body diagram cannot be squeezed away. |
+| 6. Offline resilience | FIXED. Each on-demand screen has its own safety net (SafeSuspense) instead of the app-wide crash screen; the four HR forms, My Work and the PDF libraries are downloaded quietly in the background while online; ViewAsPicker only loads when signed in. |
+| 7. Templates/settings leaking between accounts on a shared iPad | FIXED. The device records whose templates it holds (`sdc.sync.owner.v1`); when somebody else signs in, nothing of the previous person's is pushed to them, and the previous person's copy is set aside on the device (`sdc.sync.stash.v1`), not deleted. Settings now carry their own timestamp in the cloud. Signing in syncs immediately. |
+| 8. Hidden per-keystroke measuring | FIXED. The measuring rig only mounts with `?debug=print` (its result was always discarded). The incident export's re-centering only runs when the incident changes. PDF render scale is 2 on every device (desktop was 2.5 — more work than the iPads). JSA PDF: same look at 3x zoom, 25% smaller. |
+| 9. Upload refused after the file was already stored | FIXED. Type list filtered by what the role may file, re-checked before upload, 25 MB cap, unknown types refused instead of stored as "PDF", HEIC converted to JPEG where the browser can. |
+| 10. Crew/kiosk messages and refresh | FIXED. "Not open yet" is no longer reported as "expired" (and the kiosk keeps retrying those instead of dropping them); the crew page re-checks every 30 s so Scheduled turns into Sign on its own. Signatures taken on the device before publishing are now included when the JSA files itself (they used to be dropped). |
+| 11. Smaller items | FIXED: non-string snapshot trim, Finish step keeps its PDF panel, shared dialog focus trap, Records banner for PM/clerk/owner, password no-signal message, sim documents mark every name, "(blank) → (blank)" change notices. NOT FIXED: `pdf-lib` still bundles into each HR form's chunk (performance only); iPad voice input untested. |
+| Ctrl+P on non-JSA forms printed a blank JSA | FIXED. Ctrl+P shows "use Print a copy"; printing from the browser menu prints a one-page note instead of a blank JSA. |
+| HR alerts | ADDED. Settings → "Alerts on this computer": once turned on, the app checks every two minutes while open in a tab and pops up a desktop notification for new documents waiting on you. No email (needs a mail service + DNS). |
+
+Still requires a person: **run the migration** (Supabase → SQL Editor → paste
+`supabase/migrations/20260930120000_audit_hardening.sql` → Run). It now also
+strips signature images from the anonymous board lookup and restricts JSA
+filing, and is written in full — no TODOs left in it.
+
+---
+
 ## A. Fixed on this branch
 
 ### JSA (main.jsx)
@@ -300,7 +331,7 @@ Also found, **not in the migration** (decide first):
 
 ---
 
-## C. OPEN — real, not changed here
+## C. OPEN after round 1 — see "Round 2" above: all fixed except where noted there
 
 Ordered by how much I would worry about each.
 

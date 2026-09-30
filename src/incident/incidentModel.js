@@ -135,6 +135,11 @@ export function emptyWitness() {
     signMethod: '',
     // Set when they answered on their own phone; seals statement+signature.
     responseAt: '',
+    // The QR code still waiting on their phone: { token, createdAt,
+    // expiresAt } or null. Saved so leaving the step or reloading does not
+    // lose their answer (audit 2026-09-30, C3). Never printed, and left out
+    // of printedIncidentFingerprint below.
+    handoff: null,
   };
 }
 
@@ -171,7 +176,10 @@ export const INCIDENT_PHOTO_CATEGORIES = [
    on-screen thumbnail and the PDF appendix without having to load the blob
    first. sourceName/sourceSize are the ORIGINAL file's name/size, kept only
    for duplicate-upload detection (see incidentPhotoProcessing.js) -- never
-   printed. */
+   printed. An optional `storagePath` is added once the image has been
+   copied to the company's private file storage (incidentPhotoCloud.js) so
+   another device can fetch it back; absent on photos that exist only on
+   this device. Not printed, and left out of printedIncidentFingerprint. */
 export function emptyIncidentPhoto() {
   return {
     id: makeId(),
@@ -415,6 +423,25 @@ const NON_PRINTED_INCIDENT_FIELDS = ['id', 'status', 'createdAt', 'lastSavedAt',
 export function printedIncidentFingerprint(incident) {
   const printed = { ...incident };
   NON_PRINTED_INCIDENT_FIELDS.forEach(k => { delete printed[k]; });
+  /* A witness's waiting QR code is bookkeeping: making, cancelling or
+     expiring one must not mark the PDF stale or knock a finished report
+     back to draft. */
+  if (Array.isArray(printed.witnesses)) {
+    printed.witnesses = printed.witnesses.map(w => {
+      if (!w || typeof w !== 'object') return w;
+      const { handoff: _pending, ...rest } = w;
+      return rest;
+    });
+  }
+  /* Same for a photo's cloud-copy location (incidentPhotoCloud.js):
+     recording it after an upload is bookkeeping, not printed content. */
+  if (Array.isArray(printed.photos)) {
+    printed.photos = printed.photos.map(p => {
+      if (!p || typeof p !== 'object') return p;
+      const { storagePath: _stored, ...rest } = p;
+      return rest;
+    });
+  }
   return JSON.stringify(printed);
 }
 

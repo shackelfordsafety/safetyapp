@@ -71,8 +71,14 @@ function sourceDimensions(source) {
    canvas/export failure) -- callers (IncidentPhotos.jsx) catch this and
    show it directly to the field user, never a raw stack trace. */
 export async function processIncidentPhotoFile(file) {
-  if (!file || !file.type || !file.type.startsWith('image/')) {
-    throw new Error(`"${file?.name || 'That file'}" isn't a photo. Choose a JPEG or PNG image.`);
+  if (!file) throw new Error("That file isn't a photo. Choose a JPEG or PNG image.");
+  // Only a type that is known AND not an image is refused up front. Some
+  // pickers (iOS Files, Android downloads, extension-less files) hand over
+  // a real photo with an empty or generic "application/octet-stream" type;
+  // decoding below is the real test.
+  const type = String(file.type || '').toLowerCase();
+  if (type && type !== 'application/octet-stream' && !type.startsWith('image/')) {
+    throw new Error(`"${file.name || 'That file'}" isn't a photo. Choose a JPEG or PNG image.`);
   }
 
   let source;

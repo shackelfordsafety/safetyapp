@@ -29,7 +29,7 @@ const APPROVERS = {
   separation: ['hr', 'owner'],
 };
 
-export default function ApproveAndFileButton({ docType, model }) {
+export default function ApproveAndFileButton({ docType, model, pdfBlob, ensurePdf }) {
   const [link, setLink] = useState(null);
   const [me, setMe] = useState(null);
   const [canDraw, setCanDraw] = useState(false);
@@ -74,7 +74,13 @@ export default function ApproveAndFileButton({ docType, model }) {
   const allowed = link && me && ((APPROVERS[docType] || []).includes(me.role) || me.is_admin);
   if (!allowed) return null;
 
-  if (!canDraw) {
+  /* Documents the server cannot redraw (the incident report) are filed
+     with a printout made right here, from the corrected form. That used to
+     be a dead end: this spot said "approve it from My Work", and My Work
+     filed the author's ORIGINAL -- the approver's corrections died on the
+     iPad. */
+  const makesOwnPrintout = !canDraw && typeof ensurePdf === 'function';
+  if (!canDraw && !makesOwnPrintout) {
     return (
       <p className="helperText">
         You can approve this one from <strong>My Work</strong> once you have finished
@@ -87,9 +93,28 @@ export default function ApproveAndFileButton({ docType, model }) {
     setPhase('working');
     setMessage('');
     try {
+      let blob = null;
+      if (makesOwnPrintout) {
+        blob = pdfBlob || await ensurePdf();
+        if (!blob) {
+          setMessage('The printout could not be made, so nothing was filed. Fix what it says above, then try again.');
+          setPhase('error');
+          return;
+        }
+      }
       const mod = await loadModule(() => import('./openDocs'));
       const { clearPickedUpLink } = await loadModule(() => import('./pickUp'));
-      const { changes, noticeFailed } = await mod.approveWithEdits({ id: link.openDocumentId, model });
+      // Any photo the approver added here goes up with the filed record too.
+      let filing = model;
+      if (docType === 'incident' && Array.isArray(model?.photos) && model.photos.some(p => !p?.storagePath)) {
+        const { db } = await loadModule(() => import('../archive/archiveClient'));
+        const { data: userData } = await db.auth.getUser();
+        if (userData?.user?.id) {
+          const { uploadIncidentPhotos } = await loadModule(() => import('../incident/incidentPhotoCloud'));
+          filing = await uploadIncidentPhotos(db, userData.user.id, model);
+        }
+      }
+      const { changes, noticeFailed } = await mod.approveWithEdits({ id: link.openDocumentId, model: filing, pdfBlob: blob });
       clearPickedUpLink();
       setMessage(changes.length
         ? `Filed. ${changes.length === 1 ? '1 change was' : `${changes.length} changes were`} recorded${noticeFailed ? ', but the person who wrote it could NOT be notified -- tell them yourself' : ' and the person who wrote it has been told'}.`
@@ -123,8 +148,8 @@ export default function ApproveAndFileButton({ docType, model }) {
       {phase === 'error' && <p className="archiveError">{message}</p>}
       <p className="helperText">
         Files it as it reads right now, including anything you just corrected.
-        The printout is remade without the DRAFT mark, and whoever wrote it is
-        told exactly what you changed.
+        The printout is remade from what is on this screen, and whoever wrote
+        it is told exactly what you changed.
       </p>
     </div>
   );

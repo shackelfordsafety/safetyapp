@@ -151,3 +151,11 @@
     border-top: 1px solid #d8d8d8;
   }
 }
+
+/* "This code expired" on the management side. Not an error -- nothing
+   broke, two hours passed -- so the warning colour, not the red. */
+.empExpired {
+  margin: 0;
+  color: var(--warn);
+  font-weight: 600;
+}

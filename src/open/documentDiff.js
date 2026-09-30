@@ -19,6 +19,8 @@ const IGNORED = new Set([
   'id', 'status', 'createdAt', 'lastSavedAt', 'completedAt', 'updatedAt',
   'reportNumber', 'suggestionBundles', 'signatureLineCount', 'signInMode',
   'crewSignatures',
+
+  'employeeHandoff', // a pending phone code, not wording
 ]);
 
 /* Field names read to a person, not to a database. Anything not listed
@@ -80,7 +82,13 @@ export function diffDocuments(before, after) {
 
     if (Array.isArray(was) || Array.isArray(now) || (was && typeof was === 'object') || (now && typeof now === 'object')) {
       // Structured content: say it moved, don't pretend to know how.
-      if (JSON.stringify(was ?? null) !== JSON.stringify(now ?? null)) {
+      // An empty list and no list at all are the same thing to a reader --
+      // counting them as different told authors "Photos: (blank) -> (blank)".
+      const norm = v => ((Array.isArray(v) && !v.length) || (v && typeof v === 'object' && !Array.isArray(v) && !Object.keys(v).length) ? null : (v ?? null));
+      // Bookkeeping inside lists (a photo's upload location, a witness's
+      // pending phone code) is not wording anybody changed.
+      const plumbing = (k, v) => (k === 'storagePath' || k === 'handoff' ? undefined : v);
+      if (JSON.stringify(norm(was), plumbing) !== JSON.stringify(norm(now), plumbing)) {
         out.push({ field: key, label: label(key), before: show(was), after: show(now) });
       }
       return;

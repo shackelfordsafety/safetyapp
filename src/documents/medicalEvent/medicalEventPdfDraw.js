@@ -24,7 +24,8 @@ export async function drawMedicalEventPdf(model, onProgress) {
   const logoBytes = await loadLogoPngBytes(`${import.meta.env.BASE_URL}icons/shackelford-logo.webp`);
   const doc = await createFormPdf({
     formTitle: FORM_TITLE,
-    logoBytes,  });
+    logoBytes,
+  });
 
   // Field order is the paper form's.
   doc.infoTable([
@@ -103,6 +104,10 @@ export async function drawMedicalEventPdf(model, onProgress) {
 
   doc.space(6);
   doc.grayBar('Signatures');
+  /* Both signers stay on one page (with the heading). Drawn independently,
+     a near-full page 1 left the employee's row alone at the bottom and the
+     supervisor's row by itself on page 2. ~80pt per row. */
+  doc.keepTogether(165);
   /* The paper form prints Name above Signature and Date for both signers.
      A blank name falls back to whoever is already named up top, so the
      printed form never carries an empty NAME line. */

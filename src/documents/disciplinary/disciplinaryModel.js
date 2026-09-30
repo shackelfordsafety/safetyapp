@@ -94,6 +94,13 @@ export function emptyDisciplinary() {
        That case cannot be locked and should not pretend to be: the iPad
        was in management's hands the whole time. */
     employeeResponseAt: '',
+    /* The QR code still waiting on their phone: { token, createdAt,
+       expiresAt }, or null. Saved so leaving the step or reloading does not
+       lose their answer (audit 2026-09-30, C3). Bookkeeping only -- never
+       printed, left out of the printed-content fingerprint, and cleared once
+       the answer lands, the code expires, or it is cancelled. A draft saved
+       before this existed simply has none. */
+    employeeHandoff: null,
     /* WHO IS GIVING THE NOTICE, which is not `supervisor` above.
        `supervisor` describes who the employee works for. This is the
        manager holding the meeting and putting his name to it -- often not

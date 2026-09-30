@@ -1,6 +1,7 @@
 -- 2026-09-30 code audit: database hardening.
 --
--- NOT YET APPLIED. Written during the hand-over audit (see
+-- NOT YET APPLIED. How to apply: Supabase dashboard -> SQL Editor -> New
+-- query -> paste this whole file -> Run. Written during the hand-over audit (see
 -- reports/audits/2026-09-30_full-code-audit.md, section "Database"). Every
 -- item below was checked against the final state of the earlier
 -- migrations, but nothing here has been run against the live project.
@@ -88,12 +89,12 @@ alter table public.employee_requests
 --
 -- Any login could insert a jsa_publications row with expires_at in 2099
 -- onto anyone's board; one anonymous signature then made it un-removable
--- (the take-down policy needs zero signatures). Night shifts published
--- the evening before need under a day; 48 hours leaves room.
+-- (the take-down policy needs zero signatures). A night shift published
+-- the morning before runs ~46 hours to its expiry; 72 leaves room.
 ------------------------------------------------------------------------
 alter table public.jsa_publications
   add constraint jsa_publications_expiry_window
-  check (expires_at <= published_at + interval '48 hours'
+  check (expires_at <= published_at + interval '72 hours'
          and (opens_at is null or opens_at <= expires_at))
   not valid;
 
@@ -148,24 +149,126 @@ grant execute on function public.set_person_role(uuid, text) to authenticated;
 drop function if exists public.link_edits_to_filed(uuid, uuid);
 
 ------------------------------------------------------------------------
--- 8. Any JSA draft submitted for review can only be filed by someone who
---    can see it.
+-- 8. A JSA submitted for review can only be filed by somebody who can see
+--    it.
 --
 -- can_file_doc_type('jsa') is true for every role, and
--- file_reviewed_document runs as definer, so a field user who learned an
--- open-document uuid could file it. The function is replaced whole,
--- identical to 20260911040000 except for the one added check.
+-- file_reviewed_document runs as its owner, so a field user who learned an
+-- open-document uuid could file it. Replaced whole: IDENTICAL to
+-- 20260911040000_filing_is_one_transaction.sql (the only definition) except
+-- for the one added check, marked below.
 ------------------------------------------------------------------------
--- (Left as a TODO for whoever applies this: copy the body of
---  public.file_reviewed_document from 20260911040000 and add, right after
---  the `for update` fetch:
---    if doc.doc_type = 'jsa'
---       and not (doc.created_by = auth.uid() or doc.assigned_to = auth.uid()
---                or private.can_see_all_documents()) then
---      raise exception 'Not yours to file.';
---    end if;
---  It is not reproduced here so this file cannot silently drift from the
---  live function text.)
+create or replace function public.file_reviewed_document(open_id uuid)
+returns uuid
+language plpgsql
+security definer
+set search_path to 'public'
+as $$
+declare
+  doc public.open_documents%rowtype;
+  new_id uuid;
+begin
+  if auth.uid() is null then
+    raise exception 'Not signed in.';
+  end if;
+
+  select * into doc from public.open_documents where id = open_id for update;
+  if not found then
+    raise exception 'That document is no longer waiting for sign-off — somebody may have just filed it.';
+  end if;
+
+  if doc.state is distinct from 'submitted' then
+    raise exception 'That one has not been submitted for sign-off yet.';
+  end if;
+
+  if not private.can_file_doc_type(doc.doc_type) then
+    raise exception 'You are not allowed to file a % document.', doc.doc_type;
+  end if;
+
+  -- ADDED 2026-09-30: every role may file a JSA, so for JSAs also require
+  -- that the caller could see this one in the first place.
+  if doc.doc_type = 'jsa'
+     and not (doc.created_by = auth.uid()
+              or doc.assigned_to = auth.uid()
+              or private.can_see_all_documents()) then
+    raise exception 'Not yours to file.';
+  end if;
+
+  insert into public.documents (
+    doc_type, submitted_by, filed_by,
+    employee_name, job_site, doc_date, data, client_doc_id, pdf_path
+  ) values (
+    doc.doc_type,
+    doc.created_by,
+    auth.uid(),
+    nullif(btrim(coalesce(doc.employee_name, '')), ''),
+    nullif(btrim(coalesce(doc.job_site, '')), ''),
+    doc.doc_date,
+    doc.data,
+    doc.client_doc_id,
+    doc.pdf_path
+  )
+  returning id into new_id;
+
+  update public.document_edits
+     set filed_document_id = new_id
+   where open_document_id = open_id
+     and filed_document_id is null;
+
+  delete from public.open_documents where id = open_id;
+
+  return new_id;
+end;
+$$;
+
+-- create or replace keeps grants, but restate them so this file is safe
+-- to run on its own (see 20260912020000 for why PUBLIC must be named).
+revoke execute on function public.file_reviewed_document(uuid) from public;
+revoke execute on function public.file_reviewed_document(uuid) from anon;
+grant execute on function public.file_reviewed_document(uuid) to authenticated, service_role;
+
+------------------------------------------------------------------------
+-- 8b. The anonymous board lookup stops handing out signature images.
+--
+-- board_for returns each posting's whole JSA to anybody holding the board
+-- link. When men signed on the superintendent's device BEFORE it was
+-- published, their signature images were inside that JSA (crewSignatures)
+-- and went out to every phone that scanned the code. The crew page never
+-- reads them; filing reads jsa_publications directly, not through this
+-- function, so the filed sheet keeps them. Identical to
+-- 20260911020000_board_is_a_lookup_not_a_list.sql (the only definition)
+-- except `p.data - 'crewSignatures'`.
+------------------------------------------------------------------------
+create or replace function public.board_for(owner uuid)
+returns table (
+  id uuid,
+  area_label text,
+  job_site text,
+  location text,
+  job_number text,
+  doc_date date,
+  published_at timestamptz,
+  expires_at timestamptz,
+  version integer,
+  data jsonb,
+  pdf_path text
+)
+language sql
+stable
+security definer
+set search_path to 'public'
+as $$
+  select p.id, p.area_label, p.job_site, p.location, p.job_number,
+         p.doc_date, p.published_at, p.expires_at, p.version,
+         p.data - 'crewSignatures',
+         p.pdf_path
+  from public.jsa_publications p
+  where p.board_owner = owner
+    and p.expires_at > now() - interval '36 hours'
+  order by p.published_at asc;
+$$;
+
+grant execute on function public.board_for(uuid) to anon, authenticated;
 
 ------------------------------------------------------------------------
 -- 9. Validate the NOT VALID constraints against existing rows. If any of

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef } from 'react';
+import { lazy, useRef } from 'react';
 import {
   MEDICAL_EVENT_STEPS,
   SYMPTOM_ONSET_OPTIONS, RESPONSE_ACTIONS, MEDICAL_EVALUATION_TYPES, WORK_STATUS_OPTIONS, INITIAL_CLASSIFICATIONS,
@@ -15,8 +15,13 @@ import {
 import { LockedContext } from '../lockedContext';
 import { downloadDraftFile, buildDraftFilename } from '../../shared/draftTransfer';
 import { localISODate } from '../../shared/localDate';
+import { loadModule } from '../../shared/loadModule';
+import SafeSuspense from '../../shared/SafeSuspense';
 
-const EmployeeHandoffPanel = lazy(() => import('../../employee/EmployeeHandoffPanel'));
+/* Lazy like everything that talks to the cloud. Wrapped in SafeSuspense
+   below, so if it cannot load (no signal the first time after an update)
+   only that one box says so -- not the whole form. */
+const EmployeeHandoffPanel = lazy(() => loadModule(() => import('../../employee/EmployeeHandoffPanel')));
 
 function toggleInList(list, item) {
   return (list || []).includes(item) ? list.filter(x => x !== item) : [...(list || []), item];
@@ -184,20 +189,24 @@ function StepSignatures({ model, upd, prev, next }) {
         </EmployeeOwned>
 
         {method === 'phone' && (
-          <Suspense fallback={null}>
+          <SafeSuspense fallback={null}>
             <EmployeeHandoffPanel
               docType="medicalEvent"
               model={model}
               employeeName={model.employeeName}
               needs={['signature']}
               respondedAt={model.employeeResponseAt}
+              /* Saved on the form, so leaving this step (or reloading) does
+                 not lose their answer. */
+              pending={model.employeeHandoff}
+              onPendingChange={p => upd({ employeeHandoff: p })}
               onReceived={answer => (answer.signatureData ? upd({
                 employeeSignatureData: answer.signatureData,
                 employeeSignatureDate: today(),
                 employeeResponseAt: answer.respondedAt || new Date().toISOString(),
               }) : null)}
             />
-          </Suspense>
+          </SafeSuspense>
         )}
 
         {method === 'phone' && model.employeeResponseAt && (

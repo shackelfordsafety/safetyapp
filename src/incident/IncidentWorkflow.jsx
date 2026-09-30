@@ -1,4 +1,4 @@
-import { lazy, Suspense, useId, useRef, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { lazy, useId, useRef, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import {
   INCIDENT_STEPS, INJURY_NATURE_OPTIONS, CAUSE_CATEGORIES, causeKey,
   emptyWitness, emptyTeamMember, getIncidentReadinessChecks, isIncidentReady, printedIncidentFingerprint,
@@ -17,8 +17,13 @@ import SubmitArea from '../open/SubmitArea';
 import { ARCHIVE_FILING_ENABLED } from '../archive/filingEnabled';
 import { downloadDraftFile, buildDraftFilename } from '../shared/draftTransfer';
 import { localISODate } from '../shared/localDate';
+import { loadModule } from '../shared/loadModule';
+import SafeSuspense from '../shared/SafeSuspense';
 
-const EmployeeHandoffPanel = lazy(() => import('../employee/EmployeeHandoffPanel'));
+/* Lazy like everything that talks to the cloud. Wrapped in SafeSuspense
+   below, so if it cannot load (no signal the first time after an update)
+   only that one box says so -- not the whole form. */
+const EmployeeHandoffPanel = lazy(() => loadModule(() => import('../employee/EmployeeHandoffPanel')));
 
 /* Touch/width layout detection, duplicated from main.jsx's private
    useIsTouchPrimary/useElementWidth rather than imported -- this module is
@@ -334,6 +339,15 @@ function StepWitnesses({ incident, upd, prev, next }) {
       })),
     }));
   }
+  /* The code waiting on a witness's phone, saved on that witness so
+     leaving this step (or reloading) does not lose their answer. Patched
+     onto the latest incident: it is written after the code comes back
+     from the server, by which time other boxes may have been typed in. */
+  function setWitnessHandoff(id, pending) {
+    upd(prevIncident => ({
+      witnesses: (prevIncident.witnesses || []).map(w => (w.id !== id ? w : { ...w, handoff: pending })),
+    }));
+  }
   function removeWitness(id) {
     if (locked) return;
     if (!window.confirm(t.confirmRemoveWitness)) return;
@@ -376,16 +390,18 @@ function StepWitnesses({ incident, upd, prev, next }) {
             <p className="helperText">{c.needsName}</p>
           )}
           {witnessMethod(w) === 'phone' && !locked && (
-            <Suspense fallback={null}>
+            <SafeSuspense fallback={null}>
               <EmployeeHandoffPanel
                 docType="incidentWitness"
                 model={witnessHandoffSnapshot(incident, w)}
                 employeeName={w.name}
                 needs={['statement', 'signature']}
                 respondedAt={w.responseAt}
+                pending={w.handoff}
+                onPendingChange={p => setWitnessHandoff(w.id, p)}
                 onReceived={answer => receiveWitness(w.id, answer)}
               />
-            </Suspense>
+            </SafeSuspense>
           )}
           {(witnessMethod(w) === 'device' || w.responseAt) && (
             <EmployeeOwned when={w.responseAt}>

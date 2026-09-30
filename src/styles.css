@@ -2072,6 +2072,7 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
 /* ── Print (screen-only switch; physical print geometry is one consolidated
    @media print block further down this file) ── */
 .printOnly { display: none; }
+.printOtherNotice { display: none; }
 
 /* ── Responsive ── */
 @media (max-width: 940px) {
@@ -2784,6 +2785,10 @@ html[data-pointer='coarse'] .layoutDebugPanel { bottom: calc(74px + env(safe-are
   html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; color: #000 !important; }
   .appShell, .toast, .layoutDebugPanel, .dialogOverlay, .suggestionsOverlay, .stickyActionBar, .printDebugPanel, .printMeasureRoot, .pdfExportRoot, .crewKiosk { display: none !important; }
   .printOnly { display: block !important; }
+  /* Ctrl+P from a form that is not the JSA: print the notice, not a blank
+     JSA (see printOtherNotice in main.jsx). */
+  html[data-print-doc="other"] .printOnly { display: none !important; }
+  html[data-print-doc="other"] .printOtherNotice { display: block !important; padding: 1in; font: 14pt/1.4 Arial, sans-serif; color: #000; }
   table { width: 100%; border-collapse: collapse; }
 
   /* Two-level sheet model, split on purpose (previous rounds combined both

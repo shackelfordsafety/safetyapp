@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef } from 'react';
+import { lazy, useRef, useState } from 'react';
 import {
   DISCIPLINARY_STEPS, WARNING_LEVELS,
   getDisciplinaryReadinessChecks, isDisciplinaryReady, isDisciplinaryPrintFinal,
@@ -13,10 +13,14 @@ import {
 import { LockedContext } from '../lockedContext';
 import { downloadDraftFile, buildDraftFilename } from '../../shared/draftTransfer';
 import { localISODate } from '../../shared/localDate';
+import { loadModule } from '../../shared/loadModule';
+import SafeSuspense from '../../shared/SafeSuspense';
 
 /* Lazy like everything that talks to the cloud: a manager filling this in
-   with no signal never downloads the handoff machinery. */
-const EmployeeHandoffPanel = lazy(() => import('../../employee/EmployeeHandoffPanel'));
+   with no signal never downloads the handoff machinery. Wrapped in
+   SafeSuspense below, so if it cannot load (no signal the first time after
+   an update) only that one box says so -- not the whole form. */
+const EmployeeHandoffPanel = lazy(() => loadModule(() => import('../../employee/EmployeeHandoffPanel')));
 
 /* ── Step: Notice Details — employee info, warning level, sections 1-3 ──
    Section 4 (Employee Statement) is taken on the Signatures step, as part
@@ -142,8 +146,37 @@ function witnessStatementFor(model) {
   return `I was present when this was discussed. ${outcome}`;
 }
 
+/* Would this change to the employee's part change what the employee line
+   prints? Their method, whether they refused, or their signature itself.
+   Compared by what it MEANS, not by raw field: tapping the method that is
+   already chosen, or re-saving the same state, is not a change. */
+function employeeLineChanges(model, patch) {
+  const after = { ...model, ...patch };
+  /* Only what the witness's own sentence depends on: whether the employee
+     signed or refused (see witnessStatementFor). A phone answer landing
+     after the witness signed, or switching between "on this device" and
+     "on their phone", leaves that sentence true -- clearing the witness
+     for it would drag somebody back who may have left the building. */
+  return Boolean(after.employeeRefusedToSign) !== Boolean(model.employeeRefusedToSign);
+}
+
 function StepSignatures({ model, upd, prev, next }) {
   const method = employeeSignMethod(model);
+  /* THE WITNESS SIGNS FOR WHAT THEY SAW (audit 2026-09-30, C4). Their
+     statement -- "signed to acknowledge receipt" or "did not sign" -- is
+     stamped from the employee's part at the moment they sign. Change the
+     employee's part afterwards and the page would print a witness
+     statement that contradicts the employee line right above it. So a
+     change that matters takes the witness signature off, and says why. */
+  const [witnessMustResign, setWitnessMustResign] = useState(false);
+  function updEmployee(patch) {
+    if (model.witnessSignatureData && employeeLineChanges(model, patch)) {
+      upd({ ...patch, witnessSignatureData: null, witnessSignatureDate: '', witnessStatement: '' });
+      setWitnessMustResign(true);
+      return;
+    }
+    upd(patch);
+  }
   const who = model.employeeName || 'The employee';
   const statementField = (
     <TextAreaField
@@ -178,20 +211,24 @@ function StepSignatures({ model, upd, prev, next }) {
           <SegmentedToggle
             label="How are they doing it?"
             value={method}
-            onChange={v => upd({ employeeSignMethod: v, employeeRefusedToSign: v === 'none' })}
+            onChange={v => updEmployee({ employeeSignMethod: v, employeeRefusedToSign: v === 'none' })}
             options={EMPLOYEE_SIGN_METHODS}
           />
         </EmployeeOwned>
 
         {method === 'phone' && (
-          <Suspense fallback={null}>
+          <SafeSuspense fallback={null}>
             <EmployeeHandoffPanel
               docType="disciplinary"
               model={model}
               employeeName={model.employeeName}
               needs={['statement', 'signature']}
               respondedAt={model.employeeResponseAt}
-              onReceived={answer => upd({
+              /* The code waiting on their phone is saved on the notice, so
+                 leaving this step (or reloading) does not lose their answer. */
+              pending={model.employeeHandoff}
+              onPendingChange={p => upd({ employeeHandoff: p })}
+              onReceived={answer => updEmployee({
                 /* An empty statement must not wipe one typed earlier. */
                 ...(answer.statement ? { employeeStatement: answer.statement } : {}),
                 ...(answer.signatureData
@@ -202,7 +239,7 @@ function StepSignatures({ model, upd, prev, next }) {
                 employeeResponseAt: answer.respondedAt || new Date().toISOString(),
               })}
             />
-          </Suspense>
+          </SafeSuspense>
         )}
 
         {/* What came back off the phone, shown but sealed. */}
@@ -221,7 +258,7 @@ function StepSignatures({ model, upd, prev, next }) {
           <>
             {statementField}
             <div className="formPairRow">
-              <SignaturePad label="Their Signature" value={model.employeeSignatureData} onChange={data => upd({ employeeSignatureData: data, employeeSignatureDate: data ? today() : model.employeeSignatureDate })} />
+              <SignaturePad label="Their Signature" value={model.employeeSignatureData} onChange={data => updEmployee({ employeeSignatureData: data, employeeSignatureDate: data ? today() : model.employeeSignatureDate })} />
               <Field label="Date" type="date" value={model.employeeSignatureDate} onChange={v => upd({ employeeSignatureDate: v })} />
             </div>
           </>
@@ -245,14 +282,23 @@ function StepSignatures({ model, upd, prev, next }) {
       <SignerCard title="3. Witness" sub="Someone else who was in the room.">
 
         <Field label="Witness Name and Title" value={model.witnessName} onChange={v => upd({ witnessName: v })} placeholder="Name - Title" />
+        {witnessMustResign && !model.witnessSignatureData && (
+          <div className="pdfStaleWarning" role="status">
+            <strong>The witness needs to sign again</strong>
+            <span>The employee&apos;s answer changed after the witness signed, so the witness signature was taken off.</span>
+          </div>
+        )}
         <SignaturePad
           label="Witness Signature"
           value={model.witnessSignatureData}
-          onChange={data => upd({
-            witnessSignatureData: data,
-            witnessSignatureDate: data ? today() : model.witnessSignatureDate,
-            witnessStatement: data ? witnessStatementFor(model) : '',
-          })}
+          onChange={data => {
+            if (data) setWitnessMustResign(false);
+            upd({
+              witnessSignatureData: data,
+              witnessSignatureDate: data ? today() : model.witnessSignatureDate,
+              witnessStatement: data ? witnessStatementFor(model) : '',
+            });
+          }}
         />
       </SignerCard>
 

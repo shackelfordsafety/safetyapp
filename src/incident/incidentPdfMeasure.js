@@ -22,7 +22,7 @@
    page's measurement function below instead of each page hand-rolling its
    own DOM -- see the v0.1.2 full-page-utilization pass. */
 
-import { label, value, fmtDate, fmtTime, fmtDateTime } from './IncidentPdf';
+import { label, value, fmtDate, fmtTime, fmtDateTime, page2InjuredPartyRows } from './IncidentPdf';
 import { SUPERVISOR_NOTES_HELP } from './incidentPdfLayout';
 
 let measureHost = null;
@@ -209,6 +209,32 @@ export function measurePage1Budget(incident) {
     ]));
     const { wrap, box } = buildTextBlockSkeleton({ title: 'DETAILED DESCRIPTION OF THE INCIDENT' });
     body.appendChild(wrap);
+    return [box];
+  });
+}
+
+/* ── PAGE 2 ──
+   Returns how much real vertical space the Remarks/Comments box and the
+   body-diagram image share, once the Injury line, the injured-party table
+   (real values -- a long name or multi-injury list wraps) and both section
+   titles are rendered. The diagram section is measured at its natural
+   (title-only) height: on the real page it is flex:1 and takes whatever the
+   remarks box leaves, which is exactly what a long remark used to squeeze
+   to nothing. */
+export function measurePage2Budget(incident) {
+  return measureFlexBudget((body) => {
+    const val = incident.injuryOccurred === 'yes' ? 'YES' : incident.injuryOccurred === 'no' ? 'NO' : '\u2014';
+    const note = incident.injuryOccurred === 'yes' ? ' (see details below)' : '';
+    body.appendChild(el('div', 'incYesNoLine', `INJURY: ${val}${note}`));
+    body.appendChild(el('div', 'incGrayBar', 'INJURED PARTY'));
+    body.appendChild(buildInfoTableSkeleton(page2InjuredPartyRows(incident)));
+    const { wrap, box } = buildTextBlockSkeleton({ title: 'Remarks/Comments' });
+    body.appendChild(wrap);
+    const diagram = el('div', 'incBodyDiagramSection');
+    diagram.style.flex = 'none';
+    diagram.appendChild(el('div', 'incTextBlockTitle', 'PART OF BODY AFFECTED (MARK ALL AREAS THAT APPLY)'));
+    diagram.appendChild(el('div', 'incidentBodyDiagramPrint'));
+    body.appendChild(diagram);
     return [box];
   });
 }

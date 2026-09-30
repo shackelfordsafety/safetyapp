@@ -338,7 +338,7 @@ export function boardStatus(row, live, now = new Date()) {
    The database is what enforces it (see the migration); this refusal is
    only the readable version of the same rule. The is_late column stays for
    the signatures already recorded under the old behaviour. */
-export async function signPublication({ id: givenId, publicationId, signerName, signatureData, source = 'phone', expiresAt }) {
+export async function signPublication({ id: givenId, publicationId, signerName, signatureData, source = 'phone', expiresAt, opensAt }) {
   blockInDemo(`Signing`);
   /* The kiosk queue passes its own id, so a retry after a timed-out reply
      hits the primary key instead of inserting the same man twice. */
@@ -358,6 +358,16 @@ export async function signPublication({ id: givenId, publicationId, signerName, 
        that as a row-level-security violation, which to a man standing in a
        parking lot reads like the app broke. Say what actually happened. */
     const refused = /row-level security|violates row-level/i.test(error.message || '');
+    /* The same refusal also comes back BEFORE signing opens (30 minutes
+       before Time Issued). A phone clock a couple of minutes fast shows
+       the JSA as open while the database still says no -- and the man was
+       told it had "expired". Say which one it actually is. This wording
+       deliberately avoids "expired", so the kiosk queue keeps the
+       signature and retries it instead of dropping it for good. */
+    const opens = opensAt ? new Date(opensAt) : null;
+    if (refused && opens && !Number.isNaN(opens.getTime()) && opens > new Date(Date.now() - 5 * 60000)) {
+      throw new Error(`Signing for this JSA isn't open yet. It opens at ${fmtOpens(opens)}. Try again then.`);
+    }
     if (refused) {
       throw new Error("This JSA has expired, so it can't be signed any more. Ask your superintendent for today's JSA.");
     }
@@ -625,7 +635,14 @@ export async function fetchUnfiledExpired() {
   }, {});
 
   return pending.map(p => {
-    const crewSignatures = byPub[p.id] || [];
+    /* Signatures taken on the superintendent's device BEFORE publishing
+       live in the JSA itself, not in jsa_signatures -- and this used to
+       replace them with the board's list, so those men vanished from the
+       filed record. Both sets now go on the sheet, in the order signed. */
+    const onDevice = (Array.isArray(p.data?.crewSignatures) ? p.data.crewSignatures : [])
+      .filter(s => s && typeof s.dataUrl === 'string' && s.dataUrl);
+    const crewSignatures = [...onDevice, ...(byPub[p.id] || [])]
+      .sort((a, b) => String(a.signedAt || '').localeCompare(String(b.signedAt || '')));
     return {
       publicationId: p.id,
       label: p.area_label,
@@ -652,10 +669,11 @@ export async function fetchUnfiledExpired() {
    Lands in exactly the same table as a phone signature, which is the point:
    the two used to live apart (cloud vs the JSA on the device) and that
    split caused every blank sign-in sheet of 2026-09-09. */
-export async function signOnKiosk({ id, publicationId, signatureData, expiresAt }) {
+export async function signOnKiosk({ id, publicationId, signatureData, expiresAt, opensAt }) {
   blockInDemo(`Signing`);
   return signPublication({
     id,
+    opensAt,
     publicationId,
     signerName: null,
     signatureData,

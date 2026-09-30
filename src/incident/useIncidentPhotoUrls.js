@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { getPhotoBlob } from './incidentPhotoStorage';
+import { getPhotoBlob, onPhotoBlobsChanged } from './incidentPhotoStorage';
 
 /* Loads each photo's blob from IndexedDB (see incidentPhotoStorage.js) and
    turns it into an object URL for display -- used both by the on-screen
@@ -19,7 +19,20 @@ import { getPhotoBlob } from './incidentPhotoStorage';
 export function useIncidentPhotoUrls(photos) {
   const entriesRef = useRef({});
   const [, forceRender] = useState(0);
+  const [retryTick, setRetryTick] = useState(0);
   const photoIds = (photos || []).map(p => p.id).join(',');
+
+  /* A blob that arrives later (a picked-up report's photos fetched back from
+     storage) -- forget entries that were missing/errored so the effect
+     below reads them again. */
+  useEffect(() => onPhotoBlobsChanged(() => {
+    let dropped = false;
+    Object.keys(entriesRef.current).forEach((id) => {
+      const st = entriesRef.current[id]?.status;
+      if (st === 'missing' || st === 'error') { delete entriesRef.current[id]; dropped = true; }
+    });
+    if (dropped) setRetryTick((n) => n + 1);
+  }), []);
 
   useEffect(() => {
     /* No per-run "cancelled" flag: a second photo arriving while the first
@@ -64,7 +77,7 @@ export function useIncidentPhotoUrls(photos) {
     if (changed) forceRender((n) => n + 1);
     return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photoIds]);
+  }, [photoIds, retryTick]);
 
   useEffect(() => () => {
     Object.values(entriesRef.current).forEach((entry) => { if (entry.url) URL.revokeObjectURL(entry.url); });

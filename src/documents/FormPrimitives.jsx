@@ -557,13 +557,21 @@ export function ReviewExportPanel({
    reimplement it for their own Finish Document confirmation. */
 function useFocusTrapDialog(onCancel) {
   const dialogRef = useRef(null);
+  /* Same fix main.jsx's copy of this hook got on 2026-08-18: callers pass
+     onCancel as an inline arrow, so with it in the deps every parent
+     re-render (autosave flipping "Saving..." to "Saved" under the dialog)
+     re-ran this, yanked focus back to the first button, and overwrote
+     where focus should return to on close. Read it through a ref and run
+     once on open. */
+  const onCancelRef = useRef(onCancel);
+  onCancelRef.current = onCancel;
   useEffect(() => {
     const previouslyFocused = document.activeElement;
     const dialog = dialogRef.current;
     const focusable = dialog ? Array.from(dialog.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')) : [];
     focusable[0]?.focus();
     function onKeyDown(e) {
-      if (e.key === 'Escape') { onCancel(); return; }
+      if (e.key === 'Escape') { onCancelRef.current(); return; }
       if (e.key !== 'Tab' || !focusable.length) return;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
@@ -575,7 +583,7 @@ function useFocusTrapDialog(onCancel) {
       document.removeEventListener('keydown', onKeyDown);
       if (previouslyFocused && typeof previouslyFocused.focus === 'function') previouslyFocused.focus();
     };
-  }, [onCancel]);
+  }, []);
   return dialogRef;
 }
 

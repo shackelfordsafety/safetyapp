@@ -66,7 +66,7 @@ export default function SubmitArea({ docType, model, pdfBlob, ensurePdf, disable
   if (mode === 'unknown') return null;
 
   if (mode === 'approve') {
-    return <ApproveAndFileButton docType={docType} model={model} />;
+    return <ApproveAndFileButton docType={docType} model={model} pdfBlob={pdfBlob} ensurePdf={ensurePdf} />;
   }
 
   return (

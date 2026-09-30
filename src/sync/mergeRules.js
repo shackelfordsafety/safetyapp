@@ -55,3 +55,124 @@ export function mergeTemplates(local, cloud, tombstones) {
   // reshuffle itself every time a sync lands.
   return [...byId.values()].sort((x, y) => stamp(y) - stamp(x));
 }
+
+/* ── Settings' own clock ─────────────────────────────────────────────────
+   Settings go newest-wins as a whole object. They used to be compared
+   against the sync row's `updated_at` -- but ANY write bumps that (saving
+   a template, publishing a JSA), so a month-old theme change on the iPad
+   could beat yesterday's edit on the phone just because the iPad saved a
+   template afterwards. Audit 2026-09-30.
+
+   There is no column for it and no migration to add one, so the stamp
+   rides INSIDE the settings jsonb under a name nothing else uses, and is
+   peeled off again on the way down. It never reaches sdc.settings.v2 --
+   that stored shape stays exactly what it has always been. Rows written
+   before this change have no stamp; for those the old row-wide
+   `updated_at` is still the answer, which is exactly today's behaviour. */
+export const SETTINGS_STAMP_FIELD = '_settingsUpdatedAt';
+
+function isPlainObject(v) {
+  return Boolean(v) && typeof v === 'object' && !Array.isArray(v);
+}
+
+/* { settings, stamp }: the settings with the stamp removed, and the stamp
+   in ms -- or null when the row predates the dedicated stamp. */
+export function splitCloudSettings(raw) {
+  if (!isPlainObject(raw)) return { settings: {}, stamp: null };
+  const { [SETTINGS_STAMP_FIELD]: at, ...settings } = raw;
+  return { settings, stamp: typeof at === 'string' ? (Date.parse(at) || 0) : null };
+}
+
+export function stripSettingsStamp(settings) {
+  return splitCloudSettings(settings).settings;
+}
+
+export function withSettingsStamp(settings, stampMs) {
+  return { ...stripSettingsStamp(settings), [SETTINGS_STAMP_FIELD]: new Date(stampMs || 0).toISOString() };
+}
+
+/* When the cloud copy of the settings last changed. */
+export function cloudSettingsStamp(row) {
+  if (!row) return 0;
+  const { stamp } = splitCloudSettings(row.settings);
+  if (stamp !== null) return stamp;
+  return Date.parse(row.updated_at || 0) || 0;
+}
+
+/* What a device keeps of the previous person's settings when somebody
+   else signs in: the light/dark choice, which is how this screen looks
+   in this trailer, not anything about the person. Their own custom task,
+   hazard and control lists go -- those are theirs. */
+export function deviceOnlySettings(settings) {
+  return {
+    theme: isPlainObject(settings) && typeof settings.theme === 'string' ? settings.theme : 'light',
+    customQuick: { task: [], hazard: [], control: [] },
+  };
+}
+
+/* ── Whose templates are these? ───────────────────────────────────────────
+   Templates and settings live on the DEVICE, but the sync row belongs to
+   an ACCOUNT. On the one iPad in a job trailer that meant: A signs out, B
+   signs in, and B's first sync merged every one of A's templates (job
+   sites, crew leads, phone numbers) into B's account, forever. Audit
+   2026-09-30.
+
+   So the device remembers whose templates it is holding (the "owner",
+   recorded after a successful sync). The rules, all in one pure function
+   so they can be tested without a database:
+
+   - Same person as last time, or nobody recorded yet (every device that
+     synced before this change): merge exactly as before. Nobody's
+     existing templates vanish because of this fix.
+   - Somebody ELSE: nothing on the device goes up. The cloud copy is taken
+     as it is, plus whatever that person left in their own stash on this
+     device the last time somebody else took over (see syncMeta.js). The
+     previous person's copy is stashed by the caller, not thrown away --
+     it may hold templates they made offline that never reached the cloud.
+
+   Returns { switched, templates, tombstones, settings, settingsStamp,
+   cloudWins }. `settings` never carries the stamp; `cloudWins` means "the
+   device should take `settings`" (always true on a switch). */
+export function planSync({ uid, owner, local, stash, row }) {
+  const switched = Boolean(owner) && Boolean(uid) && owner !== uid;
+  const cloud = splitCloudSettings(row?.settings);
+  const cloudStamp = cloudSettingsStamp(row);
+  const hasCloudSettings = Boolean(row) && Object.keys(cloud.settings).length > 0;
+  const localSettings = stripSettingsStamp(local?.settings);
+
+  if (!switched) {
+    const tombstones = mergeTombstones(local?.tombstones, row?.template_tombstones);
+    const templates = mergeTemplates(local?.templates, row?.templates, tombstones);
+    const localStamp = Number(local?.settingsStamp) || 0;
+    const cloudWins = Boolean(row) && cloudStamp > localStamp;
+    return {
+      switched,
+      tombstones,
+      templates,
+      cloudWins,
+      settings: cloudWins ? { ...localSettings, ...cloud.settings } : localSettings,
+      settingsStamp: cloudWins ? cloudStamp : localStamp,
+    };
+  }
+
+  const mine = isPlainObject(stash) ? stash : null;
+  const tombstones = mergeTombstones(mine?.tombstones, row?.template_tombstones);
+  const templates = mergeTemplates(mine?.templates, row?.templates, tombstones);
+  const stashStamp = Number(mine?.settingsStamp) || 0;
+  const stashSettings = isPlainObject(mine?.settings) ? stripSettingsStamp(mine.settings) : null;
+  const base = deviceOnlySettings(localSettings);
+
+  let settings;
+  let settingsStamp;
+  if (stashSettings && (!hasCloudSettings || stashStamp > cloudStamp)) {
+    settings = { ...base, ...stashSettings };
+    settingsStamp = stashStamp;
+  } else if (hasCloudSettings) {
+    settings = { ...base, ...cloud.settings };
+    settingsStamp = cloudStamp;
+  } else {
+    settings = base;
+    settingsStamp = 0;
+  }
+  return { switched, tombstones, templates, cloudWins: true, settings, settingsStamp };
+}

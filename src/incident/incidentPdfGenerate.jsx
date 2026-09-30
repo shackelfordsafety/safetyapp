@@ -3,15 +3,16 @@ import { loadPdfLibs } from '../documents/pdfLibs';
 import { isIncidentPrintFinal, printedIncidentFingerprint } from './incidentModel';
 import {
   IncidentPageShell, Page1Content, Page2Content, Page3Content, Page4Content, Page5Content, Page6Content, ContinuationPage,
-  PhotoAppendixContent,
+  PhotoAppendixContent, REMARKS_MIN_HEIGHT_PX,
 } from './IncidentPdf';
 import { useIncidentPhotoUrls } from './useIncidentPhotoUrls';
 import {
   textBlockMeasureStyle, MIN_DESCRIPTION_HEIGHT_PX, MIN_STATEMENT_HEIGHT_PX, MIN_NOTE_BOX_HEIGHT_PX,
   MIN_TEAM_ROW_HEIGHT_PX, MAX_TEAM_ROW_HEIGHT_PX, PAGE_BOTTOM_SAFETY_PX, CONTINUATION_BODY_HEIGHT_PX,
+  MIN_BODY_DIAGRAM_HEIGHT_PX,
 } from './incidentPdfLayout';
 import { paginateText, measureNaturalHeight } from './textFit';
-import { measurePage1Budget, measurePage3Budget, measurePage4Budget, measurePage6NotesBudget } from './incidentPdfMeasure';
+import { measurePage1Budget, measurePage2Budget, measurePage3Budget, measurePage4Budget, measurePage6NotesBudget } from './incidentPdfMeasure';
 
 /* Phase 2 -- Page 6's "Superintendent/Supervisor Notes & Summary" box is
    fed by two separate, plainly-worded UI prompts (Immediate Actions Taken /
@@ -179,8 +180,22 @@ export function buildIncidentPagePlan(incident) {
   const supervisorNotes = paginateBoxText(supervisorText, supervisorBoxHeight);
   const safetyConsultantNotes = paginateBoxText(safetyConsultantText, safetyConsultantBoxHeight);
 
+  // PAGE 2 -- Remarks/Comments has no continuation page: it shares page 2
+  // with the body diagram, which gets whatever the remarks box leaves. Too
+  // long a remark is an overflow (blocks export) rather than a diagram
+  // squeezed to nothing or clipped off the page. Only measured when there
+  // is a remark to print (injury No prints "N/A").
+  let remarksOverflow = false;
+  const remarks = incident.injuryOccurred === 'yes' ? String(incident.injuryRemarks || '') : '';
+  if (remarks.trim()) {
+    const remarksNeed = Math.max(REMARKS_MIN_HEIGHT_PX, measureNaturalHeight(remarks, textStyle));
+    const page2Budget = measurePage2Budget(incident) - PAGE_BOTTOM_SAFETY_PX;
+    remarksOverflow = page2Budget - remarksNeed < MIN_BODY_DIAGRAM_HEIGHT_PX;
+  }
+
   const overflowFields = [];
   if (description.overflow) overflowFields.push('Detailed Description of the Incident');
+  if (remarksOverflow) overflowFields.push('Injury Remarks/Comments');
   statements.forEach((s, i) => { if (s.overflow) overflowFields.push(`Witness ${i + 1} Statement`); });
   if (supervisorNotes.overflow) overflowFields.push('Superintendent/Supervisor Notes & Summary');
   if (safetyConsultantNotes.overflow) overflowFields.push('Safety Consultant Notes & Summary');
@@ -410,10 +425,18 @@ export function IncidentPdfExportRoot({ incident, pageRefsRef }) {
   ]);
   const totalPages = pages.length;
 
+  /* Only when the incident (or its page plan) actually changes. This root is
+     mounted for the whole life of the app, so with no dependency list every
+     App re-render -- every keystroke in ANY document -- re-laid-out 6+
+     hidden Letter pages. Nothing else feeds the compact cells: their text
+     comes from `incident`, and page elements only change when `pages` does
+     (photo-URL loads touch only the appendix, which has no compact cells).
+     generateIncidentPdf() re-centers once more right before capture anyway,
+     so an export can never use stale padding. */
   useLayoutEffect(() => {
     pageRefsRef.current = pages.map(p => ({ type: p.type, el: elRefs.current[p.key] }));
     centerCompactCellContent(pageRefsRef.current);
-  });
+  }, [pages, incident, pageRefsRef]);
 
   return (
     <div className="incidentPdfExportRoot" aria-hidden="true">
@@ -472,13 +495,54 @@ function waitForImages(el) {
   }));
 }
 
+/* A photo appendix frame whose blob isn't on this device prints a "Photo
+   unavailable" / "Loading photo…" placeholder. That must never go into a
+   PDF silently (a report that looks complete but is missing its evidence).
+   Photos still loading from IndexedDB get a short grace period; anything
+   not a loaded image after that stops the export with a plain message
+   (main.jsx shows it as a toast). */
+const PHOTO_LOAD_GRACE_MS = 8000;
+
+function photoFrames(pages) {
+  return pages
+    .filter(p => p.type === 'photoAppendix' && p.el)
+    .flatMap(p => Array.from(p.el.querySelectorAll('.incPhotoFrame')));
+}
+
+function frameIsLoadedImage(frame) {
+  if (frame.getAttribute('data-photo-status') !== 'ready') return false;
+  const img = frame.querySelector('img');
+  return Boolean(img && img.complete && img.naturalWidth > 0);
+}
+
+async function assertPhotosReady(pageRefsRef) {
+  const deadline = Date.now() + PHOTO_LOAD_GRACE_MS;
+  for (;;) {
+    const frames = photoFrames(pageRefsRef.current);
+    const stillLoading = frames.some(f => (f.getAttribute('data-photo-status') || 'loading') === 'loading'
+      || (f.getAttribute('data-photo-status') === 'ready' && !f.querySelector('img')?.complete));
+    if (!stillLoading || Date.now() >= deadline) {
+      const bad = frames.filter(f => !frameIsLoadedImage(f)).length;
+      if (!bad) return;
+      throw new Error(bad === 1
+        ? "1 photo isn't on this device yet, so it can't go in the PDF. Remove it or add it again."
+        : `${bad} photos aren't on this device yet, so they can't go in the PDF. Remove them or add them again.`);
+    }
+    // eslint-disable-next-line no-await-in-loop
+    await new Promise(resolve => setTimeout(resolve, 200));
+  }
+}
+
 /* Deterministic client-side PDF assembly -- same approach as the JSA's
    generateJsaPdf: capture each already-rendered logical page with
    html2canvas, one at a time, and assemble with pdf-lib. No browser print
    pagination involved. */
 export async function generateIncidentPdf(pageRefsRef, onProgress) {
+  if (!pageRefsRef.current.length) throw new Error('No pages to export -- the document plan is empty.');
+
+  // Before anything heavy: refuse to print photo placeholders.
+  await assertPhotosReady(pageRefsRef);
   const pages = pageRefsRef.current;
-  if (!pages.length) throw new Error('No pages to export -- the document plan is empty.');
 
   /* Fetched on demand, not at the top of the file -- see
      ../documents/pdfLibs.js. */
@@ -488,9 +552,15 @@ export async function generateIncidentPdf(pageRefsRef, onProgress) {
     try { await document.fonts.ready; } catch { /* non-fatal */ }
   }
   await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  // The export root only re-centers when the incident changes (see
+  // IncidentPdfExportRoot); do it once more against the settled DOM
+  // (fonts/images loaded) so capture never uses stale padding.
+  centerCompactCellContent(pages);
 
-  const isTouchPrimary = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(any-pointer: coarse)').matches;
-  const scale = isTouchPrimary ? 2 : 2.5;
+  /* 2x everywhere (~192dpi on Letter -- plenty for print). Desktop used to
+     get 2.5x, i.e. office PCs did ~56% MORE pixel work and memory per page
+     than the iPads this was tuned for. */
+  const scale = 2;
 
   const pdfDoc = await PDFDocument.create();
   const PT_PER_IN = 72;
@@ -519,10 +589,16 @@ export async function generateIncidentPdf(pageRefsRef, onProgress) {
       throw new Error(`Page ${i + 1} of ${pages.length} (${type}) captured empty -- export aborted.`);
     }
 
-    const pngBytes = dataUrlToUint8Array(canvas.toDataURL('image/png'));
-    const pngImage = await pdfDoc.embedPng(pngBytes);
+    /* Photo appendix pages are mostly photograph: as PNG they were 3-8MB
+       each (and a big memory spike on office PCs). JPEG at 0.85 is a
+       fraction of that and looks the same; the capture background is
+       already white, so there is no alpha to lose. Text pages stay PNG so
+       the small print stays crisp. */
+    const image = type === 'photoAppendix'
+      ? await pdfDoc.embedJpg(dataUrlToUint8Array(canvas.toDataURL('image/jpeg', 0.85)))
+      : await pdfDoc.embedPng(dataUrlToUint8Array(canvas.toDataURL('image/png')));
     const pdfPage = pdfDoc.addPage([LETTER_WIDTH_PT, LETTER_HEIGHT_PT]);
-    pdfPage.drawImage(pngImage, { x: 0, y: 0, width: LETTER_WIDTH_PT, height: LETTER_HEIGHT_PT });
+    pdfPage.drawImage(image, { x: 0, y: 0, width: LETTER_WIDTH_PT, height: LETTER_HEIGHT_PT });
 
     canvas.width = 0;
     canvas.height = 0;

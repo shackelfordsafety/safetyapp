@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef } from 'react';
+import { lazy, useRef, useState } from 'react';
 import {
   SEPARATION_STEPS, SEPARATION_TYPES, SEPARATION_REASON_GROUPS,
   REHIRE_STATUSES, PROPERTY_RETURNED_OPTIONS, ACCESS_REMOVED_OPTIONS,
@@ -14,8 +14,13 @@ import {
 import { LockedContext } from '../lockedContext';
 import { downloadDraftFile, buildDraftFilename } from '../../shared/draftTransfer';
 import { localISODate } from '../../shared/localDate';
+import { loadModule } from '../../shared/loadModule';
+import SafeSuspense from '../../shared/SafeSuspense';
 
-const EmployeeHandoffPanel = lazy(() => import('../../employee/EmployeeHandoffPanel'));
+/* Lazy like everything that talks to the cloud. Wrapped in SafeSuspense
+   below, so if it cannot load (no signal the first time after an update)
+   only that one box says so -- not the whole form. */
+const EmployeeHandoffPanel = lazy(() => loadModule(() => import('../../employee/EmployeeHandoffPanel')));
 
 function toggleInList(list, item) {
   return (list || []).includes(item) ? list.filter(x => x !== item) : [...(list || []), item];
@@ -195,6 +200,20 @@ function witnessStatementFor(model) {
   return `I was present when this separation was discussed. ${outcome}`;
 }
 
+/* Would this change to the employee's part change what the employee line
+   prints? Their method, whether they refused, or their signature itself.
+   Compared by what it MEANS, not by raw field: tapping the method that is
+   already chosen is not a change. */
+function employeeLineChanges(model, patch) {
+  const after = { ...model, ...patch };
+  /* Only what the witness's own sentence depends on: whether the employee
+     signed or refused (see witnessStatementFor). A phone answer landing
+     after the witness signed, or switching between "on this device" and
+     "on their phone", leaves that sentence true -- clearing the witness
+     for it would drag somebody back who may have left the building. */
+  return Boolean(after.employeeRefusedToSign) !== Boolean(model.employeeRefusedToSign);
+}
+
 /* ── Step: Signatures — the three people in the room, in the order they
    sign: management, employee, witness (Fonzo, 2026-09-14). HR approves
    afterwards and signs nothing (Fonzo, 2026-09-15); the HR fields stay on
@@ -204,6 +223,20 @@ function witnessStatementFor(model) {
    "a bunch of word slop". ── */
 function StepSignatures({ model, upd, prev, next }) {
   const method = employeeSignMethod(model);
+  /* THE WITNESS SIGNS FOR WHAT THEY SAW (audit 2026-09-30, C4). Their
+     statement is stamped from the employee's part at the moment they sign.
+     Change the employee's part afterwards and the page would print a
+     witness statement that contradicts the employee line. So a change that
+     matters takes the witness signature off, and says why. */
+  const [witnessMustResign, setWitnessMustResign] = useState(false);
+  function updEmployee(patch) {
+    if (model.witnessSignatureData && employeeLineChanges(model, patch)) {
+      upd({ ...patch, witnessSignatureData: null, witnessSignatureDate: '', witnessStatement: '' });
+      setWitnessMustResign(true);
+      return;
+    }
+    upd(patch);
+  }
   return (
     <StepPanel title="Signatures" intro="Three people sign: you, the employee, and a witness.">
       {/* Deliberately NOT the Supervisor field from step one: this is who ran
@@ -224,27 +257,31 @@ function StepSignatures({ model, upd, prev, next }) {
           <SegmentedToggle
             label="How are they signing?"
             value={method}
-            onChange={v => upd({ employeeSignMethod: v, employeeRefusedToSign: v === 'none' })}
+            onChange={v => updEmployee({ employeeSignMethod: v, employeeRefusedToSign: v === 'none' })}
             options={EMPLOYEE_SIGN_METHODS}
           />
         </EmployeeOwned>
 
         {method === 'phone' && (
-          <Suspense fallback={null}>
+          <SafeSuspense fallback={null}>
             <EmployeeHandoffPanel
               docType="separation"
               model={model}
               employeeName={model.employeeName}
               needs={['signature']}
               respondedAt={model.employeeResponseAt}
-              onReceived={answer => (answer.signatureData ? upd({
+              /* Saved on the form, so leaving this step (or reloading) does
+                 not lose their answer. */
+              pending={model.employeeHandoff}
+              onPendingChange={p => upd({ employeeHandoff: p })}
+              onReceived={answer => (answer.signatureData ? updEmployee({
                 employeeSignatureData: answer.signatureData,
                 employeeSignatureDate: today(),
                 employeeRefusedToSign: false,
                 employeeResponseAt: answer.respondedAt || new Date().toISOString(),
               }) : null)}
             />
-          </Suspense>
+          </SafeSuspense>
         )}
 
         {method === 'phone' && model.employeeResponseAt && (
@@ -259,7 +296,7 @@ function StepSignatures({ model, upd, prev, next }) {
 
         {method === 'device' && (
           <div className="formPairRow">
-            <SignaturePad label="Their Signature" value={model.employeeSignatureData} onChange={data => upd({ employeeSignatureData: data, employeeSignatureDate: data ? today() : model.employeeSignatureDate })} />
+            <SignaturePad label="Their Signature" value={model.employeeSignatureData} onChange={data => updEmployee({ employeeSignatureData: data, employeeSignatureDate: data ? today() : model.employeeSignatureDate })} />
             <Field label="Date" type="date" value={model.employeeSignatureDate} onChange={v => upd({ employeeSignatureDate: v })} />
           </div>
         )}
@@ -277,14 +314,23 @@ function StepSignatures({ model, upd, prev, next }) {
           moment they sign, so a later edit cannot change it. */}
       <SignerCard title="3. Witness" sub="Someone else who was in the room.">
         <Field label="Witness Name and Title" value={model.witnessName} onChange={v => upd({ witnessName: v })} placeholder="Name - Title" />
+        {witnessMustResign && !model.witnessSignatureData && (
+          <div className="pdfStaleWarning" role="status">
+            <strong>The witness needs to sign again</strong>
+            <span>The employee&apos;s answer changed after the witness signed, so the witness signature was taken off.</span>
+          </div>
+        )}
         <SignaturePad
           label="Witness Signature"
           value={model.witnessSignatureData}
-          onChange={data => upd({
-            witnessSignatureData: data,
-            witnessSignatureDate: data ? today() : model.witnessSignatureDate,
-            witnessStatement: data ? witnessStatementFor(model) : '',
-          })}
+          onChange={data => {
+            if (data) setWitnessMustResign(false);
+            upd({
+              witnessSignatureData: data,
+              witnessSignatureDate: data ? today() : model.witnessSignatureDate,
+              witnessStatement: data ? witnessStatementFor(model) : '',
+            });
+          }}
         />
       </SignerCard>
 

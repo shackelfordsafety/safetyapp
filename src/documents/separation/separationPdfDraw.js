@@ -151,12 +151,12 @@ export async function drawSeparationPdf(model, onProgress) {
   /* This sentence is the reason an employee can sign a separation form
      without it meaning they agree with it. It belongs on the copy they keep,
      not only on the screen the supervisor filled in. */
-  doc.note('Employee signature acknowledges receipt and does not necessarily indicate agreement.');
+  doc.note('Employee signature acknowledges receipt and does not necessarily indicate agreement.', { keepWithNext: true });
   /* The witness statement belongs ABOVE the boxes, with the other note --
      it is context for the row, not a heading for a fourth row of its own.
      Printed only when there is a witness. */
   if (model.witnessSignatureData || model.witnessName) {
-    doc.note(model.witnessStatement || 'I was present when this separation was discussed.');
+    doc.note(model.witnessStatement || 'I was present when this separation was discussed.', { keepWithNext: true });
   }
   /* THREE BOXES, AND THAT IS THE WHOLE LIST. HR does not sign a separation
      at all. Fonzo, 2026-09-15, after asking her outright: "I talked to Miss

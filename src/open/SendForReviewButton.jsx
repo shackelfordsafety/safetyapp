@@ -86,7 +86,21 @@ export default function SendForReviewButton({ docType, model, pdfBlob, ensurePdf
             existingId = link.openDocumentId;
           }
         } catch { /* no link: a fresh submission */ }
-        const { id } = await mod.shareOpenDocument({ id: existingId, docType, model });
+        /* Incident photos go up with the report, so whoever opens it on
+           another device -- the PM approving it, or the author after a
+           send-back -- can still print them. Before this they existed only
+           on the phone that took them. */
+        let sending = model;
+        if (docType === 'incident' && Array.isArray(model?.photos) && model.photos.length) {
+          const { db } = await loadModule(() => import('../archive/archiveClient'));
+          const { data: userData } = await db.auth.getUser();
+          const userId = userData?.user?.id;
+          if (userId) {
+            const { uploadIncidentPhotos } = await loadModule(() => import('../incident/incidentPhotoCloud'));
+            sending = await uploadIncidentPhotos(db, userId, model);
+          }
+        }
+        const { id } = await mod.shareOpenDocument({ id: existingId, docType, model: sending });
         await mod.submitForSignOff({ id, pdfBlob: blob, note });
         /* Hand it off. It stops being this device's unfinished work the
            moment somebody else owns what happens next -- Fonzo, 2026-09-11,

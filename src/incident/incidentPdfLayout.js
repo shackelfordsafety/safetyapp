@@ -80,6 +80,17 @@ export const MIN_DESCRIPTION_HEIGHT_PX = 300;
 export const MIN_STATEMENT_HEIGHT_PX = 130;
 export const MIN_NOTE_BOX_HEIGHT_PX = 40;
 
+// Page 2's body diagram takes whatever the Remarks/Comments box leaves (it
+// is flex:1 in incident.css). A long remark used to shrink it to a sliver --
+// or push it off the overflow:hidden page -- with no warning. A remark that
+// would leave the diagram shorter than this blocks export instead (see
+// buildIncidentPagePlan). ~3.5in: checked on real exports -- at this size
+// all three figures and the marks still read clearly; by ~300px they are
+// getting small. With the usual one-line injured-party rows that allows
+// about 14 lines (~1,700 characters) of remarks; the full 573px diagram is
+// what a 1-2 line remark gets.
+export const MIN_BODY_DIAGRAM_HEIGHT_PX = 340;
+
 // Page 6's investigation-team rows: MIN matches the table's own long-standing
 // CSS default (enough for a normal signature image), MAX caps how much of
 // page 6's genuine leftover space (after notes get what they actually need)

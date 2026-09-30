@@ -9,7 +9,7 @@ import SpeakButton from './voice/SpeakButton';
 import CrewSignInKiosk from './jsa/CrewSignInKiosk';
 import { getContentRows, getContentColumns } from './jsa/jsaContent';
 import { handOffDraft, readLastFinished } from './shared/handOff';
-import useWaitingCount from './open/useWaitingCount';
+import useWaitingCount, { alertsSupported, alertsOn, turnAlertsOn } from './open/useWaitingCount';
 import useTodayGlance from './today/useTodayGlance';
 
 /* Shown while a screen that loads on demand is on its way. Says what is
@@ -76,6 +76,7 @@ import PublishToBoardButton from './crew/PublishToBoardButton';
 import AddToHomeScreen from './shared/AddToHomeScreen';
 import { loadModule } from './shared/loadModule';
 import ErrorBoundary from './shared/ErrorBoundary';
+import SafeSuspense from './shared/SafeSuspense';
 import DemoBanner from './shared/DemoBanner';
 import { useUserSync } from './sync/useUserSync';
 import { recordTemplateDeletion, markSettingsChanged } from './sync/syncMeta';
@@ -1567,8 +1568,10 @@ function useFocusTrapDialog(onCancel) {
    rather than a guess about what "last time" means. */
 function SameAsLastDialog({ lastJsa, onSame, onBlank, onCancel }) {
   const dialogRef = useFocusTrapDialog(onCancel);
-  const site = (lastJsa?.jobSite || lastJsa?.location || '').trim();
-  const task = (lastJsa?.overallWorkTask || '').trim();
+  // String() first: this snapshot can arrive from another device via sync
+  // with no shape check, and a non-string here crashed the Start screen.
+  const site = String(lastJsa?.jobSite || lastJsa?.location || '').trim();
+  const task = String(lastJsa?.overallWorkTask || '').trim();
   return (
     <div className="dialogOverlay" onMouseDown={e => { if (e.target === e.currentTarget) onCancel(); }}>
       <div className="dialogPanel" role="alertdialog" aria-modal="true" aria-labelledby="sameAsLastTitle" aria-describedby="sameAsLastBody" ref={dialogRef}>
@@ -1778,6 +1781,27 @@ function App() {
      knew anything was in it -- see useWaitingCount. */
   const { count: waitingCount, items: waitingItems } = useWaitingCount();
   const [activeDoc, setActiveDoc] = useState(null); // null | 'jsa-start' | 'jsa' | 'incident'
+  const printDebugFlag = usePrintDebugFlag();
+
+  /* Ctrl+P prints the hidden JSA layout. On any other form that is the
+     wrong document entirely, so tell the print stylesheet to show a notice
+     instead, and catch the shortcut itself with a plain explanation. */
+  const printsNonJsa = ['incident', 'disciplinary', 'uncontrolledEvent', 'medicalEvent', 'separation'].includes(activeDoc);
+  useEffect(() => {
+    const root = document.documentElement;
+    if (printsNonJsa) root.dataset.printDoc = 'other';
+    else delete root.dataset.printDoc;
+    if (!printsNonJsa) return undefined;
+    const onKey = (e) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
+        e.preventDefault();
+        showToast('To print this form, use "Print a copy" on its last step, then print the file it downloads.');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [printsNonJsa]);
   const [jsaStep, setJsaStep] = useState('job');
 
   // ── Incident Report state (fully separate from JSA state/storage above) ──
@@ -1942,6 +1966,30 @@ function App() {
       showToast?.('Could not save templates -- this device is out of storage room.');
     }
   }, [customTemplates]);
+
+  /* Download the forms ahead of time, quietly, while there is signal.
+     Each form arrives on demand, and the service worker only keeps a copy
+     of what has actually been fetched -- so the first time somebody opened,
+     say, the Separation form after an update, in a dead zone, it could not
+     load at all. Filling in a form must never need signal (HANDOVER rule).
+     Done once per app start, after things settle, only when online. */
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return undefined;
+    const warm = () => {
+      const quietly = p => p.catch(() => { /* next start tries again */ });
+      quietly(import('./documents/disciplinary/DisciplinaryWorkflow'));
+      quietly(import('./documents/uncontrolledEvent/UncontrolledEventWorkflow'));
+      quietly(import('./documents/medicalEvent/MedicalEventWorkflow'));
+      quietly(import('./documents/separation/SeparationWorkflow'));
+      quietly(import('./today/TodayView'));
+      quietly(import('./documents/pdfLibs').then(m => m.loadPdfLibs()));
+    };
+    const t = setTimeout(() => {
+      if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(warm, { timeout: 5000 });
+      else warm();
+    }, 4000);
+    return () => clearTimeout(t);
+  }, []);
 
   /* The crash screen's "Reload" sets a flag so a SECOND crash offers to set
      the document aside instead of reloading forever. Nothing cleared it, so
@@ -2421,7 +2469,8 @@ function App() {
       return blob;
     } catch (err) {
       console.error('[incident pdf export]', err);
-      showToast(`PDF export failed (${err?.message || 'unknown error'}).`);
+      // A missing photo is not a failure of the PDF machinery -- say it plainly.
+      showToast(/on this device yet/.test(err?.message || '') ? err.message : `PDF export failed (${err?.message || 'unknown error'}).`);
       setIncidentPdfExportState(null);
     }
   }
@@ -3184,13 +3233,13 @@ function App() {
               need it -- and skippable only when saving fails for lack of
               signal. See NameSetup. */}
           {needsName && !nameNudgeHidden && !isDocFlow && (
-            <Suspense fallback={null}>
+            <SafeSuspense fallback={null}>
               <NameSetup
                 email={readStoredSession()?.email || ''}
                 onDone={() => { setNeedsName(false); showToast('Thanks — your name is set.'); }}
                 onSkip={() => setNameNudgeHidden(true)}
               />
-            </Suspense>
+            </SafeSuspense>
           )}
           {tab === 'home' && (
             <HomeView customTemplates={customTemplates} setTab={setTab} docEntries={homeDocEntries} waitingCount={waitingCount} waitingItems={waitingItems} />
@@ -3235,7 +3284,7 @@ function App() {
             />
           )}
           {tab === 'documents' && activeDoc === 'disciplinary' && (
-            <Suspense fallback={<ScreenLoading label="Opening the form…" />}>
+            <SafeSuspense fallback={<ScreenLoading label="Opening the form…" />}>
             <DisciplinaryWorkflow
               onHandedOff={handOffAfterSubmit('disciplinary')}
               model={disciplinary.model} upd={disciplinary.upd} step={disciplinary.step} setStep={disciplinary.setStep}
@@ -3245,10 +3294,10 @@ function App() {
               onGeneratePdf={disciplinaryPdf.generate} onDownload={disciplinaryPdf.downloadClick}
               onMarkReady={markDisciplinaryReady} onMarkIncomplete={markDisciplinaryIncomplete} onStartNew={startNewDisciplinary}
             />
-            </Suspense>
+            </SafeSuspense>
           )}
           {tab === 'documents' && activeDoc === 'uncontrolledEvent' && (
-            <Suspense fallback={<ScreenLoading label="Opening the form…" />}>
+            <SafeSuspense fallback={<ScreenLoading label="Opening the form…" />}>
             <UncontrolledEventWorkflow
               onHandedOff={handOffAfterSubmit('uncontrolledEvent')}
               model={uncontrolledEvent.model} upd={uncontrolledEvent.upd} step={uncontrolledEvent.step} setStep={uncontrolledEvent.setStep}
@@ -3258,10 +3307,10 @@ function App() {
               onGeneratePdf={uncontrolledEventPdf.generate} onDownload={uncontrolledEventPdf.downloadClick}
               onMarkReady={markUncontrolledEventReady} onMarkIncomplete={markUncontrolledEventIncomplete} onStartNew={startNewUncontrolledEvent}
             />
-            </Suspense>
+            </SafeSuspense>
           )}
           {tab === 'documents' && activeDoc === 'medicalEvent' && (
-            <Suspense fallback={<ScreenLoading label="Opening the form…" />}>
+            <SafeSuspense fallback={<ScreenLoading label="Opening the form…" />}>
             <MedicalEventWorkflow
               onHandedOff={handOffAfterSubmit('medicalEvent')}
               model={medicalEvent.model} upd={medicalEvent.upd} step={medicalEvent.step} setStep={medicalEvent.setStep}
@@ -3271,10 +3320,10 @@ function App() {
               onGeneratePdf={medicalEventPdf.generate} onDownload={medicalEventPdf.downloadClick}
               onMarkReady={markMedicalEventReady} onMarkIncomplete={markMedicalEventIncomplete} onStartNew={startNewMedicalEvent}
             />
-            </Suspense>
+            </SafeSuspense>
           )}
           {tab === 'documents' && activeDoc === 'separation' && (
-            <Suspense fallback={<ScreenLoading label="Opening the form…" />}>
+            <SafeSuspense fallback={<ScreenLoading label="Opening the form…" />}>
             <SeparationWorkflow
               onHandedOff={handOffAfterSubmit('separation')}
               model={separation.model} upd={separation.upd} step={separation.step} setStep={separation.setStep}
@@ -3284,23 +3333,23 @@ function App() {
               onGeneratePdf={separationPdf.generate} onDownload={separationPdf.downloadClick}
               onMarkReady={markSeparationReady} onMarkIncomplete={markSeparationIncomplete} onStartNew={startNewSeparation}
             />
-            </Suspense>
+            </SafeSuspense>
           )}
           {tab === 'today' && (
-            <Suspense fallback={<ScreenLoading label="Loading your work…" />}>
+            <SafeSuspense fallback={<ScreenLoading label="Loading your work…" />}>
               <TodayView entries={draftEntries} goDocs={goDocs} onPickedUp={openPickedUpDocument} />
-            </Suspense>
+            </SafeSuspense>
           )}
           {tab === 'templates' && <TemplatesView allTemplates={allTemplates} customTemplates={customTemplates} loadTemplate={requestLoadTemplate} deleteTemplate={deleteTemplate} startBlank={requestStartBlank} shareTemplate={shareTemplate} importTemplateFile={importTemplateFile} />}
           {tab === 'board' && (
-            <Suspense fallback={<ScreenLoading label="Loading your board…" />}>
+            <SafeSuspense fallback={<ScreenLoading label="Loading your board…" />}>
               <MyBoard />
-            </Suspense>
+            </SafeSuspense>
           )}
           {tab === 'archive' && (
-            <Suspense fallback={<ScreenLoading label="Loading records…" />}>
+            <SafeSuspense fallback={<ScreenLoading label="Loading records…" />}>
               <ArchiveView />
-            </Suspense>
+            </SafeSuspense>
           )}
           {tab === 'settings' && <SettingsView settings={settings} setSettings={setSettings} />}
         </main>
@@ -3343,8 +3392,21 @@ function App() {
         />
       )}
 
-      <PaginationMeasureRig jsa={jsa} />
+      {/* The measuring rig lays out two hidden Letter pages and reads them
+          back on EVERY edit -- and resolvePagePlan throws the result away,
+          because a measured plan never carries continuationColumns (see
+          resolvePagePlan). Pure cost, felt as typing lag on older iPads and
+          office PCs. Kept for the ?debug=print panel only. */}
+      {printDebugFlag && <PaginationMeasureRig jsa={jsa} />}
       <PrintableJsa jsa={jsa} />
+      {/* What Ctrl+P prints from any form that is not the JSA. The built-in
+          print layout only knows the JSA, so pressing Ctrl+P on a
+          disciplinary notice printed a BLANK JSA and two sign-in sheets.
+          The real printout for these forms is the PDF from "Print a copy". */}
+      <div className="printOtherNotice">
+        <strong>This page can&apos;t be printed with Ctrl+P.</strong>
+        <p>To print this form, go to its last step and tap <b>Print a copy</b>, then print the file it downloads.</p>
+      </div>
       <PdfExportRoot jsa={jsa} plan={pdfExportPlan} pageRefsRef={pdfExportPageRefsRef} />
       {/* A SECOND export root, for a JSA being filed automatically after it
           expired. Separate on purpose: the archive worker must never touch
@@ -4633,7 +4695,14 @@ function StepFinish({
   // Which route he picked this session. Not persisted: signInMode below is
   // the durable record of "how does this one get signed", and it is what
   // the printed sheet actually reads.
-  const [route, setRoute] = useState(null);
+  // Coming back to this step with a printout already made (or being made)
+  // reopens the paper route, so its Download panel -- or its "you changed
+  // the JSA, print it again" warning -- is still on screen instead of
+  // hidden until "On paper" is tapped a second time.
+  const [route, setRoute] = useState(() => (
+    jsa.signInMode === 'printout' && (pdfExportState?.phase === 'ready' || pdfExportState?.phase === 'generating')
+      ? 'paper' : null
+  ));
 
   const [lineCountInput, setLineCountInput] = useState(String(jsa.signatureLineCount ?? 30));
   useEffect(() => { setLineCountInput(String(jsa.signatureLineCount ?? 30)); }, [jsa.signatureLineCount]);
@@ -4975,6 +5044,34 @@ const NameSetup = lazy(() => loadModule(() => import('./account/NameSetup')));
    went with it -- see the commit that removed src/jobs/. Job numbers are
    typed by hand on the Job Info step, which is how they always were; the
    picker only ever filled that same field in. */
+/* Opt-in "tell me when something is waiting on me" for a computer that
+   keeps the app open in a tab -- see ALERT_POLL_MS in useWaitingCount. */
+function DesktopAlertsCard() {
+  const [state, setState] = useState(() => (alertsOn() ? 'on' : (window.Notification?.permission === 'denied' ? 'blocked' : 'off')));
+  async function enable() {
+    const result = await turnAlertsOn();
+    setState(result === 'granted' ? 'on' : result === 'denied' ? 'blocked' : 'off');
+  }
+  return (
+    <div className="card">
+      <div className="cardHeader"><h3>Alerts on this computer</h3></div>
+      <div className="cardBody">
+        <div className="settingsRow">
+          <div className="rowInfo">
+            <strong>Tell me when a document is waiting on me</strong>
+            <p>
+              {state === 'on' && 'On. While the app is open in a tab, a pop-up appears when something new is sent to you. Checks every two minutes.'}
+              {state === 'off' && 'Shows a pop-up when somebody submits a document for you, as long as the app is open in a tab (it can be in the background). No email yet.'}
+              {state === 'blocked' && 'Blocked by this browser. To allow it, click the lock icon next to the web address, allow Notifications, then reload.'}
+            </p>
+          </div>
+          {state === 'off' && <button type="button" className="btn primary sm" onClick={enable}>Turn on</button>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SettingsView({ settings, setSettings }) {
   const session = readStoredSession();
 
@@ -4994,28 +5091,32 @@ function SettingsView({ settings, setSettings }) {
           site, or ?sim=1. Lazy, so neither the panel nor its seed documents
           reach a device that never asks for them. */}
       {SIM_ON && (
-        <Suspense fallback={null}>
+        <SafeSuspense fallback={null}>
           <SimPanel />
-        </Suspense>
+        </SafeSuspense>
       )}
 
       {/* Only ever rendered for an admin account -- see ViewAsPicker. For
           everybody else it is absent, not disabled. */}
-      <Suspense fallback={null}>
-        <ViewAsPicker />
-      </Suspense>
+      {session && (
+        <SafeSuspense fallback={null} quiet>
+          <ViewAsPicker />
+        </SafeSuspense>
+      )}
 
       {session && (
-        <Suspense fallback={null}>
+        <SafeSuspense fallback={null}>
           <ProfileCard session={session} />
-        </Suspense>
+        </SafeSuspense>
       )}
 
       {session && (
-        <Suspense fallback={null}>
+        <SafeSuspense fallback={null}>
           <PeopleCard />
-        </Suspense>
+        </SafeSuspense>
       )}
+
+      {session && alertsSupported() && <DesktopAlertsCard />}
 
       <div className="card">
         <div className="cardHeader"><h3>Appearance</h3></div>
@@ -6101,7 +6202,10 @@ async function generateJsaPdf(pageRefsRef, onProgress) {
   await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
   const isTouchPrimary = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(any-pointer: coarse)').matches;
-  const scale = isTouchPrimary ? 2 : 2.5; // keep mobile Safari canvases smaller to avoid memory pressure
+  // 2 everywhere. Desktop used 2.5, so an office PC did MORE work (and held
+  // ~50% more pixels in memory) than the iPads this was tuned for. 2x Letter
+  // is still ~192 dpi on paper.
+  const scale = 2;
 
   const pdfDoc = await PDFDocument.create();
   const PT_PER_IN = 72;
@@ -6406,16 +6510,16 @@ function Root() {
 
   if (employeeToken) {
     return (
-      <Suspense fallback={null}>
+      <SafeSuspense fallback={null}>
         <EmployeeHandoff token={employeeToken} />
-      </Suspense>
+      </SafeSuspense>
     );
   }
   if (boardOwnerId) {
     return (
-      <Suspense fallback={null}>
+      <SafeSuspense fallback={null}>
         <CrewSignIn boardOwnerId={boardOwnerId} />
-      </Suspense>
+      </SafeSuspense>
     );
   }
   return <App />;

@@ -135,7 +135,7 @@ export async function drawDisciplinaryPdf(model, onProgress) {
   doc.space(8);
   doc.grayBar('Signatures');
 
-  doc.note('Employee signature acknowledges receipt and does not necessarily indicate agreement.');
+  doc.note('Employee signature acknowledges receipt and does not necessarily indicate agreement.', { keepWithNext: true });
 
   /* What the witness witnessed, ABOVE the boxes -- context for the row, not
      a heading for a row of its own. The statement carries the weight, not
@@ -144,7 +144,7 @@ export async function drawDisciplinaryPdf(model, onProgress) {
      happened. Stored on the record at the moment of signing so it cannot
      drift if the form is edited afterwards. */
   if (model.witnessSignatureData || model.witnessName) {
-    doc.note(model.witnessStatement || 'I was present when this was discussed.');
+    doc.note(model.witnessStatement || 'I was present when this was discussed.', { keepWithNext: true });
   }
   doc.keepTogether(60);
   doc.multiSignatureRow(await withEmbeddedSignatures(doc, approvalPeople(model)));

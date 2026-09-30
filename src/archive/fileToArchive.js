@@ -2,6 +2,7 @@ import { db } from './archiveClient';
 import { blockInDemo } from '../shared/demoMode';
 import { ARCHIVE_FILING_ENABLED } from './filingEnabled';
 import { notifySessionChanged } from '../shared/session';
+import { canFileDocType, whoCanFile } from './archiveRoles';
 
 /* ── Filing a finished document to the company archive ───────────────────
    Everything here runs only when somebody actually taps "File to archive".
@@ -143,6 +144,141 @@ export async function fileDocument({ docType, model, pdfBlob }) {
   return { id };
 }
 
+/* ── What an uploaded file may be ─────────────────────────────────────────
+   Checked BEFORE anything is uploaded, because an upload cannot be taken
+   back: the bucket has no delete, so every refused attempt used to leave
+   another orphan file behind. Audit 2026-09-30. */
+
+/* 25 MB. A phone photo of a page is 2-5 MB and a multi-page scan rarely
+   passes 10; anything bigger is almost always a scanner left on its
+   highest setting, and it is slow to open for whoever looks it up later. */
+export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+
+/* What the office computer, and any browser, can open. Anything else is
+   refused with a plain instruction rather than guessed at -- this used to
+   label ANY file with no recognisable type as a PDF, which stored it under
+   a lie and it would not open. */
+const TYPE_BY_EXT = {
+  pdf: 'application/pdf',
+  jpg: 'image/jpeg', jpeg: 'image/jpeg',
+  png: 'image/png',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  tif: 'image/tiff', tiff: 'image/tiff',
+  heic: 'image/heic', heif: 'image/heif',
+};
+const EXT_BY_TYPE = {
+  'application/pdf': 'pdf',
+  'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/pjpeg': 'jpg',
+  'image/png': 'png',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+  'image/tiff': 'tif',
+};
+const SAVE_AS_HINT = 'Save it as a PDF or JPG first, then add that.';
+
+function extOf(name) {
+  const dot = String(name || '').lastIndexOf('.');
+  return dot > 0 ? String(name).slice(dot + 1).toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+}
+
+function contentTypeOf(file) {
+  const declared = String(file?.type || '').toLowerCase();
+  if (declared && declared !== 'application/octet-stream') return declared;
+  return TYPE_BY_EXT[extOf(file?.name)] || '';
+}
+
+function isHeic(type) {
+  return type === 'image/heic' || type === 'image/heif'
+    || type === 'image/heic-sequence' || type === 'image/heif-sequence';
+}
+
+function megabytes(bytes) {
+  return (bytes / (1024 * 1024)).toFixed(bytes < 10 * 1024 * 1024 ? 1 : 0);
+}
+
+/* The checks that need no network, in words, or null when the file is
+   fine to try. The upload screen calls this the moment a file is picked so
+   the problem shows before anybody fills in the rest of the form. */
+export function describeUploadProblem(file) {
+  if (!file) return null;
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return `That file is ${megabytes(file.size)} MB — the limit is 25 MB. Scan it again at a lower quality setting, or split it into a few smaller files.`;
+  }
+  if (file.size === 0) return 'That file is empty. Pick it again, or save a fresh copy first.';
+  const type = contentTypeOf(file);
+  if (!type) return `We can’t tell what kind of file “${file.name}” is. ${SAVE_AS_HINT}`;
+  if (!isHeic(type) && !EXT_BY_TYPE[type]) {
+    return `“${file.name}” isn’t a PDF or a photo, so it may not open on the office computer. ${SAVE_AS_HINT}`;
+  }
+  return null;
+}
+
+/* iPhone and iPad photos are HEIC, which the office Windows PC cannot
+   open -- a record nobody can read is not much of a record. Converted to
+   JPEG right here when this browser can read HEIC itself (Safari on the
+   iPad and iPhone can, which is where these come from). Where it cannot
+   (Chrome or Edge on Windows), refused with an instruction instead of
+   storing a file that will not open. No library: the browser either
+   decodes it or it does not.
+
+   Scaled to at most 4096 px on the long side and 16 megapixels, which
+   keeps a page photo sharp and stays under the canvas size iPad Safari
+   will actually draw (bigger canvases come back blank, silently). */
+async function heicToJpeg(file) {
+  if (typeof document === 'undefined' || typeof Image === 'undefined') return null;
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    if (!w || !h) return null;
+    const scale = Math.min(1, 4096 / Math.max(w, h), Math.sqrt(16000000 / (w * h)));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(w * scale));
+    canvas.height = Math.max(1, Math.round(h * scale));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.9));
+    canvas.width = 0; canvas.height = 0; // hand the memory back on iPad
+    return blob && blob.size ? blob : null;
+  } catch {
+    return null;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+/* Resolves to { body, contentType, ext, convertedFrom } ready to upload,
+   or throws a plain-English Error saying what to do instead. */
+export async function prepareUploadFile(file) {
+  const problem = describeUploadProblem(file);
+  if (problem) throw new Error(problem);
+  const type = contentTypeOf(file);
+  if (isHeic(type)) {
+    const jpeg = await heicToJpeg(file);
+    if (!jpeg) {
+      throw new Error('That photo is in Apple’s HEIC format, which the office computer can’t open, and this browser can’t convert it. '
+        + 'Save it as a JPG or PDF first — or add it from the iPad or iPhone it was taken on.');
+    }
+    if (jpeg.size > MAX_UPLOAD_BYTES) throw new Error(`That photo is still ${megabytes(jpeg.size)} MB after converting — the limit is 25 MB.`);
+    return { body: jpeg, contentType: 'image/jpeg', ext: 'jpg', convertedFrom: 'heic' };
+  }
+  const contentType = type === 'image/jpg' || type === 'image/pjpeg' ? 'image/jpeg' : type;
+  /* supabase-js uploads a File/Blob as multipart and IGNORES the
+     contentType option for it -- the stored type is the Blob's own. A
+     file with no declared type would be stored as octet-stream and not
+     open in a browser, so it is re-wrapped with the right one (no copy of
+     the bytes). */
+  const body = file.type === contentType ? file : new Blob([file], { type: contentType });
+  return { body, contentType, ext: EXT_BY_TYPE[type], convertedFrom: null };
+}
+
 /* ── Filing a document that already exists as a file ─────────────────────
    For the years of write-ups, separations and incident reports that were
    finished long before this app existed and are sitting on somebody's hard
@@ -157,20 +293,34 @@ export async function fileDocument({ docType, model, pdfBlob }) {
    should be able to tell them apart. */
 export async function uploadExistingDocument({ docType, file, employeeName, jobSite, docDate, note }) {
   blockInDemo(`Adding a document to the archive`);
-  const user = await getArchiveUser();
-  if (!user) throw new NotSignedInError();
   if (!file) throw new Error('Choose a file first.');
   if (!SUMMARY[docType]) throw new Error('Pick which kind of document this is.');
+  const fileProblem = describeUploadProblem(file);
+  if (fileProblem) throw new Error(fileProblem);
+
+  const user = await getArchiveUser();
+  if (!user) throw new NotSignedInError();
+
+  /* Asked fresh, right before uploading, rather than trusting the list the
+     screen was drawn from: a role can be changed while this page is open.
+     The database refuses the row anyway -- but only AFTER the file is in
+     the bucket, which cannot delete it, and with a message in Postgres. */
+  const { data: me, error: meErr } = await db
+    .from('profiles').select('role, is_admin').eq('id', user.id).maybeSingle();
+  if (meErr) throw new Error('Could not check what your account is allowed to file. Check your signal and try again — nothing was uploaded.');
+  if (!canFileDocType(me || { role: 'field' }, docType)) {
+    throw new Error(`Your account can’t file this kind of document — only ${whoCanFile(docType)} can. Nothing was uploaded. Ask HR if your role should be different.`);
+  }
+
+  const prepared = await prepareUploadFile(file);
 
   const id = (crypto.randomUUID && crypto.randomUUID())
     || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  const dot = file.name.lastIndexOf('.');
-  const ext = dot > 0 ? file.name.slice(dot + 1).toLowerCase().replace(/[^a-z0-9]/g, '') : 'pdf';
-  const path = `${user.id}/${id}.${ext || 'pdf'}`;
+  const path = `${user.id}/${id}.${prepared.ext}`;
 
   const { error: uploadError } = await db.storage
     .from('documents')
-    .upload(path, file, { contentType: file.type || 'application/pdf', upsert: false });
+    .upload(path, prepared.body, { contentType: prepared.contentType, upsert: false });
   if (uploadError) throw new Error(`Could not upload the file: ${uploadError.message}`);
 
   const { error: insertError } = await db.from('documents').insert({
@@ -185,10 +335,16 @@ export async function uploadExistingDocument({ docType, file, employeeName, jobS
       originalFilename: file.name,
       uploadedAt: new Date().toISOString(),
       note: blank(note) || undefined,
+      convertedFrom: prepared.convertedFrom || undefined,
     },
     pdf_path: path,
   });
-  if (insertError) throw new Error(`Could not file the document: ${insertError.message}`);
+  if (insertError) {
+    if (/row-level security/i.test(insertError.message || '')) {
+      throw new Error(`The archive refused it: your account can’t file this kind of document — only ${whoCanFile(docType)} can. Ask HR if your role should be different.`);
+    }
+    throw new Error(`Could not file the document: ${insertError.message}`);
+  }
 
   return { id };
 }

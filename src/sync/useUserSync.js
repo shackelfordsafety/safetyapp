@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { loadModule } from '../shared/loadModule';
-import { readStoredSession, deviceName } from '../shared/session';
+import { readStoredSession, deviceName, onSessionChanged } from '../shared/session';
 /* Pure functions that import nothing -- safe to load eagerly, unlike
    userSync.js which drags the whole Supabase library in with it. */
 import { mergeTemplates } from './mergeRules';
-import { readTombstones } from './syncMeta';
+import { readTombstones, writeLocalSettings, setLocalSettingsStamp } from './syncMeta';
 import { readLastFinished, writeLastFinished } from '../shared/handOff';
 
 /* ── Keeping templates and settings in step across devices ───────────────
@@ -74,8 +74,19 @@ export function useUserSync({ templates, setTemplates, settings, setSettings, on
       /* The same merge rules the cloud half uses, run once more against
          what the device holds NOW, so the just-saved template survives
          alongside whatever came down. */
+      /* When the device just changed hands, only what was made DURING the
+         round trip is kept -- by whoever is signed in now. Everything the
+         trip started with was the previous person's, and has been set
+         aside for them (see planSync in mergeRules.js). Merging the whole
+         current list back in would put it straight into this account on
+         the next sync. */
+      let movedTemplates = dataRef.current.templates;
+      if (merged.switched && templatesMovedUnderUs) {
+        const seen = new Set((Array.isArray(startedWith.templates) ? startedWith.templates : []).map(t => JSON.stringify(t)));
+        movedTemplates = (Array.isArray(movedTemplates) ? movedTemplates : []).filter(t => !seen.has(JSON.stringify(t)));
+      }
       const nextTemplates = templatesMovedUnderUs
-        ? mergeTemplates(dataRef.current.templates, merged.templates, readTombstones())
+        ? mergeTemplates(movedTemplates, merged.templates, readTombstones())
         : merged.templates;
 
       /* Only mark this as synced when it really is. If something moved
@@ -92,8 +103,18 @@ export function useUserSync({ templates, setTemplates, settings, setSettings, on
       }
       /* A settings edit made during the round trip is newer than anything
          the cloud had when it started, so the local one stays. */
-      if (merged.cloudWins && !settingsMovedUnderUs
+      /* ...except when the device just changed hands: then the local
+         settings were the previous person's, and this person's win. */
+      if (merged.cloudWins && (merged.switched || !settingsMovedUnderUs)
         && JSON.stringify(merged.settings) !== JSON.stringify(dataRef.current.settings)) {
+        /* Storage and the local clock first, in exactly the string the
+           app's settings effect compares against, so it does not stamp
+           these as "changed on this device just now". That stamp made a
+           device that merely RECEIVED settings claim to be the newest on
+           its next sync, and push them back over any genuinely newer edit
+           still on its way from a third device. */
+        writeLocalSettings(merged.settings);
+        setLocalSettingsStamp(merged.settingsStamp);
         setSettings(merged.settings);
       }
     } catch {
@@ -113,6 +134,20 @@ export function useUserSync({ templates, setTemplates, settings, setSettings, on
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
   }, [run]);
+
+  /* Signing in. Neither focus nor a data change happens when somebody
+     signs in on a screen they are already looking at, so without this
+     their templates did not arrive until they left the app and came back.
+     Only a CHANGE of who is signed in counts: the same event also fires
+     on focus and on every storage write from another tab, and the focus
+     listener above already covers the first. */
+  const lastUserRef = useRef(readStoredSession()?.id || null);
+  useEffect(() => onSessionChanged(() => {
+    const id = readStoredSession()?.id || null;
+    if (id === lastUserRef.current) return;
+    lastUserRef.current = id;
+    if (id) run();
+  }), [run]);
 
   // And shortly after anything changes locally, so a template saved on one
   // device is on the others by the time you pick them up.

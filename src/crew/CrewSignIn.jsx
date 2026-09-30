@@ -93,6 +93,25 @@ export default function CrewSignIn({ boardOwnerId }) {
 
   useEffect(() => { load(); }, [load]);
 
+  /* A man who scanned at 5:20 for a JSA that opens at 5:30 used to sit on
+     "Scheduled" with no Sign button until he reloaded the page himself.
+     Look again quietly every 30 seconds, and whenever the phone comes back
+     to this page, without flashing the loading screen. */
+  const refreshQuietly = useCallback(async () => {
+    try {
+      const next = await fetchBoard(boardOwnerId);
+      setRows(next);
+      setPicked(p => (p ? (next.find(r => r.id === p.id) || p) : p));
+    } catch { /* keep what is on screen; the next tick tries again */ }
+  }, [boardOwnerId]);
+  useEffect(() => {
+    if (status !== 'ready' || done || signing) return undefined;
+    const t = setInterval(refreshQuietly, 30000);
+    const onShow = () => { if (document.visibilityState === 'visible') refreshQuietly(); };
+    document.addEventListener('visibilitychange', onShow);
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', onShow); };
+  }, [status, done, signing, refreshQuietly]);
+
   function backToList() {
     setPicked(null);
     setSigning(false);
@@ -112,6 +131,7 @@ export default function CrewSignIn({ boardOwnerId }) {
         signatureData: signature,
         source: 'phone',
         expiresAt: picked.expires_at,
+        opensAt: picked.opensAt ? new Date(picked.opensAt).toISOString() : null,
       });
       try { localStorage.setItem(NAME_KEY, name.trim()); } catch { /* private mode */ }
       setDone(true);

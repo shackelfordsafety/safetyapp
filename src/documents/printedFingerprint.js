@@ -6,7 +6,11 @@
    (useDraftDocument's upd()) and for PDF staleness checks (usePdfExport),
    so both call sites can never drift apart on what counts as "printed
    content". */
-const DEFAULT_EXCLUDE = ['id', 'status', 'createdAt', 'lastSavedAt', 'completedAt', 'notes'];
+/* employeeHandoff: the QR code still waiting on the employee's phone
+   (disciplinary/separation/medical). Bookkeeping, never printed -- making,
+   cancelling or expiring one must not mark the PDF stale or knock a
+   finished document back to draft. Audit 2026-09-30, C3. */
+const DEFAULT_EXCLUDE = ['id', 'status', 'createdAt', 'lastSavedAt', 'completedAt', 'notes', 'employeeHandoff'];
 
 export function printedFingerprint(model, extraExclude = []) {
   const printed = { ...model };

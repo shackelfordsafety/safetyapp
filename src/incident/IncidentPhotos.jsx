@@ -34,18 +34,17 @@ export default function IncidentPhotos({ incident, upd, showToast, prev, next })
     const files = Array.from(fileList || []);
     if (!files.length) return;
     setIsProcessing(true);
-    // A local accumulator, not `incident.photos` -- upd()/setIncident() is
-    // async and this loop awaits between files, so re-reading the `incident`
-    // prop after the first await would see a stale snapshot (React hasn't
-    // re-rendered this component with the previous file's new photo yet)
-    // and each subsequent upd() would silently clobber it. Accumulating
-    // locally and always passing the FULL resulting array sidesteps that
-    // entirely. Also doubles as in-batch duplicate detection (selecting the
-    // same file twice in one picker action).
-    let nextPhotos = photos.slice();
+    // Each finished photo is appended with a FUNCTIONAL update against the
+    // latest incident, never by writing back an array accumulated here: the
+    // loop awaits between files, and anything the person does meanwhile
+    // (remove a photo, type a caption) happened after that array was
+    // copied. Writing it back used to resurrect a photo removed mid-batch
+    // and wipe captions typed mid-batch. `seen` is only for in-batch
+    // duplicate detection (the same file picked twice in one go).
+    const seen = photos.slice();
     try {
       for (const file of files) {
-        const duplicate = findLikelyDuplicatePhoto(nextPhotos, file);
+        const duplicate = findLikelyDuplicatePhoto(seen, file);
         if (duplicate) {
           const proceed = window.confirm(`"${file.name}" looks like a photo you already added. Add it again anyway?`);
           if (!proceed) continue;
@@ -63,8 +62,8 @@ export default function IncidentPhotos({ incident, upd, showToast, prev, next })
           };
           // eslint-disable-next-line no-await-in-loop
           await savePhotoBlob(meta.id, incident.id, blob);
-          nextPhotos = [...nextPhotos, meta];
-          upd({ photos: nextPhotos });
+          seen.push(meta);
+          upd(prev => ({ photos: [...(prev.photos || []), meta] }));
         } catch (err) {
           showToast?.(err?.message || `Couldn't add "${file.name}".`);
         }
@@ -84,12 +83,12 @@ export default function IncidentPhotos({ incident, upd, showToast, prev, next })
     if (locked) return;
     if (!window.confirm(c.confirmRemove)) return;
     deletePhotoBlob(photo.id).catch(() => { /* metadata removal below still proceeds */ });
-    upd({ photos: (incident.photos || []).filter(p => p.id !== photo.id) });
+    upd(prev => ({ photos: (prev.photos || []).filter(p => p.id !== photo.id) }));
   }
 
   function updatePhoto(id, patch) {
     if (locked) return;
-    upd({ photos: (incident.photos || []).map(p => (p.id === id ? { ...p, ...patch } : p)) });
+    upd(prev => ({ photos: (prev.photos || []).map(p => (p.id === id ? { ...p, ...patch } : p)) }));
   }
 
   return (

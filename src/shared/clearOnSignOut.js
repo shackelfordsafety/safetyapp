@@ -44,12 +44,11 @@ const CONTENT_KEYS = [
   'sdc.jobs.v1',
   // The list of completed incident reports (number, location, date).
   'sdc.incident.records.v1',
-  // When THIS device last changed its settings, and which templates it
-  // deleted. Both describe the previous person's account; left behind,
-  // the next person's first sync treated this iPad's stamp as theirs and
-  // could push the previous person's settings over their own.
-  'sdc.sync.meta.v1',
-  'sdc.jsa.templates.tombstones.v1',
+  // NOT the sync bookkeeping (sdc.sync.*, template tombstones): sync now
+  // records which account this device's templates belong to
+  // (sdc.sync.owner.v1) and sets the previous person's copy aside when
+  // somebody else signs in -- wiping it here would lose that person's
+  // offline deletions. See planSync in sync/mergeRules.js.
 ];
 
 const LABELS = {

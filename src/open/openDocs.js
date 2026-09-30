@@ -411,6 +411,16 @@ export async function pickUpOpenDocument(id) {
   const row = await getOpenDocument(id);
   const { placeIntoWorkflow } = await import('./pickUp');
   const placed = placeIntoWorkflow(row);
+  /* An incident's photos live on the device that took them. Submit now
+     uploads them beside the report; bring them down here so this device
+     can print them. Best effort -- never blocks opening the report, and
+     the export itself refuses to print a photo that is still missing. */
+  if (row.doc_type === 'incident') {
+    try {
+      const { restoreIncidentPhotos } = await import('../incident/incidentPhotoCloud');
+      await restoreIncidentPhotos(db, row.data);
+    } catch { /* opening still works; the export will say what is missing */ }
+  }
   return { ...placed, row };
 }
 
@@ -511,13 +521,18 @@ export async function findSubmittedDocumentFor(docType, clientDocId) {
    clean. The author's copy carries a DRAFT stamp on purpose and always
    will; taking that stamp off is the approver's act, and now it literally
    is. */
-export async function approveWithEdits({ id, model }) {
+export async function approveWithEdits({ id, model, pdfBlob }) {
   blockInDemo('Approving a document');
   const user = await requireUser();
   const row = await getOpenDocument(id);
 
+  /* The four forms drawn directly are redrawn here. An incident report is
+     photographed page by page from the open form instead, so the caller
+     makes that printout from what is on screen and hands it in. Before
+     this, an approver who corrected an incident had no way to file the
+     correction at all: the only button filed the author's original. */
   const draw = DIRECT_DRAW[row.doc_type];
-  if (!draw) {
+  if (!draw && !pdfBlob) {
     throw new Error('This kind of document has to be corrected in its own form. Open it, fix it, then submit it.');
   }
 
@@ -542,8 +557,11 @@ export async function approveWithEdits({ id, model }) {
   /* Marked complete for the draw, not on the saved document -- the status
      that matters from here on is "filed", and the archive row IS the
      finished thing. */
-  const drawPdf = await draw();
-  const { blob } = await drawPdf({ ...model, status: 'completed' }, () => {});
+  let blob = pdfBlob;
+  if (draw) {
+    const drawPdf = await draw();
+    ({ blob } = await drawPdf({ ...model, status: 'completed' }, () => {}));
+  }
 
   const name = (crypto.randomUUID && crypto.randomUUID())
     || `${Date.now()}-${Math.random().toString(36).slice(2)}`;

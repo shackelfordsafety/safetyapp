@@ -121,3 +121,20 @@ export async function deletePhotosForIncident(incidentId) {
     tx.onerror = () => reject(tx.error || new Error('Failed to clean up photos for the discarded draft.'));
   });
 }
+
+/* Tiny change signal for blobs written from outside the Photos step (e.g.
+   restoreIncidentPhotos in incidentPhotoCloud.js fetching a picked-up
+   report's photos back). useIncidentPhotoUrls listens and retries any
+   photo it had already given up on as missing. */
+const blobListeners = new Set();
+
+export function onPhotoBlobsChanged(listener) {
+  blobListeners.add(listener);
+  return () => blobListeners.delete(listener);
+}
+
+export function notifyPhotoBlobsChanged() {
+  blobListeners.forEach((listener) => {
+    try { listener(); } catch { /* a listener must never break the caller */ }
+  });
+}

@@ -197,26 +197,38 @@ export function Page1Content({ incident, descriptionText, descriptionBoxHeightPx
    No, every detail field prints "N/A" and the diagram prints clean (no
    marks) instead of collapsing the whole section to one generic sentence,
    so the printed page always matches the reference form's layout. */
-export function Page2Content({ incident }) {
+/* Page 2's injured-party table rows -- shared with measurePage2Budget
+   (incidentPdfMeasure.js) so the remarks-overflow check measures exactly the
+   table that prints, long names and multi-injury lists included. */
+export function page2InjuredPartyRows(incident) {
   const injured = incident.injuryOccurred === 'yes';
   const na = v => (injured ? (v || 'N/A') : 'N/A');
+  return [
+    [label('Name, Title, Years in Company & Current Trade', '38%'), value(na([incident.injuredPartyName, incident.injuredPartyTitle, incident.injuredPartyYearsWithCompany, incident.injuredPartyCurrentTrade].filter(Boolean).join(' \u2022 ')))],
+    [label('Contact Info (phone)', '38%'), value(na(incident.injuredPartyPhone))],
+    [label('Contact Info (email)', '38%'), value(na(incident.injuredPartyEmail))],
+    // The paper form says "circle one"; this app deliberately allows more
+    // than one, because a real injury is often a laceration AND a burn.
+    // The printed label says so rather than contradicting the page.
+    [label('Nature of Injury (select all that apply)', '38%'), value(na((incident.injuryNature || []).join(', ') + (incident.injuryNature?.includes('Other') && incident.injuryNatureOther ? ` (${incident.injuryNatureOther})` : '')))],
+    [label('Body Part(s) Affected', '38%'), value(na(incident.bodyPartsAffectedText))],
+    [label('Treatment', '38%'), value(na(incident.treatmentLevel === 'firstAid' ? 'First aid' : incident.treatmentLevel === 'beyondFirstAid' ? 'Services beyond first aid' : ''))],
+    [label('Physician/Clinic for First Aid Treatment', '38%'), value(na(incident.treatingPhysicianOrClinic))],
+  ];
+}
+
+// The Remarks/Comments box's own floor (inline minHeight below). Shared with
+// the overflow check in buildIncidentPagePlan.
+export const REMARKS_MIN_HEIGHT_PX = 40;
+
+export function Page2Content({ incident }) {
+  const injured = incident.injuryOccurred === 'yes';
   return (
     <>
       <YesNoLine label="INJURY" val={incident.injuryOccurred} note="(see details below)" />
       <GrayBar>INJURED PARTY</GrayBar>
-      <InfoTable rows={[
-        [label('Name, Title, Years in Company & Current Trade', '38%'), value(na([incident.injuredPartyName, incident.injuredPartyTitle, incident.injuredPartyYearsWithCompany, incident.injuredPartyCurrentTrade].filter(Boolean).join(' \u2022 ')))],
-        [label('Contact Info (phone)', '38%'), value(na(incident.injuredPartyPhone))],
-        [label('Contact Info (email)', '38%'), value(na(incident.injuredPartyEmail))],
-        // The paper form says "circle one"; this app deliberately allows more
-        // than one, because a real injury is often a laceration AND a burn.
-        // The printed label says so rather than contradicting the page.
-        [label('Nature of Injury (select all that apply)', '38%'), value(na((incident.injuryNature || []).join(', ') + (incident.injuryNature?.includes('Other') && incident.injuryNatureOther ? ` (${incident.injuryNatureOther})` : '')))],
-        [label('Body Part(s) Affected', '38%'), value(na(incident.bodyPartsAffectedText))],
-        [label('Treatment', '38%'), value(na(incident.treatmentLevel === 'firstAid' ? 'First aid' : incident.treatmentLevel === 'beyondFirstAid' ? 'Services beyond first aid' : ''))],
-        [label('Physician/Clinic for First Aid Treatment', '38%'), value(na(incident.treatingPhysicianOrClinic))],
-      ]} />
-      <TextBlock title="Remarks/Comments" text={injured ? (incident.injuryRemarks || '') : 'N/A'} minHeightPx={40} />
+      <InfoTable rows={page2InjuredPartyRows(incident)} />
+      <TextBlock title="Remarks/Comments" text={injured ? (incident.injuryRemarks || '') : 'N/A'} minHeightPx={REMARKS_MIN_HEIGHT_PX} />
       <div className="incBodyDiagramSection">
         <div className="incTextBlockTitle">PART OF BODY AFFECTED (MARK ALL AREAS THAT APPLY)</div>
         <div className="incidentBodyDiagramPrint">
@@ -436,7 +448,9 @@ function PhotoAppendixBlock({ photo, urlEntry }) {
   const label = urlEntry?.status === 'missing' || urlEntry?.status === 'error' ? 'Photo unavailable' : 'Loading photo…';
   return (
     <div className="incPhotoBlock">
-      <div className="incPhotoFrame" style={{ height: `${PHOTO_FRAME_HEIGHT_PX}px` }}>
+      {/* data-photo-status lets generateIncidentPdf() refuse to print a
+          placeholder instead of the photo (see assertPhotosReady there). */}
+      <div className="incPhotoFrame" data-photo-status={ready ? 'ready' : (urlEntry?.status || 'loading')} style={{ height: `${PHOTO_FRAME_HEIGHT_PX}px` }}>
         {ready
           ? <img src={urlEntry.url} alt={photo.caption || photo.category || 'Incident photo'} className="incPhotoImage" />
           : <div className="incPhotoPlaceholder">{label}</div>}

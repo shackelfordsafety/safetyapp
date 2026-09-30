@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { db } from './archiveClient';
 import UploadDocument from './UploadDocument';
+import { seesAllDocuments, seesAllDisciplinary } from './archiveRoles';
 import './archive.css';
 import HelpButton from '../shared/HelpButton';
 import { notifySessionChanged, clearStoredSession } from '../shared/session';
@@ -301,7 +302,7 @@ export default function ArchiveView() {
       if (!user) { setStatus('signedout'); return; }
       setSession(user);
 
-      const { data: prof, error: profErr } = await db.from('profiles').select('full_name, role').eq('id', user.id).maybeSingle();
+      const { data: prof, error: profErr } = await db.from('profiles').select('full_name, role, is_admin').eq('id', user.id).maybeSingle();
       if (profErr) throw profErr;
       setProfile(prof || { role: 'field', full_name: null });
 
@@ -423,7 +424,12 @@ export default function ArchiveView() {
     window.location.reload();
   }
 
-  const seesAll = profile?.role === 'safety' || profile?.role === 'hr';
+  /* Mirrors the database's own rule (private.can_see_all_documents: owner,
+     safety, HR, PM, clerk). This said safety/HR only, so a PM, clerk or
+     owner looking at every document in the company was told they could
+     only see their own. Audit 2026-09-30. */
+  const seesAll = seesAllDocuments(profile);
+  const seesDisciplinary = seesAllDisciplinary(profile);
 
   const range = useMemo(() => {
     const iso = d => d.toISOString().slice(0, 10);
@@ -491,6 +497,7 @@ export default function ArchiveView() {
     return (
       <div className="page">
         <UploadDocument
+          profile={profile}
           onDone={async () => { setMode('browse'); await loadEverything(); }}
         />
       </div>
@@ -545,7 +552,9 @@ export default function ArchiveView() {
       <div className="arcScope">
         {seesAll
           ? 'You can see every document filed by everybody.'
-          : 'You can see the documents you filed. Safety and HR can see everything.'}
+          : seesDisciplinary
+            ? 'You can see the documents you filed, plus every disciplinary notice. The office (owners, HR, safety, PMs and clerks) can see everything.'
+            : 'You can see the documents you filed. The office (owners, HR, safety, PMs and clerks) can see everything.'}
       </div>
 
       {/* Search stays on the surface -- "find everything on this person"

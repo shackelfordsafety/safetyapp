@@ -144,6 +144,13 @@ export function emptySeparation() {
        Empty for a separation he signed on the manager's device, which
        cannot honestly be locked. */
     employeeResponseAt: '',
+    /* The QR code still waiting on their phone: { token, createdAt,
+       expiresAt }, or null. Saved so leaving the step or reloading does not
+       lose their answer (audit 2026-09-30, C3). Bookkeeping only -- never
+       printed, left out of the printed-content fingerprint, and cleared once
+       the answer lands, the code expires, or it is cancelled. A draft saved
+       before this existed simply has none. */
+    employeeHandoff: null,
     /* WHO IS SIGNING, which is not the same person as `supervisor` above.
        `supervisor` is an info field describing who the employee WORKED for.
        This is the manager who ran the separation and is putting his name to

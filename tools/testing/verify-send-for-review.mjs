@@ -91,7 +91,7 @@ async function main() {
 
     // Make the printout via the secondary route, so the rest of the checks
     // see the ready panel too.
-    await page.getByRole('button', { name: /paper copy first/i }).first().click();
+    await page.getByRole('button', { name: /paper copy first|Print a copy/i }).first().click();
     await page.locator('.pdfReadyPanel').waitFor({ state: 'visible', timeout: 60000 });
     await page.waitForTimeout(400);
 

@@ -126,6 +126,13 @@ export function emptyMedicalEvent() {
     // Set when the employee signed on their own phone. Seals their signature
     // on this device (see EmployeeOwned in FormPrimitives).
     employeeResponseAt: '',
+    /* The QR code still waiting on their phone: { token, createdAt,
+       expiresAt }, or null. Saved so leaving the step or reloading does not
+       lose their answer (audit 2026-09-30, C3). Bookkeeping only -- never
+       printed, left out of the printed-content fingerprint, and cleared once
+       the answer lands, the code expires, or it is cancelled. A draft saved
+       before this existed simply has none. */
+    employeeHandoff: null,
     supervisorSignatureName: '',
     supervisorSignatureData: null,
     supervisorSignatureDate: '',

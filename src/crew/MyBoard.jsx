@@ -136,6 +136,7 @@ export default function MyBoard() {
       publicationId: kiosk.id,
       signatureData: dataUrl,
       expiresAt: kiosk.expires_at,
+      opensAt: kiosk.opensAt ? new Date(kiosk.opensAt).toISOString() : null,
     });
     if (!held) {
       setKioskError('This iPad is out of room and could not hold that signature. Sign the paper sheet instead.');
@@ -156,6 +157,7 @@ export default function MyBoard() {
       publicationId: entry.publicationId,
       signatureData: entry.signatureData,
       expiresAt: entry.expiresAt,
+      opensAt: entry.opensAt,
     }));
     setKioskPending(pendingCount());
     if (refused > 0) {

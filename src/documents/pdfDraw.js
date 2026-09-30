@@ -218,17 +218,52 @@ export async function createFormPdf({ formTitle, logoBytes }) {
   }
 
   const bottomLimit = () => PAGE_H - MARGIN;
+  const pageTop = () => MARGIN + HEADER_H + 6;
   /* Drawable height of a fresh page — how tall a block can be and still be
      keepable whole. */
-  const pageCapacity = () => bottomLimit() - (MARGIN + HEADER_H + 6);
+  const pageCapacity = () => bottomLimit() - pageTop();
+
+  /* KEEP A CAPTION WITH WHAT IT INTRODUCES.
+     A caption (gray bar, numbered bar, field label, a text box's title) is
+     not drawn when it is called. It waits here until the next block asks
+     ensure() for room, and that request covers the caption AND the block,
+     so the two land on the same page. Each used to reserve room for itself
+     alone, which printed "4. EMPLOYEE STATEMENT" by itself at the foot of
+     page 1 with its box starting page 2 (2026-09-30 audit, C5).
+
+     When nothing breaks, the caption is drawn at exactly the spot it always
+     was -- only the moment of drawing moves, not the position. */
+  let pendingCaption = null; // { h, gap, draw(topY) }
+  const captionH = () => (pendingCaption ? pendingCaption.h + pendingCaption.gap : 0);
+  function flushCaption() {
+    if (!pendingCaption) return;
+    const pc = pendingCaption;
+    pendingCaption = null;
+    pc.draw(y);
+    y += pc.h + pc.gap;
+  }
+  /* Two captions in a row (a gray bar, then a text box's own title) wait
+     together and move together. */
+  function queueCaption(h, draw) {
+    const prev = pendingCaption;
+    pendingCaption = prev
+      ? { h: prev.h + prev.gap + h, gap: 0, draw: top => { prev.draw(top); draw(top + prev.h + prev.gap); } }
+      : { h, gap: 0, draw };
+  }
+
+  /* Never breaks a page that is already fresh: a block taller than a whole
+     page draws from the top rather than leaving a blank sheet behind it. */
   function ensure(h) {
-    if (!page) { newPage(false); return; }
-    if (y + h > bottomLimit()) newPage(true);
+    if (!page) newPage(false);
+    else if (y + captionH() + h > bottomLimit() && y > pageTop()) newPage(true);
+    flushCaption();
   }
 
   const api = {
-    get cursor() { return y; },
-    space(h) { y += h; },
+    get cursor() { return y + captionH(); },
+    /* Space after a caption that hasn't been drawn yet belongs between it
+       and its block, so it travels with the caption. */
+    space(h) { if (pendingCaption) pendingCaption.gap += h; else y += h; },
 
     /* Reserve room for a group of blocks that must not be split.
        Each block only guarantees room for ITSELF, so a note that fits at
@@ -243,17 +278,21 @@ export async function createFormPdf({ formTitle, logoBytes }) {
        page still draws rather than looping. */
     keepTogether(h) {
       if (!page) { newPage(false); return; }
-      if (y + h > bottomLimit() && h <= pageCapacity()) newPage(true);
+      const need = captionH() + h;
+      if (y + need > bottomLimit() && need <= pageCapacity() && y > pageTop()) newPage(true);
     },
 
-    /* MAJOR section divider. */
+    /* MAJOR section divider. Drawn with the block that follows it — see
+       pendingCaption. */
     grayBar(text) {
       const size = 9.5;
       const h = 17;
-      ensure(h + 4);
-      rect(colX, y, colW, h, { fill: GRAY_FILL, border: RULE });
-      drawTextAt(String(text).toUpperCase(), colX + 7, y + centeredBaseline(h, size), size, bold);
-      y += h;
+      const x = colX;
+      const w = colW;
+      queueCaption(h, top => {
+        rect(x, top, w, h, { fill: GRAY_FILL, border: RULE });
+        drawTextAt(String(text).toUpperCase(), x + 7, top + centeredBaseline(h, size), size, bold);
+      });
     },
 
     /* Numbered subsection caption band — the header OF the box beneath it,
@@ -262,15 +301,17 @@ export async function createFormPdf({ formTitle, logoBytes }) {
     numberedBar(number, text) {
       const size = 9.5;
       const h = 17;
-      ensure(h + 20);
-      rect(colX, y, colW, h, { fill: TINT_FILL, border: RULE });
-      let x = colX + 7;
-      if (number != null) {
-        drawTextAt(`${number}.`, x, y + centeredBaseline(h, size), size, bold);
-        x += 13;
-      }
-      drawTextAt(String(text).toUpperCase(), x, y + centeredBaseline(h, size), size, bold);
-      y += h;
+      const x0 = colX;
+      const w = colW;
+      queueCaption(h, top => {
+        rect(x0, top, w, h, { fill: TINT_FILL, border: RULE });
+        let x = x0 + 7;
+        if (number != null) {
+          drawTextAt(`${number}.`, x, top + centeredBaseline(h, size), size, bold);
+          x += 13;
+        }
+        drawTextAt(String(text).toUpperCase(), x, top + centeredBaseline(h, size), size, bold);
+      });
     },
 
     /* Subsection label — the bare bold caption above a field. Caps by
@@ -280,24 +321,33 @@ export async function createFormPdf({ formTitle, logoBytes }) {
     fieldLabel(text, { caps = true } = {}) {
       const size = 9.5;
       const h = 13;
-      ensure(h + 16);
-      drawTextAt(caps ? String(text).toUpperCase() : String(text), colX, y + centeredBaseline(h, size), size, bold);
-      y += h;
+      const x = colX;
+      queueCaption(h, top => {
+        drawTextAt(caps ? String(text).toUpperCase() : String(text), x, top + centeredBaseline(h, size), size, bold);
+      });
     },
 
     /* A line of small print — an instruction or a legal note the paper form
        carries. Not a label and not a field: it exists to be READ off the
        printed page, which is why it belongs here and not only in the app's
-       on-screen helper text. */
-    note(text) {
+       on-screen helper text.
+       `keepWithNext` treats the note like a caption: it waits and moves with
+       the block after it. For the lines that introduce a signature row --
+       "signature acknowledges receipt", the witness statement -- which mean
+       nothing on a page the signatures are not on. */
+    note(text, { keepWithNext = false } = {}) {
       const size = 8;
       const lines = wrap(text, colW, size, italic);
+      const x = colX;
+      const drawLines = top => {
+        lines.forEach((ln, i) => {
+          drawTextAt(ln, x, top + i * 10 + topBaseline(2, size), size, italic, MUTED);
+        });
+      };
+      if (keepWithNext) { queueCaption(lines.length * 10 + 2, drawLines); return; }
       ensure(lines.length * 10 + 4);
-      lines.forEach(ln => {
-        drawTextAt(ln, colX, y + topBaseline(2, size), size, italic, MUTED);
-        y += 10;
-      });
-      y += 2;
+      drawLines(y);
+      y += lines.length * 10 + 2;
     },
 
     /* Rows of [label, value] or [label, value, label, value]. `labelW` is a
@@ -372,8 +422,9 @@ export async function createFormPdf({ formTitle, logoBytes }) {
       /* Keep the box whole where that's possible: asking for all of it means
          a box that merely doesn't fit the space left moves to the next page
          intact. A box taller than any page can't be kept whole, so it asks
-         only for enough room to be worth starting here. */
-      ensure(total <= pageCapacity() ? total : padY * 2 + lead * 3);
+         only for enough room to be worth starting here. Its caption (and a
+         bar above it) counts toward "a page", since they move with it. */
+      ensure(captionH() + total <= pageCapacity() ? total : Math.min(total, padY * 2 + lead * 3));
 
       let remaining = lines;
       let first = true;
@@ -399,22 +450,39 @@ export async function createFormPdf({ formTitle, logoBytes }) {
       } while (remaining.length);
     },
 
-    /* Check-all-that-apply grid. `columns` defaults to 2. */
+    /* Check-all-that-apply grid. `columns` defaults to 2.
+       Option text wraps inside its own cell -- a free-text "Other — ..."
+       used to run under the next column, or off the right edge of the sheet
+       from the last one -- and each row grows to its tallest cell. A
+       one-line option draws exactly where it always did. */
     checkboxGrid({ options, checked, columns = 2 }) {
       const list = Array.isArray(checked) ? checked : [checked].filter(Boolean);
       const size = 9.5;
       const rowH = 14;
+      const lead = 11;
       const box = 8;
       const cellW = colW / columns;
+      const textW = cellW - box - 5 - 4;
+      const cells = options.map(opt => {
+        const isOn = list.includes(opt);
+        const f = isOn ? bold : font;
+        return { opt, isOn, f, lines: wrap(opt, textW, size, f) };
+      });
       const rows = Math.ceil(options.length / columns);
-      ensure(rows * rowH + 4);
+      const rowHeights = Array.from({ length: rows }, (_, r) => {
+        const inRow = cells.slice(r * columns, r * columns + columns);
+        return rowH + (Math.max(...inRow.map(c => c.lines.length)) - 1) * lead;
+      });
+      const rowTops = [];
+      rowHeights.reduce((top, h) => { rowTops.push(top); return top + h; }, 0);
+      const gridH = rowHeights.reduce((a, b) => a + b, 0);
+      ensure(gridH + 4);
       y += 2;
-      options.forEach((opt, i) => {
+      cells.forEach(({ isOn, f, lines }, i) => {
         const col = i % columns;
         const row = Math.floor(i / columns);
         const x = colX + col * cellW;
-        const topY = y + row * rowH;
-        const isOn = list.includes(opt);
+        const topY = y + rowTops[row];
         const boxTop = topY + (rowH - box) / 2;
         rect(x, boxTop, box, box, { border: RULE_DARK, borderWidth: 0.9 });
         if (isOn) {
@@ -422,9 +490,11 @@ export async function createFormPdf({ formTitle, logoBytes }) {
           line(x + 1.6, boxTop + box * 0.55, x + box * 0.42, boxTop + box - 1.6, { color: INK, thickness: 1.1 });
           line(x + box * 0.42, boxTop + box - 1.6, x + box - 1.2, boxTop + 1.4, { color: INK, thickness: 1.1 });
         }
-        drawTextAt(opt, x + box + 5, topY + centeredBaseline(rowH, size), size, isOn ? bold : font);
+        lines.forEach((ln, li) => {
+          drawTextAt(ln, x + box + 5, topY + centeredBaseline(rowH, size) + li * lead, size, f);
+        });
       });
-      y += rows * rowH + 2;
+      y += gridH + 2;
     },
 
     /* One signature + date pair. The slot owns the single signing rule; the
@@ -434,7 +504,16 @@ export async function createFormPdf({ formTitle, logoBytes }) {
       const slotH = 40;
       const capSize = 8;
       const capH = 12;
-      ensure(slotH + capH + 8 + (nameValue !== undefined ? 18 : 0));
+      const capLead = 9.5;
+      const gap = 12;
+      const sigW = colW * 0.64;
+      const dateW = colW - sigW - gap;
+      /* A long "Name - Title — Role" wraps under its own line instead of
+         running into the date's caption; the row grows by the extra lines. */
+      const capLines = wrap(String(sigLabel).toUpperCase(), sigW, capSize);
+      const dateLines = wrap(String(dateLabel).toUpperCase(), dateW, capSize);
+      const extra = (Math.max(capLines.length, dateLines.length) - 1) * capLead;
+      ensure(slotH + capH + 8 + extra + (nameValue !== undefined ? 18 : 0));
       if (nameValue !== undefined) {
         const nameH = 15;
         drawTextAt('NAME', colX, y + topBaseline(4, capSize), capSize, font, MUTED);
@@ -443,9 +522,6 @@ export async function createFormPdf({ formTitle, logoBytes }) {
         y += nameH + 3;
       }
       y += 6;
-      const gap = 12;
-      const sigW = colW * 0.64;
-      const dateW = colW - sigW - gap;
       const dateX = colX + sigW + gap;
 
       if (note) {
@@ -460,14 +536,18 @@ export async function createFormPdf({ formTitle, logoBytes }) {
         page.drawImage(image, { x: colX + 2, y: flip(y + slotH - 1), width: w, height: hh });
       }
       line(colX, y + slotH, colX + sigW, y + slotH);
-      drawTextAt(String(sigLabel).toUpperCase(), colX, y + slotH + topBaseline(3, capSize), capSize, font, MUTED);
+      capLines.forEach((ln, i) => {
+        drawTextAt(ln, colX, y + slotH + topBaseline(3, capSize) + i * capLead, capSize, font, MUTED);
+      });
 
       // A note (e.g. "Refused / Unavailable to Sign") replaces the date too —
       // there is no signing date to print. Same guard multiSignatureRow uses.
       if (!note && dateValue) drawTextAt(dateValue, dateX + 2, y + slotH - 4, 10, font);
       line(dateX, y + slotH, colX + colW, y + slotH);
-      drawTextAt(String(dateLabel).toUpperCase(), dateX, y + slotH + topBaseline(3, capSize), capSize, font, MUTED);
-      y += slotH + capH + 4;
+      dateLines.forEach((ln, i) => {
+        drawTextAt(ln, dateX, y + slotH + topBaseline(3, capSize) + i * capLead, capSize, font, MUTED);
+      });
+      y += slotH + capH + 4 + extra;
     },
 
     /* Two independent field groups side by side. Each callback draws with the
@@ -486,6 +566,7 @@ export async function createFormPdf({ formTitle, logoBytes }) {
 
       colX = outerX; colW = half;
       left();
+      if (pendingCaption) ensure(0); // a caption still waiting belongs to this column
       const leftBottom = y;
       const leftEnd = pages.indexOf(page);
 
@@ -500,6 +581,7 @@ export async function createFormPdf({ formTitle, logoBytes }) {
       y = top;
       colX = outerX + half + gap; colW = half;
       right();
+      if (pendingCaption) ensure(0);
       const rightBottom = y;
       const rightEnd = pages.indexOf(page);
 
@@ -518,10 +600,17 @@ export async function createFormPdf({ formTitle, logoBytes }) {
     multiSignatureRow(items) {
       const slotH = 34;
       const capSize = 7.6;
+      const capLead = 9;
       const gap = 10;
-      ensure(slotH + 26);
-      y += 6;
       const each = (colW - gap * (items.length - 1)) / items.length;
+      /* "ALFONSO HERNANDEZ - SAFETY DIRECTOR — MANAGEMENT" is wider than a
+         third of the page. Wrap each name inside its own column and push the
+         row down by the extra lines, rather than letting it print under the
+         neighbour's name. Each date sits right under its own name. */
+      const labels = items.map(it => wrap(String(it.label).toUpperCase(), each, capSize));
+      const extra = (Math.max(...labels.map(l => l.length)) - 1) * capLead;
+      ensure(slotH + 26 + extra);
+      y += 6;
       items.forEach((it, i) => {
         const x = colX + i * (each + gap);
         if (it.note) {
@@ -535,12 +624,15 @@ export async function createFormPdf({ formTitle, logoBytes }) {
           page.drawImage(it.image, { x: x + 2, y: flip(y + slotH - 1), width: w, height: hh });
         }
         line(x, y + slotH, x + each, y + slotH);
-        drawTextAt(String(it.label).toUpperCase(), x, y + slotH + topBaseline(3, capSize), capSize, font, MUTED);
+        const capTop = y + slotH + topBaseline(3, capSize);
+        labels[i].forEach((ln, li) => {
+          drawTextAt(ln, x, capTop + li * capLead, capSize, font, MUTED);
+        });
         if (!it.note && it.dateValue) {
-          drawTextAt(it.dateValue, x, y + slotH + topBaseline(3, capSize) + 11, capSize, font, rgb(0.33, 0.33, 0.33));
+          drawTextAt(it.dateValue, x, capTop + (labels[i].length - 1) * capLead + 11, capSize, font, rgb(0.33, 0.33, 0.33));
         }
       });
-      y += slotH + 26;
+      y += slotH + 26 + extra;
     },
 
     async embedSignature(dataUrl) {
@@ -558,10 +650,11 @@ export async function createFormPdf({ formTitle, logoBytes }) {
        the total isn't knowable while the pages are being drawn, which is why
        newPage() deliberately leaves this corner empty. */
     async finish() {
+      if (pendingCaption) ensure(0);
       const total = pages.length;
       pages.forEach((p, i) => {
         const label = `Page ${i + 1} of ${total}`;
-        p.drawText(label, {
+        p.drawText(toPdfText(label), {
           x: PAGE_W - MARGIN - widthOf(label, 8.5),
           y: PAGE_H - (MARGIN + 16), size: 8.5, font, color: MUTED,
         });

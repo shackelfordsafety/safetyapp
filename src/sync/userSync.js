@@ -1,6 +1,10 @@
 import { db } from '../archive/archiveClient';
-import { readTombstones, writeTombstones, localSettingsStamp } from './syncMeta';
-import { mergeTemplates, mergeTombstones } from './mergeRules';
+import {
+  readTombstones, writeTombstones, localSettingsStamp, setLocalSettingsStamp,
+  readSyncOwner, writeSyncOwner, readStashFor, writeStashFor, clearStashFor,
+  writeLocalTemplates, writeLocalSettings,
+} from './syncMeta';
+import { planSync, withSettingsStamp, stripSettingsStamp, mergeTemplates, mergeTombstones } from './mergeRules';
 import { IS_DEMO } from '../shared/demoMode';
 
 /* ── Your templates and settings, on every device you sign in on ─────────
@@ -95,34 +99,40 @@ export async function syncUserData({ templates, settings, lastJsa, deviceLabel }
     needsName = !String(prof?.full_name || '').trim();
   } catch { /* a missing profile is not worth failing a sync over */ }
 
+  /* Whose templates is this device holding? If it is somebody else's,
+     none of it goes up -- see planSync() in mergeRules.js. */
+  const owner = readSyncOwner();
   const localTombs = readTombstones();
-  const tombstones = mergeTombstones(localTombs, row?.template_tombstones);
-  const mergedTemplates = mergeTemplates(templates, row?.templates, tombstones);
-
-  const cloudSettingsStamp = Date.parse(row?.updated_at || 0) || 0;
-  const cloudWins = Boolean(row) && cloudSettingsStamp > localSettingsStamp();
-  const mergedSettings = cloudWins
-    ? { ...settings, ...(row.settings || {}) }
-    : settings;
-
-  writeTombstones(tombstones);
+  const localStamp = localSettingsStamp();
+  const plan = planSync({
+    uid,
+    owner,
+    local: { templates, settings, tombstones: localTombs, settingsStamp: localStamp },
+    stash: readStashFor(uid),
+    row,
+  });
+  const { switched, tombstones, templates: mergedTemplates, settings: mergedSettings, settingsStamp, cloudWins } = plan;
+  /* What goes up carries its own clock; what stays on the device never
+     does (stripSettingsStamp is applied inside planSync). */
+  const settingsForCloud = withSettingsStamp(mergedSettings, settingsStamp);
 
   /* The last JSA, so "same info as last time?" answers the same on the
      phone and the iPad. Stripped on the way UP -- crew signatures and
-     day-specific fields never leave the device. */
-  const localJsa = lastJsa?.model
+     day-specific fields never leave the device. And never at all when the
+     device was somebody else's: that snapshot is theirs. */
+  const localJsa = !switched && lastJsa?.model
     ? { savedAt: lastJsa.savedAt, model: stripForRepeat(lastJsa.model) }
     : null;
   const mergedJsa = newerSnapshot(localJsa, row?.last_jsa || null);
 
   const before = JSON.stringify([row?.templates || [], row?.settings || {}, row?.template_tombstones || [], row?.last_jsa || null]);
-  const after = JSON.stringify([mergedTemplates, mergedSettings, tombstones, mergedJsa]);
+  const after = JSON.stringify([mergedTemplates, settingsForCloud, tombstones, mergedJsa]);
   if (before !== after) {
     const { error: upErr } = await db.from('user_sync').upsert({
       user_id: uid,
       templates: mergedTemplates,
       template_tombstones: tombstones,
-      settings: mergedSettings,
+      settings: settingsForCloud,
       last_jsa: mergedJsa,
       updated_at: new Date().toISOString(),
       updated_by_device: deviceLabel || null,
@@ -130,8 +140,43 @@ export async function syncUserData({ templates, settings, lastJsa, deviceLabel }
     if (upErr) throw upErr;
   }
 
+  /* Only now that the cloud has it is anything on the device changed. A
+     failure above leaves the device exactly as it was, owner and all. */
+  writeTombstones(tombstones);
+  if (switched) {
+    /* The previous person's copy, parked rather than deleted -- it may
+       hold a template made offline that never reached their account. */
+    const earlier = readStashFor(owner);
+    const keepEarlierSettings = Boolean(earlier?.settings) && (Number(earlier.settingsStamp) || 0) > localStamp;
+    writeStashFor(owner, {
+      templates: mergeTemplates(earlier?.templates, templates, []),
+      tombstones: mergeTombstones(earlier?.tombstones, localTombs),
+      settings: keepEarlierSettings ? earlier.settings : stripSettingsStamp(settings),
+      settingsStamp: keepEarlierSettings ? earlier.settingsStamp : localStamp,
+    });
+    /* Storage first, owner last: if the page is closed between the two,
+       the next sync still sees a switch rather than merging the previous
+       person's templates into this account. */
+    const wroteTemplates = writeLocalTemplates(mergedTemplates);
+    const wroteSettings = writeLocalSettings(mergedSettings);
+    setLocalSettingsStamp(settingsStamp);
+    // This person's own stash has just been folded into their account.
+    clearStashFor(uid);
+    if (wroteTemplates && wroteSettings) writeSyncOwner(uid);
+  } else {
+    writeSyncOwner(uid);
+  }
+
   /* jsaFromCloud is set only when the cloud's copy actually won, so the
      caller knows whether there is anything to write to this device. */
   const jsaFromCloud = mergedJsa && mergedJsa !== localJsa ? mergedJsa : null;
-  return { templates: mergedTemplates, settings: mergedSettings, cloudWins, needsName, jsaFromCloud };
+  return {
+    templates: mergedTemplates,
+    settings: mergedSettings,
+    settingsStamp,
+    cloudWins,
+    switched,
+    needsName,
+    jsaFromCloud,
+  };
 }
