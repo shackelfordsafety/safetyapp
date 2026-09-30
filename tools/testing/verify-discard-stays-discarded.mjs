@@ -74,6 +74,9 @@ async function main() {
        publishing to the board. */
     page.once('dialog', d => d.accept());
     await page.getByRole('tab', { name: /Finish/i }).first().click();
+    /* Document Options moved under a collapsed "More options" section on
+       the Finish step (2026-09-2x); open it first or the button is hidden. */
+    await page.locator('details.finishMore summary').click();
     await page.getByRole('button', { name: 'Document Options' }).click();
     await page.getByRole('button', { name: /Clear/i }).first().click();
     await page.waitForTimeout(1600); // well past the autosave window
