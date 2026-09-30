@@ -263,11 +263,11 @@ async function main() {
          it all out there for somebody to figure out." */
       await page.getByRole('button', { name: 'They are not signing', exact: true }).first().click();
       await page.waitForTimeout(300);
-      const employeeAddSigCount = await page.locator('.signaturePad', { hasText: 'Employee Signature' }).getByRole('button', { name: 'Add signature' }).count();
+      const employeeAddSigCount = await page.locator('.signaturePad', { hasText: /Their Signature|Employee Signature/ }).getByRole('button', { name: 'Add signature' }).count();
       check(employeeAddSigCount === 0, 'Employee signature pad is not offered once refused/unavailable is toggled on');
 
       // Only the manager signs.
-      await page.locator('.signaturePad', { hasText: /Manage(r|ment) Signature/ }).getByRole('button', { name: 'Add signature' }).click();
+      await page.locator('.signaturePad', { hasText: /Your Signature|Manage(r|ment) Signature/ }).getByRole('button', { name: 'Add signature' }).click();
       const canvas = page.locator('canvas.signatureCanvas').first();
       await canvas.scrollIntoViewIfNeeded();
       const box = await canvas.boundingBox();
